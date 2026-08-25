@@ -35,6 +35,15 @@ importers:
 
   packages/api: {}
 
+  packages/auth:
+    dependencies:
+      '@ideeza/db':
+        specifier: workspace:*
+        version: link:../db
+      '@ideeza/domain':
+        specifier: workspace:*
+        version: link:../domain
+
   packages/config: {}
 
   packages/db:

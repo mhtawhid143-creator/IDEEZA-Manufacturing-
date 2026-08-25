@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
 import { seedDatabase } from '../prisma/seed.js';
-import { startTestDatabase, type TestDatabase } from './helpers/test-database.js';
+import { startTestDatabase, type TestDatabase } from '../test-support/index.js';
 
 let database: TestDatabase;
 let prisma: PrismaClient;
@@ -34,6 +34,8 @@ describe('migrations apply to a clean database', () => {
     expect(rows.map((row) => row.migration_name)).toEqual([
       '20260517090000_init',
       '20260517091000_guards',
+      '20260825085934_auth_sessions',
+      '20260825090000_auth_guards',
     ]);
   });
 
@@ -48,8 +50,9 @@ describe('migrations apply to a clean database', () => {
       JOIN pg_namespace n ON n.oid = t.typnamespace
       WHERE t.typtype = 'e' AND n.nspname = 'public'
     `);
-    expect(tables).toBe(41);
-    expect(enums).toBe(25);
+    // 41 business tables from T02 plus Session and UserCredential from T03.
+    expect(tables).toBe(43);
+    expect(enums).toBe(26);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {
@@ -83,6 +86,10 @@ describe('migrations apply to a clean database', () => {
       'evidence_single_context',
       'stage_position_matches_canonical_key',
       'payout_money_sane',
+      'session_manufacturer_binding',
+      'session_expiry_window_ordered',
+      'session_revocation_is_explained',
+      'credential_counters_sane',
     ]) {
       expect(names).toContain(expected);
     }

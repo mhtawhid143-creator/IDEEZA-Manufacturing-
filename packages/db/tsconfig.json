@@ -4,9 +4,19 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@ideeza/domain": ["../domain/src/index.ts"],
-      "@ideeza/db": ["./src/index.ts"]
+      "@ideeza/domain": [
+        "../domain/src/index.ts"
+      ],
+      "@ideeza/db": [
+        "./src/index.ts"
+      ]
     }
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "test-support/**/*.ts",
+    "prisma/**/*.ts",
+    "scripts/**/*.ts"
+  ]
 }

@@ -9,7 +9,7 @@ import EmbeddedPostgres from 'embedded-postgres';
 import { PrismaClient } from '@prisma/client';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dbPackageRoot = resolve(here, '..', '..');
+const dbPackageRoot = resolve(here, '..');
 
 const prismaCli = createRequire(join(dbPackageRoot, 'package.json')).resolve(
   'prisma/build/index.js',

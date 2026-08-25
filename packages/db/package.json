@@ -19,7 +19,8 @@
     "migration:sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "node --env-file=.env --import tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force --skip-seed"
+    "db:reset": "prisma migrate reset --force --skip-seed",
+    "migration:new": "node --import tsx scripts/migration-diff.ts"
   },
   "dependencies": {
     "@ideeza/domain": "workspace:*",

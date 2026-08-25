@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ideeza/domain": ["../domain/src/index.ts"],
+      "@ideeza/db": ["../db/src/index.ts"],
+      "@ideeza/auth": ["./src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

@@ -30,6 +30,14 @@ enum ActorRole {
   ops_admin
 }
 
+enum SessionRevocationReason {
+  signed_out
+  rotated
+  password_changed
+  revoked_by_operations
+  account_suspended
+}
+
 enum PackageKind {
   pcb
   module_3d
@@ -323,8 +331,55 @@ model User {
   disputesOpened    Dispute[]
   evidenceSubmitted Evidence[]
   domainEvents      DomainEvent[]
+  credential        UserCredential?
+  sessions          Session[]
 
   @@index([role])
+}
+
+/// Sign-in secret for a user. Kept out of the User row so that reading a user
+/// never carries the hash with it.
+model UserCredential {
+  userId            String    @id
+  passwordHash      String
+  algorithm         String    @default("scrypt")
+  failedAttempts    Int       @default(0)
+  lockedUntil       DateTime?
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// A server side session. Only the hash of the token is stored, so a leaked
+/// database row cannot be replayed as a session.
+///
+/// A manufacturer session must name the manufacturer it acts for: that is what
+/// keeps one manufacturer out of another manufacturer's requests, quotes,
+/// inventory and payouts. A database check constraint enforces it.
+model Session {
+  id                   String                   @id
+  userId               String
+  tokenHash            String                   @unique
+  role                 ActorRole
+  activeManufacturerId String?
+  issuedAt             DateTime                 @default(now())
+  lastSeenAt           DateTime                 @default(now())
+  idleExpiresAt        DateTime
+  absoluteExpiresAt    DateTime
+  revokedAt            DateTime?
+  revocationReason     SessionRevocationReason?
+  userAgent            String?
+  ipAddress            String?
+
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeManufacturer ManufacturerProfile? @relation(fields: [activeManufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([idleExpiresAt])
+  @@index([absoluteExpiresAt])
+  @@index([activeManufacturerId])
 }
 
 /// The buyer address book. Requests and orders keep their own inline snapshot
@@ -373,6 +428,7 @@ model ManufacturerProfile {
   withdrawals    WithdrawalRequest[]
   reviews        Review[]
   domainEvents   DomainEvent[]
+  sessions       Session[]
 
   @@index([countryCode])
 }
