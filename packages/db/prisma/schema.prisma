@@ -1,0 +1,1196 @@
+// IDEEZA Manufacturing Platform - persistence model.
+//
+// Scope of this file: tables, relationships, constraints and indexes only.
+// Business rules, state transitions, invariants and permissions live in
+// packages/domain and are NOT re-implemented here. Where a rule can also be
+// expressed cheaply and exactly in the database it is added as a constraint, so
+// that a bug in an application path cannot corrupt the record.
+//
+// Money convention: every amount is stored as an integer minor unit
+// (<name>Minor, BigInt) together with a row-level ISO currency column. No
+// floating point type is used for money anywhere in this schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enumerations. These mirror packages/domain/src/status exactly; the database
+// refuses any value the domain layer does not know.
+// ---------------------------------------------------------------------------
+
+enum ActorRole {
+  buyer
+  manufacturer
+  ops_admin
+}
+
+enum PackageKind {
+  pcb
+  module_3d
+  full_product
+}
+
+enum AssemblyMode {
+  none
+  smt
+  through_hole
+  mixed
+}
+
+enum SubstitutionPolicy {
+  not_allowed
+  with_approval
+  manufacturer_discretion
+}
+
+enum RfqStatus {
+  draft
+  submitted
+  closed
+  withdrawn
+}
+
+enum RfqRecipientStatus {
+  routed
+  viewed
+  quoted
+  declined
+  expired
+}
+
+enum RfqDeclineReason {
+  capability_mismatch
+  capacity_unavailable
+  below_minimum_order_quantity
+  parts_unavailable
+  lead_time_not_achievable
+  files_incomplete
+  destination_not_served
+  other
+}
+
+enum QuoteStatus {
+  draft
+  submitted
+  revision_requested
+  revised
+  accepted
+  rejected
+  expired
+  withdrawn
+}
+
+enum SubstitutionStatus {
+  proposed
+  approved
+  rejected
+}
+
+enum OrderStatus {
+  awaiting_payment
+  confirmed
+  in_production
+  quality_check
+  ready_to_ship
+  shipped
+  delivered
+  completed
+  cancel_requested
+  cancelled
+  refund_requested
+  refunded
+  partially_refunded
+  disputed
+  resolved
+}
+
+enum ProductionStageKey {
+  quote_accepted
+  payment_secured
+  files_under_review
+  materials_confirmed
+  in_production
+  quality_check
+  ready_to_ship
+  shipped
+  delivered
+  completed
+}
+
+enum ProductionProgressStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum PaymentStatus {
+  initiated
+  secured
+  released
+  refunded
+  partially_refunded
+}
+
+enum PaymentMethodKind {
+  card
+  paypal
+  bank
+  stablecoin
+  platform_token
+}
+
+enum PayoutStatus {
+  pending_release
+  released
+  refunded
+  disputed
+}
+
+enum WithdrawalStatus {
+  requested
+  paid
+  rejected
+}
+
+enum RefundStatus {
+  requested
+  mfr_responded
+  ops_review
+  approved
+  partial
+  rejected
+}
+
+enum DisputeStatus {
+  open
+  responded
+  under_review
+  resolved
+  escalated
+}
+
+enum DisputeOutcome {
+  no_issue_found
+  rework
+  partial_refund
+  full_refund
+  replacement_shipment
+  cancelled_before_production
+  escalated_to_inspection
+}
+
+enum OrderIssueReason {
+  failed_quality_check
+  defective_units
+  wrong_specification
+  wrong_quantity
+  unapproved_substitution
+  late_delivery
+  damaged_in_transit
+  not_delivered
+  missing_documentation
+}
+
+enum MessageContextKind {
+  rfq
+  quote
+  order
+  shipping
+  dispute
+}
+
+enum EvidenceKind {
+  accepted_quote
+  order_terms
+  design_file
+  bom_revision
+  approved_substitution
+  change_order
+  quality_report
+  measurement_data
+  photo
+  shipping_record
+  delivery_record
+  buyer_statement
+  manufacturer_statement
+}
+
+enum EvidenceContextKind {
+  rfq
+  quote
+  order
+  production
+  delivery
+  refund
+  dispute
+}
+
+enum EventSubjectKind {
+  rfq
+  rfq_recipient
+  quote
+  substitution
+  payment
+  order
+  production_stage
+  production_task
+  refund
+  dispute
+  payout
+  evidence
+  review
+}
+
+enum DomainEventKind {
+  rfq_submitted
+  rfq_withdrawn
+  rfq_recipient_viewed
+  rfq_recipient_declined
+  rfq_recipient_expired
+  rfq_clarification_requested
+  quote_submitted
+  quote_revision_requested
+  quote_revised
+  quote_accepted
+  quote_rejected
+  quote_expired
+  quote_withdrawn
+  substitution_suggested
+  substitution_approved
+  substitution_rejected
+  payment_initiated
+  payment_secured
+  payment_failed
+  order_created
+  order_confirmed
+  order_production_started
+  order_stage_advanced
+  order_task_updated
+  order_shipped
+  order_delivered
+  order_delivery_confirmed
+  order_review_window_expired
+  order_completed
+  order_cancel_requested
+  order_cancelled
+  refund_requested
+  refund_manufacturer_approved
+  refund_manufacturer_challenged
+  refund_decided
+  dispute_opened
+  dispute_responded
+  dispute_under_review
+  dispute_resolved
+  dispute_escalated
+  inspection_evidence_accepted
+  partial_refund_agreed
+  payout_released
+  payout_withheld
+  evidence_captured
+  review_published
+}
+
+// ---------------------------------------------------------------------------
+// Party
+// ---------------------------------------------------------------------------
+
+model User {
+  id          String    @id
+  email       String    @unique
+  displayName String
+  role        ActorRole
+  createdAt   DateTime  @default(now())
+  suspendedAt DateTime?
+
+  addresses         PostalAddress[]
+  memberships       ManufacturerMember[]
+  products          Product[]
+  rfqs              Rfq[]
+  ordersAsBuyer     ManufacturingOrder[]
+  payments          Payment[]
+  uploadedFiles     FileRef[]
+  threadMemberships MessageThreadParticipant[]
+  messages          Message[]
+  notifications     Notification[]
+  reviews           Review[]
+  refundsRequested  Refund[]
+  disputesOpened    Dispute[]
+  evidenceSubmitted Evidence[]
+  domainEvents      DomainEvent[]
+
+  @@index([role])
+}
+
+/// The buyer address book. Requests and orders keep their own inline snapshot
+/// of the destination, so editing an entry here never rewrites history.
+model PostalAddress {
+  id          String    @id
+  ownerId     String
+  label       String?
+  line1       String
+  line2       String?
+  city        String
+  region      String?
+  postalCode  String?
+  countryCode String    @db.Char(2)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+}
+
+model ManufacturerProfile {
+  id                  String    @id
+  legalName           String
+  displayName         String
+  addressLine1        String
+  addressLine2        String?
+  city                String
+  region              String?
+  postalCode          String?
+  countryCode         String    @db.Char(2)
+  rating              Decimal?  @db.Decimal(3, 2)
+  onTimeDeliveryRate  Decimal?  @db.Decimal(5, 4)
+  completedOrderCount Int       @default(0)
+  verifiedAt          DateTime?
+  createdAt           DateTime  @default(now())
+
+  capability     ManufacturerCapability?
+  members        ManufacturerMember[]
+  rfqRecipients  RfqRecipient[]
+  quotes         Quote[]
+  orders         ManufacturingOrder[]
+  inventoryItems InventoryItem[]
+  payouts        Payout[]
+  withdrawals    WithdrawalRequest[]
+  reviews        Review[]
+  domainEvents   DomainEvent[]
+
+  @@index([countryCode])
+}
+
+model ManufacturerCapability {
+  manufacturerId       String   @id
+  services             String[]
+  certifications       String[]
+  servedRegions        String[]
+  minimumOrderQuantity Int
+  standardLeadTimeDays Int
+  updatedAt            DateTime @updatedAt
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+}
+
+model ManufacturerMember {
+  id             String   @id
+  manufacturerId String
+  userId         String
+  isOwner        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([manufacturerId, userId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Product and requirements
+// ---------------------------------------------------------------------------
+
+model Product {
+  id        String   @id
+  ownerId   String
+  name      String
+  createdAt DateTime @default(now())
+
+  owner    User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  files    ProductFile[]
+  bomLines BomLine[]
+  packages ManufacturingPackage[]
+
+  @@index([ownerId])
+}
+
+/// An immutable pointer to one stored file revision. The storage provider is
+/// not part of this task; only the record is.
+model FileRef {
+  id           String   @id
+  name         String
+  revision     Int      @default(1)
+  contentHash  String
+  byteSize     Int
+  uploadedById String?
+  uploadedAt   DateTime @default(now())
+
+  uploadedBy         User?               @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  productLinks       ProductFile[]
+  packageLinks       PackageFile[]
+  requirementsLinks  RequirementsFile[]
+  quoteAttachments   QuoteAttachment[]
+  messageAttachments MessageAttachment[]
+  evidence           Evidence[]
+
+  @@unique([contentHash, revision])
+}
+
+model ProductFile {
+  productId String
+  fileId    String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  file    FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([productId, fileId])
+}
+
+/// Master bill-of-materials line owned by a product.
+model BomLine {
+  id                     String  @id
+  productId              String
+  reference              String
+  componentName          String
+  manufacturerPartNumber String?
+  sku                    String?
+  footprint              String?
+  quantityPerUnit        Int
+
+  product      Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  packageLinks PackageBomLine[]
+
+  @@unique([productId, reference])
+  @@index([sku])
+}
+
+model ManufacturingPackage {
+  id        String      @id
+  productId String
+  kind      PackageKind
+  createdAt DateTime    @default(now())
+
+  product      Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  files        PackageFile[]
+  bomLines     PackageBomLine[]
+  requirements ManufacturingRequirements[]
+  rfqs         Rfq[]
+
+  @@index([productId, kind])
+}
+
+model PackageFile {
+  packageId String
+  fileId    String
+
+  package ManufacturingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  file    FileRef              @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, fileId])
+}
+
+model PackageBomLine {
+  packageId String
+  bomLineId String
+
+  package ManufacturingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  bomLine BomLine              @relation(fields: [bomLineId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, bomLineId])
+}
+
+/// The structured production boundary. A row is frozen once lockedAt is set,
+/// which is the moment a request is submitted against it.
+model ManufacturingRequirements {
+  id                      String             @id
+  packageId               String
+  version                 Int                @default(1)
+  quantity                Int
+  material                String
+  manufacturingMethod     String
+  tolerance               String
+  leadTimeDays            Int
+  shippingRequirement     String
+  assembly                AssemblyMode
+  qualityCheckRequirement String
+  substitutionPolicy      SubstitutionPolicy
+  notes                   String?
+  lockedAt                DateTime?
+  createdAt               DateTime           @default(now())
+
+  package ManufacturingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  files   RequirementsFile[]
+  rfqs    Rfq[]
+
+  @@unique([packageId, version])
+}
+
+model RequirementsFile {
+  requirementsId String
+  fileId         String
+
+  requirements ManufacturingRequirements @relation(fields: [requirementsId], references: [id], onDelete: Cascade)
+  file         FileRef                   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([requirementsId, fileId])
+}
+
+// ---------------------------------------------------------------------------
+// Request for quotes
+// ---------------------------------------------------------------------------
+
+/// One request, routed to one or many manufacturers. Multiple recipients never
+/// mean multiple orders: they mean competing quotes for the buyer to compare.
+model Rfq {
+  id                String    @id
+  buyerId           String
+  packageId         String
+  requirementsId    String
+  status            RfqStatus @default(draft)
+  quantity          Int
+  volumeTiers       Int[]
+  targetPriceMinor  BigInt?
+  currency          String    @db.Char(3)
+  shipToLine1       String
+  shipToLine2       String?
+  shipToCity        String
+  shipToRegion      String?
+  shipToPostalCode  String?
+  shipToCountryCode String    @db.Char(2)
+  neededBy          DateTime?
+  responseDeadline  DateTime?
+  submittedAt       DateTime?
+  closedAt          DateTime?
+  createdAt         DateTime  @default(now())
+
+  buyer         User                      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  package       ManufacturingPackage      @relation(fields: [packageId], references: [id])
+  requirements  ManufacturingRequirements @relation(fields: [requirementsId], references: [id])
+  recipients    RfqRecipient[]
+  items         RfqItem[]
+  quotes        Quote[]                   @relation("RfqQuotes")
+  acceptedQuote Quote?                    @relation("RfqAcceptedQuote")
+  orders        ManufacturingOrder[]
+  threads       MessageThread[]
+  evidence      Evidence[]
+
+  @@index([buyerId, status])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+/// Per-manufacturer routing state. This row, not the request, is what a
+/// manufacturer is allowed to read.
+model RfqRecipient {
+  id             String             @id
+  rfqId          String
+  manufacturerId String
+  status         RfqRecipientStatus @default(routed)
+  viewedAt       DateTime?
+  quotedAt       DateTime?
+  declinedAt     DateTime?
+  declineReason  RfqDeclineReason?
+  declineNote    String?
+  expiresAt      DateTime?
+  createdAt      DateTime           @default(now())
+
+  rfq          Rfq                 @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, manufacturerId])
+  @@index([manufacturerId, status])
+  @@index([rfqId, status])
+}
+
+/// The bill of materials as sent with the request: the persisted form of the
+/// requirements snapshot that every recipient quotes against.
+model RfqItem {
+  id                     String  @id
+  rfqId                  String
+  reference              String
+  componentName          String
+  manufacturerPartNumber String?
+  sku                    String?
+  quantityRequired       Int
+
+  rfq           Rfq            @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  quoteItems    QuoteItem[]
+  substitutions Substitution[]
+
+  @@unique([rfqId, reference])
+  @@index([sku])
+}
+
+// ---------------------------------------------------------------------------
+// Quote
+// ---------------------------------------------------------------------------
+
+/// A manufacturer response carrying every term the buyer needs to compare it.
+///
+/// acceptedForRfqId is the database-level guarantee that a request can only ever
+/// have one accepted quote: it is set to the request id on acceptance and is
+/// unique, and PostgreSQL allows many NULLs in a unique column.
+model Quote {
+  id                    String      @id
+  rfqId                 String
+  manufacturerId        String
+  status                QuoteStatus @default(draft)
+  version               Int         @default(1)
+  acceptedForRfqId      String?     @unique
+  quantity              Int
+  currency              String      @db.Char(3)
+  unitPriceMinor        BigInt
+  totalPriceMinor       BigInt
+  shippingEstimateMinor BigInt?
+  toolingSetupCostMinor BigInt?
+  leadTimeDays          Int
+  materialProcessNotes  String
+  warrantyTerms         String?
+  terms                 String
+  expiresAt             DateTime
+  submittedAt           DateTime?
+  acceptedAt            DateTime?
+  createdAt             DateTime    @default(now())
+
+  rfq            Rfq                 @relation("RfqQuotes", fields: [rfqId], references: [id], onDelete: Cascade)
+  acceptedForRfq Rfq?                @relation("RfqAcceptedQuote", fields: [acceptedForRfqId], references: [id])
+  manufacturer   ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  items          QuoteItem[]
+  revisions      QuoteRevision[]
+  substitutions  Substitution[]
+  attachments    QuoteAttachment[]
+  order          ManufacturingOrder?
+  payments       Payment[]
+  threads        MessageThread[]
+  evidence       Evidence[]
+
+  @@unique([rfqId, manufacturerId, version])
+  @@index([rfqId, status])
+  @@index([manufacturerId, status])
+  @@index([status, expiresAt])
+}
+
+model QuoteItem {
+  id             String  @id
+  quoteId        String
+  rfqItemId      String?
+  description    String
+  quantity       Int
+  currency       String  @db.Char(3)
+  unitPriceMinor BigInt
+  lineTotalMinor BigInt
+
+  quote   Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  rfqItem RfqItem? @relation(fields: [rfqItemId], references: [id], onDelete: SetNull)
+
+  @@index([quoteId])
+}
+
+/// An immutable record of a superseded set of quote terms.
+model QuoteRevision {
+  id                 String    @id
+  quoteId            String
+  version            Int
+  requestedByBuyerAt DateTime?
+  buyerNote          String?
+  previousTerms      Json
+  createdAt          DateTime  @default(now())
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, version])
+}
+
+/// A manufacturer-suggested replacement part. It must be decided by the buyer,
+/// and the decision becomes part of the documented order record.
+model Substitution {
+  id                       String             @id
+  quoteId                  String
+  rfqItemId                String
+  status                   SubstitutionStatus @default(proposed)
+  requestedPartReference   String
+  suggestedPartName        String
+  suggestedInventoryItemId String?
+  technicalJustification   String
+  currency                 String             @db.Char(3)
+  priceImpactMinor         BigInt
+  leadTimeImpactDays       Int
+  decidedAt                DateTime?
+  createdAt                DateTime           @default(now())
+
+  quote                  Quote          @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  rfqItem                RfqItem        @relation(fields: [rfqItemId], references: [id], onDelete: Cascade)
+  suggestedInventoryItem InventoryItem? @relation(fields: [suggestedInventoryItemId], references: [id], onDelete: SetNull)
+
+  @@unique([quoteId, rfqItemId])
+  @@index([quoteId, status])
+}
+
+model QuoteAttachment {
+  quoteId String
+  fileId  String
+
+  quote Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  file  FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([quoteId, fileId])
+}
+
+// ---------------------------------------------------------------------------
+// Manufacturing order
+// ---------------------------------------------------------------------------
+
+/// An order exists only for an accepted quote, and the accepted quote can back
+/// exactly one order (acceptedQuoteId is unique).
+///
+/// A database check constraint added in the migration additionally refuses any
+/// row that has left awaiting_payment without a payment attached.
+model ManufacturingOrder {
+  id                 String      @id
+  rfqId              String
+  acceptedQuoteId    String      @unique
+  buyerId            String
+  manufacturerId     String
+  paymentId          String?     @unique
+  status             OrderStatus @default(awaiting_payment)
+  shipToLine1        String
+  shipToLine2        String?
+  shipToCity         String
+  shipToRegion       String?
+  shipToPostalCode   String?
+  shipToCountryCode  String      @db.Char(2)
+  reviewWindowEndsAt DateTime?
+  confirmedAt        DateTime?
+  deliveredAt        DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime    @default(now())
+
+  rfq           Rfq                    @relation(fields: [rfqId], references: [id])
+  acceptedQuote Quote                  @relation(fields: [acceptedQuoteId], references: [id])
+  buyer         User                   @relation(fields: [buyerId], references: [id])
+  manufacturer  ManufacturerProfile    @relation(fields: [manufacturerId], references: [id])
+  payment       Payment?               @relation("OrderPayment", fields: [paymentId], references: [id])
+  snapshot      AcceptedQuoteSnapshot?
+  stages        ProductionStage[]
+  tasks         ProductionTask[]
+  payouts       Payout[]
+  evidence      Evidence[]
+  refunds       Refund[]
+  disputes      Dispute[]
+  threads       MessageThread[]
+  review        Review?
+  domainEvents  DomainEvent[]
+
+  @@index([buyerId, status])
+  @@index([manufacturerId, status])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+/// The frozen copy of what both sides agreed to.
+///
+/// Rows are append-only: the migration installs triggers that refuse UPDATE and
+/// DELETE, because a dispute is decided on this record.
+model AcceptedQuoteSnapshot {
+  orderId                 String   @id
+  quoteId                 String
+  quoteVersion            Int
+  manufacturerId          String
+  quantity                Int
+  currency                String   @db.Char(3)
+  unitPriceMinor          BigInt
+  totalPriceMinor         BigInt
+  shippingEstimateMinor   BigInt?
+  toolingSetupCostMinor   BigInt?
+  leadTimeDays            Int
+  materialProcessNotes    String
+  warrantyTerms           String?
+  terms                   String
+  requirements            Json
+  approvedSubstitutionIds String[]
+  checksum                String
+  capturedAt              DateTime @default(now())
+
+  order ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
+/// One of the ten canonical stages, tracked per order. Shop-floor detail is a
+/// ProductionTask nested in a stage, never a stage of its own.
+model ProductionStage {
+  id          String                   @id
+  orderId     String
+  key         ProductionStageKey
+  position    Int
+  status      ProductionProgressStatus @default(pending)
+  startedAt   DateTime?
+  completedAt DateTime?
+  note        String?
+
+  order    ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tasks    ProductionTask[]
+  evidence Evidence[]
+
+  @@unique([orderId, key])
+  @@unique([orderId, position])
+  @@index([orderId, status])
+  @@index([status])
+}
+
+model ProductionTask {
+  id          String                   @id
+  orderId     String
+  stageId     String
+  label       String
+  position    Int
+  status      ProductionProgressStatus @default(pending)
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  order ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stage ProductionStage    @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, position])
+  @@index([orderId])
+  @@index([stageId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Inventory (manufacturer owned; buyers never read this table)
+// ---------------------------------------------------------------------------
+
+model InventoryItem {
+  id                   String    @id
+  manufacturerId       String
+  partName             String
+  sku                  String
+  category             String
+  stockQuantity        Int       @default(0)
+  reservedQuantity     Int       @default(0)
+  lowStockThreshold    Int       @default(0)
+  currency             String    @db.Char(3)
+  unitCostMinor        BigInt
+  leadTimeDays         Int
+  minimumOrderQuantity Int?
+  storageLocation      String?
+  enabledForMatching   Boolean   @default(true)
+  lastCountedAt        DateTime?
+  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime  @default(now())
+
+  manufacturer  ManufacturerProfile   @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  substitutes   InventorySubstitute[] @relation("InventoryItemSubstitutes")
+  substituteFor InventorySubstitute[] @relation("InventoryItemSubstituteFor")
+  substitutions Substitution[]
+
+  @@unique([manufacturerId, sku])
+  @@index([manufacturerId, category])
+  @@index([manufacturerId, enabledForMatching])
+}
+
+model InventorySubstitute {
+  itemId       String
+  substituteId String
+
+  item       InventoryItem @relation("InventoryItemSubstitutes", fields: [itemId], references: [id], onDelete: Cascade)
+  substitute InventoryItem @relation("InventoryItemSubstituteFor", fields: [substituteId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, substituteId])
+}
+
+// ---------------------------------------------------------------------------
+// Money
+// ---------------------------------------------------------------------------
+
+/// Buyer funding held by the platform against one accepted quote.
+model Payment {
+  id                  String            @id
+  quoteId             String
+  buyerId             String
+  status              PaymentStatus     @default(initiated)
+  method              PaymentMethodKind
+  currency            String            @db.Char(3)
+  goodsAmountMinor    BigInt
+  shippingAmountMinor BigInt            @default(0)
+  taxAmountMinor      BigInt            @default(0)
+  platformFeeMinor    BigInt            @default(0)
+  totalChargedMinor   BigInt
+  securedAt           DateTime?
+  releasedAt          DateTime?
+  createdAt           DateTime          @default(now())
+
+  quote   Quote               @relation(fields: [quoteId], references: [id])
+  buyer   User                @relation(fields: [buyerId], references: [id])
+  order   ManufacturingOrder? @relation("OrderPayment")
+  payouts Payout[]
+
+  @@index([buyerId, status])
+  @@index([quoteId])
+  @@index([status, createdAt])
+}
+
+/// The manufacturer-facing side of the same money. releaseTriggerEventId points
+/// at the documented order event that justified the release.
+model Payout {
+  id                    String       @id
+  orderId               String
+  paymentId             String
+  manufacturerId        String
+  status                PayoutStatus @default(pending_release)
+  currency              String       @db.Char(3)
+  orderAmountMinor      BigInt
+  platformFeeMinor      BigInt
+  netAmountMinor        BigInt
+  releaseTriggerEventId String?
+  releasedAt            DateTime?
+  createdAt             DateTime     @default(now())
+
+  order               ManufacturingOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payment             Payment             @relation(fields: [paymentId], references: [id])
+  manufacturer        ManufacturerProfile @relation(fields: [manufacturerId], references: [id])
+  releaseTriggerEvent DomainEvent?        @relation(fields: [releaseTriggerEventId], references: [id])
+
+  @@unique([orderId])
+  @@index([manufacturerId, status])
+  @@index([status, createdAt])
+}
+
+model WithdrawalRequest {
+  id             String           @id
+  manufacturerId String
+  status         WithdrawalStatus @default(requested)
+  currency       String           @db.Char(3)
+  amountMinor    BigInt
+  requestedAt    DateTime         @default(now())
+  settledAt      DateTime?
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Communication (always bound to a business object)
+// ---------------------------------------------------------------------------
+
+/// A thread cannot exist without a context: the migration adds a check
+/// constraint that the context column matching contextKind is present.
+model MessageThread {
+  id            String             @id
+  contextKind   MessageContextKind
+  rfqId         String?
+  quoteId       String?
+  orderId       String?
+  disputeId     String?
+  lastMessageAt DateTime?
+  createdAt     DateTime           @default(now())
+
+  rfq          Rfq?                       @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  quote        Quote?                     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  order        ManufacturingOrder?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dispute      Dispute?                   @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  participants MessageThreadParticipant[]
+  messages     Message[]
+
+  @@index([contextKind])
+  @@index([rfqId])
+  @@index([orderId])
+  @@index([lastMessageAt])
+}
+
+model MessageThreadParticipant {
+  threadId String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, userId])
+  @@index([userId])
+}
+
+/// Either human text or a system card that references a structured action. The
+/// card references the event; it never carries the commitment itself.
+model Message {
+  id                String   @id
+  threadId          String
+  authorId          String?
+  body              String?
+  referencedEventId String?
+  sentAt            DateTime @default(now())
+
+  thread          MessageThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author          User?               @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  referencedEvent DomainEvent?        @relation(fields: [referencedEventId], references: [id])
+  attachments     MessageAttachment[]
+
+  @@index([threadId, sentAt])
+  @@index([sentAt])
+}
+
+model MessageAttachment {
+  messageId String
+  fileId    String
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  file    FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, fileId])
+}
+
+model Notification {
+  id          String    @id
+  recipientId String
+  kind        String
+  title       String
+  body        String
+  deepLink    String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, readAt])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Records: events, evidence, reviews, resolution
+// ---------------------------------------------------------------------------
+
+/// Append-only log of structured business actions.
+///
+/// The migration installs triggers that refuse UPDATE and DELETE: this log is
+/// the evidence base for payout release and dispute decisions.
+model DomainEvent {
+  id                  String           @id
+  sequence            BigInt           @default(autoincrement())
+  kind                DomainEventKind
+  actorRole           ActorRole
+  actorUserId         String?
+  actorManufacturerId String?
+  subjectKind         EventSubjectKind
+  subjectId           String
+  orderId             String?
+  payload             Json             @default("{}")
+  occurredAt          DateTime         @default(now())
+
+  actorUser         User?                @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorManufacturer ManufacturerProfile? @relation(fields: [actorManufacturerId], references: [id], onDelete: SetNull)
+  order             ManufacturingOrder?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payoutsReleased   Payout[]
+  messages          Message[]
+
+  @@index([subjectKind, subjectId])
+  @@index([orderId, occurredAt])
+  @@index([kind, occurredAt])
+  @@index([occurredAt])
+  @@index([sequence])
+}
+
+/// A piece of the documented record, bound to exactly one context. The
+/// migration adds a check constraint enforcing that.
+model Evidence {
+  id                String              @id
+  contextKind       EvidenceContextKind
+  kind              EvidenceKind
+  title             String
+  rfqId             String?
+  quoteId           String?
+  orderId           String?
+  productionStageId String?
+  refundId          String?
+  disputeId         String?
+  fileId            String?
+  payload           Json?
+  submittedById     String?
+  capturedAt        DateTime            @default(now())
+
+  rfq             Rfq?                @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  quote           Quote?              @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  order           ManufacturingOrder? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productionStage ProductionStage?    @relation(fields: [productionStageId], references: [id], onDelete: Cascade)
+  refund          Refund?             @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  dispute         Dispute?            @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  file            FileRef?            @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  submittedBy     User?               @relation(fields: [submittedById], references: [id], onDelete: SetNull)
+
+  @@index([orderId, kind])
+  @@index([contextKind])
+  @@index([capturedAt])
+}
+
+model Review {
+  id             String   @id
+  orderId        String   @unique
+  manufacturerId String
+  authorId       String
+  rating         Int
+  body           String?
+  anonymous      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  order        ManufacturingOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  author       User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, rating])
+}
+
+/// The financial outcome of an order issue.
+model Refund {
+  id                      String           @id
+  orderId                 String
+  requestedById           String
+  status                  RefundStatus     @default(requested)
+  reason                  OrderIssueReason
+  currency                String           @db.Char(3)
+  requestedAmountMinor    BigInt
+  approvedAmountMinor     BigInt?
+  description             String
+  manufacturerRespondedAt DateTime?
+  decidedAt               DateTime?
+  createdAt               DateTime         @default(now())
+
+  order       ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  requestedBy User               @relation(fields: [requestedById], references: [id])
+  evidence    Evidence[]
+  disputes    Dispute[]
+
+  @@index([orderId, status])
+  @@index([status, createdAt])
+}
+
+/// The process that resolves a contested order.
+model Dispute {
+  id                 String           @id
+  orderId            String
+  refundId           String?
+  openedById         String
+  status             DisputeStatus    @default(open)
+  reason             OrderIssueReason
+  currency           String           @db.Char(3)
+  claimedAmountMinor BigInt
+  outcome            DisputeOutcome?
+  outcomeAmountMinor BigInt?
+  resolvedAt         DateTime?
+  createdAt          DateTime         @default(now())
+
+  order    ManufacturingOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refund   Refund?            @relation(fields: [refundId], references: [id], onDelete: SetNull)
+  openedBy User               @relation(fields: [openedById], references: [id])
+  evidence Evidence[]
+  threads  MessageThread[]
+
+  @@index([orderId, status])
+  @@index([status, createdAt])
+}

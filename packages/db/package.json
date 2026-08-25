@@ -3,5 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Placeholder for a later task. No implementation in T01."
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "prisma generate && tsc --noEmit -p tsconfig.json",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate && prisma format --check",
+    "migration:sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "node --env-file=.env --import tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset --force --skip-seed"
+  },
+  "dependencies": {
+    "@ideeza/domain": "workspace:*",
+    "@prisma/client": "^6.2.1"
+  },
+  "devDependencies": {
+    "embedded-postgres": "17.10.0-beta.17",
+    "prisma": "^6.2.1",
+    "tsx": "^4.19.2"
+  }
 }
