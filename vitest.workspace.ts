@@ -9,6 +9,7 @@ const alias = {
   '@ideeza/types': fromRoot('./packages/types/src/index.ts'),
   '@ideeza/db': fromRoot('./packages/db/src/index.ts'),
   '@ideeza/auth': fromRoot('./packages/auth/src/index.ts'),
+  '@ideeza/ui': fromRoot('./packages/ui/src/index.ts'),
 };
 
 export default defineWorkspace([
@@ -22,10 +23,22 @@ export default defineWorkspace([
         'packages/types/test/**/*.test.ts',
         'packages/auth/test/**/*.test.ts',
         'packages/config/test/**/*.test.mjs',
+        'apps/*/test/**/*.test.ts',
       ],
       // Suites suffixed .db.test.ts need a PostgreSQL cluster and run in the
       // database project instead.
       exclude: ['**/*.db.test.ts', '**/node_modules/**'],
+    },
+  },
+  {
+    resolve: { alias },
+    esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
+    test: {
+      name: 'ui',
+      environment: 'jsdom',
+      include: ['packages/ui/test/**/*.test.tsx', 'apps/*/test/**/*.test.tsx'],
+      setupFiles: ['packages/ui/test/setup.ts'],
+      globals: false,
     },
   },
   {

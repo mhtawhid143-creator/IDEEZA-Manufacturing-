@@ -29,6 +29,13 @@ const SHARED_AUTH_ROUTES: readonly RouteRule[] = Object.freeze([
   { pattern: '/auth/sign-in', anonymous: true },
   { pattern: '/auth/sign-out', anonymous: true },
   { pattern: '/auth/session', anonymous: true },
+  // The component gallery renders the design system with no data in it, so it
+  // is readable without a session for design review.
+  { pattern: '/design-system', anonymous: true },
+  // Reachable without a session on purpose: they explain a refusal, and
+  // requiring a session to read them would loop.
+  { pattern: '/forbidden', anonymous: true },
+  { pattern: '/unavailable', anonymous: true },
 ]);
 
 const USER_RULES: readonly RouteRule[] = Object.freeze([
@@ -36,6 +43,7 @@ const USER_RULES: readonly RouteRule[] = Object.freeze([
     { pattern: '/', capability: 'order.view' },
     { pattern: '/manufacturing', capability: 'order.view' },
     { pattern: '/manufacturing/draft/**', capability: 'rfq.create' },
+    { pattern: '/manufacturing/rfq', capability: 'rfq.view' },
     { pattern: '/manufacturing/rfq/new', capability: 'rfq.create' },
     { pattern: '/manufacturing/rfq/*', capability: 'rfq.view' },
     { pattern: '/manufacturing/rfq/*/quotes', capability: 'quote.view' },
@@ -44,12 +52,14 @@ const USER_RULES: readonly RouteRule[] = Object.freeze([
     { pattern: '/manufacturing/rfq/*/substitutions', capability: 'substitution.decide' },
     { pattern: '/manufacturing/checkout/**', capability: 'checkout.pay' },
     { pattern: '/manufacturing/orders', capability: 'order.view' },
+    { pattern: '/manufacturing/history', capability: 'order.view' },
     { pattern: '/manufacturing/orders/*', capability: 'order.view' },
     { pattern: '/manufacturing/orders/*/records', capability: 'evidence.read' },
     { pattern: '/manufacturing/orders/*/confirm-delivery', capability: 'delivery.confirm' },
     { pattern: '/manufacturing/orders/*/refund', capability: 'refund.request' },
     { pattern: '/manufacturing/orders/*/cancel', capability: 'cancellation.request' },
     { pattern: '/manufacturing/orders/*/dispute', capability: 'dispute.open' },
+    { pattern: '/messages', capability: 'messaging.participate' },
     { pattern: '/messages/**', capability: 'messaging.participate' },
     { pattern: '/notifications', capability: 'messaging.participate' },
 ]);
@@ -72,6 +82,7 @@ const MANUFACTURER_RULES: readonly RouteRule[] = Object.freeze([
     { pattern: '/orders/*/cancel-request', capability: 'cancellation.request' },
     { pattern: '/orders/*/refund-response', capability: 'refund.respond' },
     { pattern: '/orders/*/dispute', capability: 'dispute.open' },
+    { pattern: '/messages', capability: 'messaging.participate' },
     { pattern: '/inventory', capability: 'inventory.read' },
     { pattern: '/inventory/**', capability: 'inventory.write' },
     { pattern: '/payouts', capability: 'payout.withdraw' },

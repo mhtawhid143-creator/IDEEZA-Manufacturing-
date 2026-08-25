@@ -1,0 +1,115 @@
+/**
+ * IDEEZA design tokens.
+ *
+ * Values are taken from the two Figma sources and reconciled:
+ *  - the User Panel V2 file supplies the surface, text, border and radius
+ *    palette the buyer screens are actually drawn with (Inter, warm violet
+ *    neutrals, --primaryColor #7C2DB9, --SecondaryColor #FE2AD4);
+ *  - the IDEEZA Design System file supplies the interaction states the panel
+ *    file does not define: button variants, hover and pressed colours, focus
+ *    halos and the elevation ladder.
+ *
+ * Anything a component needs is a variable here, so a re-theme is a token edit
+ * rather than a component rewrite.
+ */
+
+:root {
+  /* Brand ---------------------------------------------------------------- */
+  --ids-color-brand: #7c2db9;
+  --ids-color-brand-hover: #6a1fa4;
+  --ids-color-brand-pressed: #55168a;
+  --ids-color-brand-weak: #f3eafa;
+  --ids-color-brand-tint: #f1e4fa;
+  --ids-color-brand-surface: #f8f5ff;
+  --ids-color-brand-surface-hover: #ede5ff;
+  --ids-color-brand-surface-pressed: #d9cafe;
+  --ids-color-accent: #fe2ad4;
+
+  /* Text ----------------------------------------------------------------- */
+  --ids-color-heading: #0e0515;
+  --ids-color-body: #4a4450;
+  --ids-color-muted: #b2afb4;
+  --ids-color-on-brand: #ffffff;
+  --ids-color-disabled-text: #cbd5e1;
+
+  /* Surfaces ------------------------------------------------------------- */
+  --ids-color-surface: #ffffff;
+  --ids-color-canvas: #f8f5f9;
+  --ids-color-raised: #f1f5f9;
+  --ids-color-disabled-bg: #f1f5f9;
+
+  /* Borders -------------------------------------------------------------- */
+  --ids-color-border: #f3eafa;
+  --ids-color-border-strong: #e6e6e7;
+  --ids-color-border-input: #e2e8f0;
+  --ids-color-border-input-hover: #94a3b8;
+
+  /* Status --------------------------------------------------------------- */
+  --ids-color-danger: #f2415a;
+  --ids-color-danger-strong: #dc2626;
+  --ids-color-danger-weak: #fee2e2;
+  --ids-color-warning: #eab308;
+  --ids-color-warning-weak: #fef3c7;
+  --ids-color-success: #16a34a;
+  --ids-color-success-weak: #dcfce7;
+  --ids-color-info: #2563eb;
+  --ids-color-info-weak: #dbeafe;
+  --ids-color-neutral: #64748b;
+  --ids-color-neutral-weak: #f1f5f9;
+
+  /* Focus ---------------------------------------------------------------- */
+  --ids-color-focus: #7c2db9;
+  --ids-color-focus-halo: #7c2db973;
+  --ids-color-focus-halo-on-fill: #7c2db98c;
+  --ids-color-focus-halo-danger: #dc262680;
+
+  /* Radius (Figma Radius/radi-*) ---------------------------------------- */
+  --ids-radius-xs: 2px;
+  --ids-radius-sm: 4px;
+  --ids-radius-md: 8px;
+  --ids-radius-lg: 12px;
+  --ids-radius-xl: 16px;
+  --ids-radius-2xl: 28px;
+  --ids-radius-full: 1000px;
+
+  /* Elevation (Figma F04 shadow ladder) --------------------------------- */
+  --ids-shadow-flat: none;
+  --ids-shadow-card: 0 1px 2px rgba(14, 5, 21, 0.06), 0 1px 3px rgba(14, 5, 21, 0.04);
+  --ids-shadow-dropdown: 0 8px 24px rgba(14, 5, 21, 0.1), 0 2px 6px rgba(14, 5, 21, 0.06);
+  --ids-shadow-modal: 0 24px 48px rgba(14, 5, 21, 0.18), 0 8px 16px rgba(14, 5, 21, 0.08);
+  --ids-shadow-overlay: 0 32px 64px rgba(14, 5, 21, 0.24);
+  --ids-shadow-brand: 0 8px 24px rgba(124, 45, 185, 0.24);
+
+  /* Layout (measured from the Figma frames) ----------------------------- */
+  --ids-navbar-height: 68px;
+  --ids-sidebar-width: 232px;
+  --ids-content-gutter: 32px;
+  --ids-content-max: 1440px;
+
+  /* Type ---------------------------------------------------------------- */
+  --ids-font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ids-font-heading: var(--ids-font-body);
+  --ids-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+/**
+ * The design files are light mode only, so dark mode inverts the neutral ramp
+ * and keeps the brand hue. It is opt-in via [data-theme="dark"] until a dark
+ * design exists to check against.
+ */
+:root[data-theme='dark'] {
+  --ids-color-heading: #f8f5f9;
+  --ids-color-body: #cdc7d3;
+  --ids-color-muted: #8b8593;
+  --ids-color-surface: #17111d;
+  --ids-color-canvas: #0e0515;
+  --ids-color-raised: #211a29;
+  --ids-color-border: #2b2233;
+  --ids-color-border-strong: #3a3143;
+  --ids-color-border-input: #3a3143;
+  --ids-color-brand-weak: #241733;
+  --ids-color-brand-tint: #2c1a40;
+  --ids-color-brand-surface: #1d1327;
+  --ids-color-disabled-bg: #211a29;
+  --ids-color-disabled-text: #6b6473;
+}

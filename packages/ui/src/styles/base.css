@@ -1,0 +1,61 @@
+/**
+ * Base layer. Kept deliberately small: it sets the page surface, the body type
+ * and one focus treatment that every interactive component inherits.
+ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--ids-color-canvas);
+  color: var(--ids-color-body);
+  font-family: var(--ids-font-body);
+  font-size: 14px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  color: var(--ids-color-heading);
+  font-family: var(--ids-font-heading);
+  font-weight: 600;
+}
+
+/* One visible focus treatment for keyboard users across every component. */
+:focus-visible {
+  outline: 2px solid var(--ids-color-focus);
+  outline-offset: 2px;
+}
+
+/* Respect a reduced motion preference for every animation in the system. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Screen reader only, used for labels that are visually implied. */
+.ids-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

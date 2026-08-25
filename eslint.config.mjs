@@ -8,6 +8,26 @@ const ideezaPlugin = {
   },
 };
 
+const NODE_GLOBALS = {
+  process: 'readonly',
+  console: 'readonly',
+  fetch: 'readonly',
+  URL: 'readonly',
+  setTimeout: 'readonly',
+  clearTimeout: 'readonly',
+  setInterval: 'readonly',
+  clearInterval: 'readonly',
+  Buffer: 'readonly',
+  __dirname: 'readonly',
+  __filename: 'readonly',
+};
+
+/** Code that runs inside the browser through Playwright's page.evaluate. */
+const BROWSER_GLOBALS = {
+  document: 'readonly',
+  window: 'readonly',
+};
+
 export default tseslint.config(
   {
     ignores: [
@@ -15,6 +35,9 @@ export default tseslint.config(
       '**/dist/**',
       '**/coverage/**',
       '**/*.tsbuildinfo',
+      '**/.next/**',
+      '**/next-env.d.ts',
+      '**/.verify-shots/**',
       'packages/config/eslint/**',
     ],
   },
@@ -53,6 +76,25 @@ export default tseslint.config(
     files: ['**/*.test.ts', '**/test/**/*.ts'],
     rules: {
       'ideeza/legacy-vocabulary': 'off',
+    },
+  },
+  {
+    // Build tooling: commonjs config files.
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { module: 'writable', require: 'readonly', ...NODE_GLOBALS },
+    },
+    rules: {
+      // Tailwind and postcss load these files with require, by design.
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    // Repository tooling: node scripts, some of which drive a browser.
+    files: ['tools/**/*.mjs', 'tools/**/*.ts', '*.mjs', '*.ts'],
+    languageOptions: {
+      globals: { ...NODE_GLOBALS, ...BROWSER_GLOBALS },
     },
   },
 );
