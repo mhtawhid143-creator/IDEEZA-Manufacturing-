@@ -1,0 +1,7 @@
+{
+  "name": "@ideeza/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Placeholder for a later task. No implementation in T01."
+}

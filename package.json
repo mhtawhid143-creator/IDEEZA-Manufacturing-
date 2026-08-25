@@ -1,0 +1,25 @@
+{
+  "name": "ideeza-manufacturing",
+  "private": true,
+  "version": "0.1.0",
+  "description": "IDEEZA Manufacturing Platform monorepo",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "build": "pnpm -r --if-present run build",
+    "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^2.1.8"
+  }
+}

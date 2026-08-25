@@ -1,0 +1,93 @@
+import { z } from 'zod';
+import { idSchema, isoTimestampSchema, moneySchema, positiveMoneySchema } from './common.js';
+import {
+  disputeOutcomeSchema,
+  disputeStatusSchema,
+  evidenceKindSchema,
+  orderIssueReasonSchema,
+  refundStatusSchema,
+} from './status.js';
+
+export const evidenceSchema = z.object({
+  id: idSchema,
+  orderId: idSchema,
+  kind: evidenceKindSchema,
+  title: z.string().min(1).max(200),
+  fileId: idSchema.optional(),
+  submittedById: idSchema.optional(),
+  capturedAt: isoTimestampSchema,
+});
+
+/**
+ * A refund request must arrive with evidence.
+ *
+ * Manufacturing quality is judged against agreed specifications, so a claim
+ * without a record cannot be decided fairly and is refused at the boundary.
+ */
+export const requestRefundSchema = z.object({
+  orderId: idSchema,
+  reason: orderIssueReasonSchema,
+  requestedAmount: positiveMoneySchema,
+  description: z.string().min(20).max(4000),
+  evidenceFileIds: z.array(idSchema).min(1).max(20),
+  expectedOutcome: z
+    .enum(['refund', 'partial_refund', 'rework', 'replacement'])
+    .optional(),
+});
+export type RequestRefundInput = z.infer<typeof requestRefundSchema>;
+
+export const respondToRefundSchema = z.object({
+  refundId: idSchema,
+  response: z.enum(['approve', 'challenge']),
+  note: z.string().max(4000).optional(),
+  evidenceFileIds: z.array(idSchema).max(20).default([]),
+});
+export type RespondToRefundInput = z.infer<typeof respondToRefundSchema>;
+
+export const refundSchema = z.object({
+  id: idSchema,
+  orderId: idSchema,
+  requestedById: idSchema,
+  status: refundStatusSchema,
+  reason: orderIssueReasonSchema,
+  requestedAmount: moneySchema,
+  approvedAmount: moneySchema.optional(),
+  description: z.string(),
+  evidenceIds: z.array(idSchema),
+  manufacturerRespondedAt: isoTimestampSchema.optional(),
+  decidedAt: isoTimestampSchema.optional(),
+  createdAt: isoTimestampSchema,
+});
+
+export const openDisputeSchema = z.object({
+  orderId: idSchema,
+  refundId: idSchema.optional(),
+  reason: orderIssueReasonSchema,
+  claimedAmount: positiveMoneySchema,
+  statement: z.string().min(20).max(8000),
+  evidenceFileIds: z.array(idSchema).min(1).max(20),
+});
+export type OpenDisputeInput = z.infer<typeof openDisputeSchema>;
+
+export const resolveDisputeSchema = z.object({
+  disputeId: idSchema,
+  outcome: disputeOutcomeSchema,
+  outcomeAmount: positiveMoneySchema.optional(),
+  rationale: z.string().min(20).max(8000),
+});
+export type ResolveDisputeInput = z.infer<typeof resolveDisputeSchema>;
+
+export const disputeSchema = z.object({
+  id: idSchema,
+  orderId: idSchema,
+  refundId: idSchema.optional(),
+  openedById: idSchema,
+  status: disputeStatusSchema,
+  reason: orderIssueReasonSchema,
+  claimedAmount: moneySchema,
+  evidenceIds: z.array(idSchema),
+  outcome: disputeOutcomeSchema.optional(),
+  outcomeAmount: moneySchema.optional(),
+  resolvedAt: isoTimestampSchema.optional(),
+  createdAt: isoTimestampSchema,
+});
