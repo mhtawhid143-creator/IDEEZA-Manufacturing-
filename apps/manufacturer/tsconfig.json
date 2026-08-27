@@ -1,0 +1,59 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "preserve",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "verbatimModuleSyntax": false,
+    "allowJs": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@ideeza/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@ideeza/domain": [
+        "../../packages/domain/src/index.ts"
+      ],
+      "@ideeza/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@ideeza/auth/edge": [
+        "../../packages/auth/src/edge.ts"
+      ],
+      "@ideeza/auth": [
+        "../../packages/auth/src/index.ts"
+      ],
+      "@ideeza/db": [
+        "../../packages/db/src/index.ts"
+      ]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "middleware.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

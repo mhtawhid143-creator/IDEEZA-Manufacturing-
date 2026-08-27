@@ -1,0 +1,640 @@
+import Link from 'next/link';
+import { Card, CardHeader, PageHeader, StatusChip, Tag, Text, buttonAppearance } from '@ideeza/ui';
+import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
+import { getShopContext } from '@/data/shop.js';
+import { linkIfBuilt } from '@/lib/navigation.js';
+import { requireManufacturer } from '@/lib/auth.js';
+
+export const dynamic = 'force-dynamic';
+
+const major = (minor: number): string => (minor / 100).toFixed(2);
+
+const percent = (rate: number | null): string =>
+  rate === null ? '—' : `${Math.round(rate * 100)}%`;
+
+const day = (at: Date): string =>
+  at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/**
+ * Event kinds, said in a sentence a shop floor would recognise.
+ *
+ * The log stores machine names because two panels and a test read them. The feed
+ * translates rather than renames, so a kind that has no entry here still shows
+ * up — unreadable is better than hidden.
+ */
+const ACTIVITY_LABEL: Readonly<Record<string, string>> = {
+  'rfq.submitted': 'Request received',
+  'rfq.recipient_viewed': 'Request opened',
+  'rfq.recipient_declined': 'Request declined',
+  'quote.submitted': 'Quote sent',
+  'quote.revised': 'Quote revised',
+  'quote.withdrawn': 'Quote withdrawn',
+  'quote.accepted': 'Quote accepted',
+  'quote.rejected': 'Quote rejected',
+  'substitution.suggested': 'Substitute suggested',
+  'substitution.approved': 'Substitute approved',
+  'substitution.rejected': 'Substitute rejected',
+  'order.created': 'Order created',
+  'order.payment_captured': 'Payment held by IDEEZA',
+  'order.production_started': 'Production started',
+  'order.stage_completed': 'Stage completed',
+  'order.evidence_attached': 'Evidence attached',
+  'order.shipped': 'Shipment recorded',
+  'order.delivered': 'Delivery confirmed',
+  'order.cancel_requested': 'Cancellation asked for',
+  'order.refund_requested': 'Refund asked for',
+  'dispute.opened': 'Issue opened',
+  'dispute.resolved': 'Issue resolved',
+  'payout.released': 'Payout released',
+};
+
+interface TileProps {
+  readonly label: string;
+  readonly value: string;
+  readonly note: string;
+  readonly tone?: 'neutral' | 'warning' | 'danger';
+  readonly href?: string;
+}
+
+/**
+ * One number and what it means.
+ *
+ * The design puts six of these across the top. Each one carries the sentence
+ * underneath that says where the number came from, because a figure a shop plans
+ * its week around has to be traceable.
+ */
+const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
+  const body = (
+    <Card
+      className={
+        tone === 'danger'
+          ? 'border-danger-weak'
+          : tone === 'warning'
+            ? 'border-warning-weak'
+            : undefined
+      }
+    >
+      <Text tone="muted" size="xs">
+        {label}
+      </Text>
+      <p className="mt-1 text-2xl font-bold text-heading">{value}</p>
+      <Text
+        tone={tone === 'danger' ? 'danger' : 'muted'}
+        size="xs"
+        className="mt-1 block"
+      >
+        {note}
+      </Text>
+    </Card>
+  );
+
+  const target = href === undefined ? undefined : linkIfBuilt(href);
+  if (target === undefined) return body;
+  return (
+    <Link
+      href={target}
+      className="rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+    >
+      {body}
+    </Link>
+  );
+};
+
+/**
+ * The manufacturer dashboard.
+ *
+ * Six headline numbers, then where the work is: the production board, the work
+ * mix, the orders on the line, the requests waiting on an answer, stock health,
+ * what is owed, and what just happened. Every figure is a query against this
+ * shop’s own rows — nothing here is a placeholder waiting for data.
+ */
+const DashboardPage = async () => {
+  const actor = await requireManufacturer('/dashboard');
+  const [shop, tiles, sections] = await Promise.all([
+    getShopContext(actor.manufacturerId, actor.userId),
+    getHeadlineTiles(actor.manufacturerId),
+    getDashboardSections(actor.manufacturerId),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Analytics"
+        description={
+          shop === null
+            ? 'Your shop'
+            : `${shop.displayName} · ${shop.city}, ${shop.countryCode}`
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {shop !== null && (
+              <StatusChip
+                status={shop.verified ? 'accepted' : 'pending'}
+                label={shop.verified ? 'Verified shop' : 'Verification pending'}
+                withDot
+              />
+            )}
+            {linkIfBuilt('/inventory') === undefined ? (
+              <span
+                className={buttonAppearance({ className: 'pointer-events-none opacity-60' })}
+                aria-disabled="true"
+                title="Inventory arrives with the inventory stage."
+              >
+                Add inventory
+              </span>
+            ) : (
+              <Link href="/inventory" className={buttonAppearance()}>
+                Add inventory
+              </Link>
+            )}
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Tile
+          label="Open RFQs"
+          value={String(tiles.openRfqs)}
+          note={`${tiles.newThisWeek} new this week · ${tiles.needResponse} with a deadline`}
+          href="/rfqs"
+        />
+        <Tile
+          label="Quotes awaiting a decision"
+          value={String(tiles.quotesSubmitted)}
+          note={`${tiles.quotesAccepted} of your quotes have been accepted, all time`}
+          href="/quotes"
+        />
+        <Tile
+          label="Delayed orders"
+          value={String(tiles.delayedOrders)}
+          note={
+            tiles.delayedOrders === 0
+              ? `${tiles.ordersInFlight} orders in flight, all inside their lead time`
+              : 'Past the lead time you quoted'
+          }
+          tone={tiles.delayedOrders === 0 ? 'neutral' : 'danger'}
+          href="/orders"
+        />
+        <Tile
+          label="On-time delivery"
+          value={percent(tiles.onTimeDeliveryRate)}
+          note="Recorded by the platform across your completed orders"
+        />
+        <Tile
+          label="Low stock items"
+          value={String(tiles.lowStockItems)}
+          note={
+            tiles.criticalStockItems === 0
+              ? 'None out of stock'
+              : `${tiles.criticalStockItems} out of stock — reorder now`
+          }
+          tone={tiles.criticalStockItems === 0 ? 'warning' : 'danger'}
+          href="/inventory"
+        />
+        <Tile
+          label="Pending payouts"
+          value={`${tiles.currency} ${major(tiles.pendingPayoutMinor)}`}
+          note={`${tiles.pendingPayoutCount} awaiting a documented release`}
+          href="/payouts"
+        />
+      </div>
+
+
+      {/* ----------------------------------------------- where the work is */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader
+            title="Production status"
+            description="Every order you hold, by where it has got to."
+            actions={
+              <Link
+                href="/orders"
+                className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+              >
+                View all
+              </Link>
+            }
+          />
+          <ul aria-label="Production status" className="mt-4 flex flex-col gap-3">
+            {sections.production.map((bar) => (
+              <li key={bar.label} className="flex items-center gap-3">
+                <span className="w-40 shrink-0 text-sm text-body">{bar.label}</span>
+                <span className="w-8 shrink-0 text-sm font-semibold text-heading">
+                  {bar.count}
+                </span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+                  <span
+                    className={
+                      bar.label === 'Needing attention'
+                        ? 'block h-full bg-danger'
+                        : 'block h-full bg-brand'
+                    }
+                    style={{ width: `${Math.max(bar.count === 0 ? 0 : 4, bar.share)}%` }}
+                  />
+                </span>
+                <span className="w-10 shrink-0 text-right text-xs text-muted">
+                  {bar.share}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Orders"
+            description="What kind of work they are."
+          />
+          <p className="mt-2 text-2xl font-bold text-heading">{sections.orderCount}</p>
+          <ul aria-label="Work mix" className="mt-4 flex flex-col gap-2">
+            {sections.workMix.length === 0 ? (
+              <Text tone="muted" size="sm">
+                No orders yet.
+              </Text>
+            ) : (
+              sections.workMix.map((slice) => (
+                <li key={slice.label} className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-brand"
+                  />
+                  <span className="flex-1 text-sm text-body">{slice.label}</span>
+                  <span className="text-sm font-semibold text-heading">
+                    {slice.count}
+                  </span>
+                </li>
+              ))
+            )}
+          </ul>
+        </Card>
+      </div>
+
+      {/* ------------------------------------- what is on the line and waiting */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Card padded={false}>
+          <div className="px-4 py-4 md:px-6">
+            <CardHeader
+              title="Orders in production"
+              actions={
+                <Link
+                  href="/orders?status=in_flight"
+                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                >
+                  View all
+                </Link>
+              }
+            />
+          </div>
+          {sections.ordersInProduction.length === 0 ? (
+            <div className="px-4 pb-6 md:px-6">
+              <Text tone="muted" size="sm">
+                Nothing on the line right now.
+              </Text>
+            </div>
+          ) : (
+            <ul aria-label="Orders in production" className="border-t border-line">
+              {sections.ordersInProduction.map((order) => (
+                <li
+                  key={order.orderId}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/orders/${order.orderId}`}
+                      className="block truncate text-sm font-semibold text-heading hover:text-brand"
+                    >
+                      {order.productName}
+                    </Link>
+                    <Text tone="muted" size="xs">
+                      {order.buyerName} · {order.quantity} units
+                    </Text>
+                  </div>
+                  <div className="min-w-[140px]">
+                    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-line">
+                      <span
+                        className="block h-full bg-success"
+                        style={{
+                          width: `${Math.round(
+                            (order.completedStages / order.totalStages) * 100,
+                          )}%`,
+                        }}
+                      />
+                    </span>
+                    <Text tone="muted" size="xs" className="mt-1 block">
+                      {order.stageLabel} · {order.completedStages}/{order.totalStages}
+                    </Text>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card padded={false}>
+          <div className="px-4 py-4 md:px-6">
+            <CardHeader
+              title="Requests needing an answer"
+              actions={
+                <Link
+                  href="/rfqs?status=routed"
+                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                >
+                  View all
+                </Link>
+              }
+            />
+          </div>
+          {sections.requestsNeedingAction.length === 0 ? (
+            <div className="px-4 pb-6 md:px-6">
+              <Text tone="muted" size="sm">
+                Nothing waiting on you.
+              </Text>
+            </div>
+          ) : (
+            <ul aria-label="Requests needing an answer" className="border-t border-line">
+              {sections.requestsNeedingAction.map((request) => (
+                <li
+                  key={request.rfqId}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-heading">
+                      {request.productName}
+                    </p>
+                    <Text tone="muted" size="xs">
+                      {request.kindLabel} · {request.quantity} units
+                      {request.respondBy === null
+                        ? ''
+                        : ` · reply by ${day(request.respondBy)}`}
+                    </Text>
+                  </div>
+                  <Link
+                    href={`/rfqs/${request.rfqId}`}
+                    className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                  >
+                    Send quote
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      {/* ----------------------------------------- stock and what is owed */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Card padded={false}>
+          <div className="px-4 py-4 md:px-6">
+            <CardHeader
+              title="Inventory health"
+              actions={
+                <Link
+                  href="/inventory"
+                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                >
+                  View all
+                </Link>
+              }
+            />
+          </div>
+          {sections.inventoryHealth.length === 0 ? (
+            <div className="px-4 pb-6 md:px-6">
+              <Text tone="muted" size="sm">
+                No parts yet. A buyer&rsquo;s bill of materials is matched against these.
+              </Text>
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto border-t border-line">
+              <table className="w-full border-collapse text-sm">
+                <caption className="ids-sr-only">Inventory health</caption>
+                <thead>
+                  <tr className="border-b border-line bg-raised">
+                    {['Part', 'MOQ', 'Available', 'Status'].map((header) => (
+                      <th
+                        key={header}
+                        scope="col"
+                        className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sections.inventoryHealth.map((part) => (
+                    <tr key={part.id} className="border-b border-line last:border-0">
+                      <td className="px-4 py-2.5">
+                        <Link
+                          href={`/inventory/${part.id}`}
+                          className="text-sm text-heading hover:text-brand"
+                        >
+                          {part.partName}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2.5 text-body">
+                        {part.minimumOrderQuantity ?? '—'}
+                      </td>
+                      <td className="px-4 py-2.5 text-body">{part.available}</td>
+                      <td className="px-4 py-2.5">
+                        <Tag
+                          tone={
+                            part.level === 'in_stock'
+                              ? 'success'
+                              : part.level === 'low_stock'
+                                ? 'warning'
+                                : 'danger'
+                          }
+                        >
+                          {part.level === 'in_stock'
+                            ? 'In stock'
+                            : part.level === 'low_stock'
+                              ? 'Low stock'
+                              : 'Out of stock'}
+                        </Tag>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card padded={false}>
+          <div className="px-4 py-4 md:px-6">
+            <CardHeader
+              title="Recent payouts"
+              actions={
+                <Link
+                  href="/payouts"
+                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                >
+                  View all
+                </Link>
+              }
+            />
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-line p-3">
+                <Text tone="muted" size="xs" className="block">
+                  Held
+                </Text>
+                <p className="text-lg font-bold text-heading">
+                  {sections.currency} {major(sections.pendingPayoutMinor)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-line p-3">
+                <Text tone="muted" size="xs" className="block">
+                  Released
+                </Text>
+                <p className="text-lg font-bold text-heading">
+                  {sections.currency} {major(sections.releasedPayoutMinor)}
+                </p>
+              </div>
+            </div>
+          </div>
+          {sections.payouts.length === 0 ? (
+            <div className="px-4 pb-6 md:px-6">
+              <Text tone="muted" size="sm">
+                No payouts yet.
+              </Text>
+            </div>
+          ) : (
+            <ul aria-label="Recent payouts" className="border-t border-line">
+              {sections.payouts.map((payout) => (
+                <li
+                  key={payout.id}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-heading">
+                      {payout.buyerName}
+                    </p>
+                    <Text tone="muted" size="xs">
+                      {payout.orderId.slice(-8)}
+                    </Text>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-heading">
+                      {sections.currency} {major(payout.netAmountMinor)}
+                    </span>
+                    <StatusChip status={payout.status} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      {/* ------------------------------------------------ what just happened */}
+      <Card padded={false}>
+        <div className="px-4 py-4 md:px-6">
+          <CardHeader
+            title="Recent activity"
+            description="From the platform's own event log, newest first."
+          />
+        </div>
+        {sections.activity.length === 0 ? (
+          <div className="px-4 pb-6 md:px-6">
+            <Text tone="muted" size="sm">
+              Nothing recorded yet.
+            </Text>
+          </div>
+        ) : (
+          <ol aria-label="Recent activity" className="border-t border-line">
+            {sections.activity.map((entry) => (
+              <li
+                key={entry.id}
+                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-2.5 last:border-b-0 md:px-6"
+              >
+                <p className="text-sm text-body">
+                  <span className="font-semibold text-heading">
+                    {ACTIVITY_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}
+                  </span>{' '}
+                  <span className="text-muted">{entry.subject.slice(-8)}</span>
+                </p>
+                <Text tone="muted" size="xs">
+                  {day(entry.at)}
+                </Text>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Card>
+
+      <Card tone="brand">
+        <CardHeader
+          title="How work reaches you"
+          description="The parts of this that are yours to move, and the parts that are not."
+        />
+        <ol className="mt-3 flex flex-col gap-2">
+          {[
+            'A buyer sends a request to the shops it chose. It arrives in Request Quote.',
+            'You read the files, the specification and the bill of materials, and either quote it or decline with a reason.',
+            'If a part is short, you propose a substitute. The buyer decides — you never decide for them.',
+            'The buyer accepts one quote. IDEEZA takes the money and holds it; that is when production may start.',
+            'You move the ten production stages and attach the evidence. The buyer reads them.',
+            'The money is released against a documented event: delivery confirmed, the review window closing, or a resolved issue.',
+          ].map((line, index) => (
+            <li key={line} className="flex gap-2 text-sm text-body">
+              <span
+                aria-hidden
+                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand"
+              >
+                {index + 1}
+              </span>
+              {line}
+            </li>
+          ))}
+        </ol>
+      </Card>
+
+      {shop !== null && shop.profileCompleteness < 100 && (
+        <Card>
+          <CardHeader
+            title="What buyers match you on"
+            description="A request only reaches shops whose published capabilities cover it."
+            actions={
+              linkIfBuilt('/profile') === undefined ? undefined : (
+                <Link
+                  href="/profile"
+                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                >
+                  Open the profile
+                </Link>
+              )
+            }
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            {shop.services.length === 0 ? (
+              <Tag tone="warning">No services published</Tag>
+            ) : (
+              shop.services.map((service) => (
+                <Tag key={service} tone="brand">
+                  {service.replace(/_/g, ' ')}
+                </Tag>
+              ))
+            )}
+            {shop.servedRegions.length === 0 ? (
+              <Tag tone="warning">No regions served</Tag>
+            ) : (
+              shop.servedRegions.map((region) => (
+                <Tag key={region} tone="neutral">
+                  {region}
+                </Tag>
+              ))
+            )}
+            {shop.minimumOrderQuantity === null && (
+              <Tag tone="warning">No minimum order quantity</Tag>
+            )}
+            {shop.standardLeadTimeDays === null && (
+              <Tag tone="warning">No standard lead time</Tag>
+            )}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default DashboardPage;
