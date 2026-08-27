@@ -1,5 +1,9 @@
-import { Card, CardHeader, Heading, StatusChip, Text } from '@ideeza/ui';
+import { Alert, Card, CardHeader, Heading, StatusChip, Text } from '@ideeza/ui';
+import { DraftList } from '@/components/draft-list.js';
 import { HubSection } from '@/components/hub-section.js';
+import { listDrafts } from '@/data/drafts.js';
+import { hubCounts } from '@/data/requests.js';
+import { requireBuyer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,7 +12,14 @@ const JOURNEY: readonly {
   readonly note: string;
   readonly corrected?: boolean;
 }[] = [
-  { step: 'Product and package', note: 'Choose what to build: PCB, 3D module or the full product.' },
+  {
+    step: 'Product and package',
+    note: 'Choose what goes: the boards, the printed parts, or both. What you tick decides what is being made.',
+  },
+  {
+    step: 'Detailed specification',
+    note: 'Board material, layers, finish, tests — as much or as little as your design needs. Anything left open is the manufacturer\u2019s choice.',
+  },
   { step: 'Manufacturing requirements', note: 'Material, method, tolerance, assembly, quality check, shipping.' },
   { step: 'Select manufacturers', note: 'One request, routed to one or many manufacturers.' },
   { step: 'Quotes received', note: 'Each manufacturer answers with its own quote, or declines.' },
@@ -31,13 +42,50 @@ const JOURNEY: readonly {
  * The manufacturing hub, which is also the Draft tab: a draft is where the
  * journey starts, so the landing route and the first tab are the same page.
  */
-const ManufacturingPage = () => (
+const ManufacturingPage = async ({
+  searchParams,
+}: {
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
+  const actor = await requireBuyer('/manufacturing');
+  const [drafts, counts] = await Promise.all([
+    listDrafts(actor.userId),
+    hubCounts(actor.userId),
+  ]);
+  const query = await searchParams;
+
+  return (
   <HubSection
     path={'/manufacturing'}
     activeId="draft"
-    panelTitle="Drafts ready to send to manufacture"
-    plannedIn="the package and requirements task"
+    panel={
+      <DraftList
+        drafts={drafts.map((draft) => ({
+          rfqId: draft.rfqId,
+          productId: draft.productId,
+          productName: draft.productName,
+          creatorName: draft.creatorName,
+          kind: draft.kind,
+          quantity: draft.quantity,
+          leadTimeDays: draft.leadTimeDays,
+          fileCount: draft.includedFileIds.length,
+          bomLineCount: draft.includedBomLineIds.length,
+          files: draft.files,
+        }))}
+      />
+    }
+    counts={{
+      draft: counts.drafts,
+      requests: counts.requests,
+      active: counts.active,
+      history: counts.history,
+    }}
   >
+    {query['withdrawn'] === '1' && (
+      <Alert tone="info" title="Draft withdrawn">
+        Nothing was sent, and the product it came from can start a new request.
+      </Alert>
+    )}
     <Card>
       <CardHeader
         title="How this journey works"
@@ -69,14 +117,18 @@ const ManufacturingPage = () => (
     </Card>
 
     <Card tone="brand">
-      <Heading level={4}>What is built in this task</Heading>
+      <Heading level={4}>Where the money sits at each step</Heading>
       <Text className="mt-2">
-        The design system, this shell, the navigation, the protected routes and
-        the responsive behaviour. The request, quote, checkout, order and issue
-        features arrive in the tasks that follow, each behind the same guard.
+        Nothing is charged to send a request or to receive quotes. Accepting a
+        quote opens an order that is <span className="font-semibold">not</span>{' '}
+        confirmed: IDEEZA takes the funds at checkout and holds them. Production
+        starts once they are held, and they reach the manufacturer only against a
+        documented event — your delivery confirmation, an accepted inspection, or
+        a resolved issue. A refund request or a dispute stops that release.
       </Text>
     </Card>
   </HubSection>
-);
+  );
+};
 
 export default ManufacturingPage;

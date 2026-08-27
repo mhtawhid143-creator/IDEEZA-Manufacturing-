@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AuthError, SESSION_COOKIE_NAME } from '@ideeza/auth';
 import { authServices } from '@/lib/auth.js';
+import { directSignInEnabled } from '@/lib/direct-sign-in.js';
 
 export interface SignInState {
   readonly error?: string;
@@ -69,5 +70,8 @@ export const signOutAction = async (): Promise<void> => {
     }
   }
   store.delete(SESSION_COOKIE_NAME);
-  redirect('/auth/sign-in');
+  // In review mode the sign-in page walks straight back in, so signing out
+  // lands on the chooser instead: otherwise the session would be replaced
+  // before the visitor saw anything, and switching account would be impossible.
+  redirect(directSignInEnabled() ? '/auth/sign-in?pick=1' : '/auth/sign-in');
 };

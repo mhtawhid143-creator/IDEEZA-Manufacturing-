@@ -7,6 +7,7 @@ const PATHS: Record<NavIcon, string> = {
   compass: 'M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM13 7l-2 4-4 2 2-4z',
   feed: 'M4 4h12v3H4zM4 9h7v7H4zM13 9h3v3h-3zM13 13h3v3h-3z',
   message: 'M4 5h12v8H8l-4 3z',
+  heart: 'M10 16s-5.5-3.5-5.5-7A3.2 3.2 0 0 1 10 6.4 3.2 3.2 0 0 1 15.5 9c0 3.5-5.5 7-5.5 7z',
   blog: 'M5 3h10v14H5zM7 6h6M7 9h6M7 12h4',
   works: 'M4 8h12v8H4zM7 8V5h6v3',
   factory: 'M3 16V9l4 2V9l4 2V9l4 2v5zM6 13h2M10 13h2M14 13h1',

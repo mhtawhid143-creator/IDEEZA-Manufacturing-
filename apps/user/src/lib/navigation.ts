@@ -21,6 +21,7 @@ export type NavIcon =
   | 'compass'
   | 'feed'
   | 'message'
+  | 'heart'
   | 'blog'
   | 'works'
   | 'factory'
@@ -50,6 +51,13 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
   { id: 'parts', label: 'Parts & Agile Module', icon: 'parts', unavailableReason: OTHER_MODULE },
   { id: 'marketplace', label: 'Explore Marketplace', icon: 'compass', unavailableReason: OTHER_MODULE },
   { id: 'newsfeed', label: 'Newsfeed', icon: 'feed', unavailableReason: OTHER_MODULE },
+  {
+    id: 'favorites',
+    label: 'Favorites',
+    href: '/favorites',
+    capability: 'product.favorite',
+    icon: 'heart',
+  },
   {
     id: 'messages',
     label: 'Messages',

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Card, NotBuiltYet, PageHeader } from '@ideeza/ui';
+import { Card, PageHeader } from '@ideeza/ui';
 import { HubTabs } from './hub-tabs.js';
 import { MANUFACTURING_TABS } from '@/lib/navigation.js';
 import { requireBuyer } from '@/lib/auth.js';
@@ -9,9 +9,10 @@ export interface HubSectionProps {
   readonly path: string;
   /** Which hub tab this route is. */
   readonly activeId: string;
-  /** What the section will list once the feature behind it is built. */
-  readonly panelTitle: string;
-  readonly plannedIn: string;
+  /** What this tab lists. */
+  readonly panel: ReactNode;
+  /** How many records sit behind each tab, as the design shows them. */
+  readonly counts?: Readonly<Record<string, number>> | undefined;
   readonly children?: ReactNode;
 }
 
@@ -20,13 +21,13 @@ export interface HubSectionProps {
  *
  * The four tabs are four routes, so the frame is shared rather than the page:
  * every tab renders the same header and tab row, passes the same guard, and
- * marks its own panel as not built yet.
+ * supplies its own list.
  */
 export const HubSection = async ({
   path,
   activeId,
-  panelTitle,
-  plannedIn,
+  panel,
+  counts,
   children,
 }: HubSectionProps) => {
   await requireBuyer(path);
@@ -45,12 +46,13 @@ export const HubSection = async ({
               id: tab.id,
               label: tab.label,
               href: tab.href,
+              ...(counts?.[tab.id] === undefined ? {} : { count: counts[tab.id] }),
             }))}
             activeId={activeId}
           />
         </div>
         <div className="p-4 md:p-6">
-          <NotBuiltYet title={panelTitle} plannedIn={plannedIn} />
+          {panel}
         </div>
       </Card>
 

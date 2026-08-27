@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SESSION_COOKIE_NAME, resolveRouteRule } from '@ideeza/auth';
+import { SESSION_COOKIE_NAME, resolveRouteRule } from '@ideeza/auth/edge';
 
 /**
  * A cheap first pass only.
@@ -9,6 +9,11 @@ import { SESSION_COOKIE_NAME, resolveRouteRule } from '@ideeza/auth';
  * visitor with no session straight to sign-in instead of rendering a shell they
  * cannot use, and refuse a path that has no rule at all. The real authentication
  * and authorisation happen in the server layout through requireBuyer.
+ *
+ * It lives in `src/` because that is where Next 15 looks when the application
+ * has a `src` directory — at the repository root it is silently never bundled,
+ * which is exactly what happened until the manufacturer app was built and the
+ * same mistake showed up there.
  */
 export const middleware = (request: NextRequest): NextResponse => {
   const { pathname } = request.nextUrl;

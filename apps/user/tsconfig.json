@@ -32,6 +32,9 @@
       "@ideeza/types": [
         "../../packages/types/src/index.ts"
       ],
+      "@ideeza/auth/edge": [
+        "../../packages/auth/src/edge.ts"
+      ],
       "@ideeza/auth": [
         "../../packages/auth/src/index.ts"
       ],

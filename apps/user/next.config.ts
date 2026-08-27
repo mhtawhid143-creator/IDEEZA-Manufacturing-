@@ -1,4 +1,8 @@
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
+
+const fromRoot = (relativePath: string): string =>
+  fileURLToPath(new URL(relativePath, import.meta.url));
 
 const config: NextConfig = {
   reactStrictMode: true,
@@ -9,6 +13,15 @@ const config: NextConfig = {
     ignoreDuringBuilds: true,
   },
   webpack: (webpackConfig) => {
+    webpackConfig.resolve.alias = {
+      ...(webpackConfig.resolve.alias ?? {}),
+      // The package ships sources, so the edge-safe entry point is resolved to
+      // its file rather than through the published export map. The middleware
+      // imports it to stay out of the password hasher, which needs node:crypto
+      // and cannot be bundled for the edge.
+      '@ideeza/auth/edge$': fromRoot('../../packages/auth/src/edge.ts'),
+    };
+
     // The workspace sources use the ".js" specifier that NodeNext requires.
     // Webpack needs to be told that it resolves to the TypeScript file.
     webpackConfig.resolve.extensionAlias = {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Drawer } from '@ideeza/ui';
+import { Drawer, ToastProvider } from '@ideeza/ui';
 import { Navbar } from './navbar.js';
 import { Sidebar } from './sidebar.js';
 
@@ -29,6 +29,7 @@ export const AppShell = ({
   const [navigationOpen, setNavigationOpen] = useState(false);
 
   return (
+    <ToastProvider>
     <div className="min-h-dvh bg-canvas">
       <Navbar
         displayName={displayName}
@@ -60,5 +61,6 @@ export const AppShell = ({
         />
       </Drawer>
     </div>
+    </ToastProvider>
   );
 };

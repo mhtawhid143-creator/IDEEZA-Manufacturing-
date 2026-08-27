@@ -57,6 +57,8 @@ describe('every route in the app has a rule', () => {
   it('found the app routes', () => {
     expect(routes.length).toBeGreaterThan(20);
     expect(routes).toContain('/manufacturing');
+    expect(routes).toContain('/favorites');
+    expect(routes).toContain('/products/sample-productId');
     expect(routes).toContain('/auth/sign-in');
     expect(routes).toContain('/design-system');
   });
@@ -152,6 +154,21 @@ describe('navigation', () => {
     for (const forbidden of ['inventory', 'payout', 'production', 'rfq inbox']) {
       expect(labels.some((label) => label.includes(forbidden))).toBe(false);
     }
+  });
+
+  it('keeps favourites and products on the buyer surface only', () => {
+    for (const path of ['/favorites', '/products/seed_product_drone']) {
+      expect(isRouteAllowed('user', path, buyer)).toBe(true);
+      expect(isRouteAllowed('user', path, manufacturer)).toBe(false);
+      expect(isRouteAllowed('user', path, ops)).toBe(false);
+      expect(isRouteAllowed('manufacturer', path, manufacturer)).toBe(false);
+    }
+  });
+
+  it('lists Favorites in the navigation, because manufacturing starts there', () => {
+    const favorites = PRIMARY_NAV.find((entry) => entry.id === 'favorites');
+    expect(favorites?.href).toBe('/favorites');
+    expect(favorites?.capability).toBe('product.favorite');
   });
 
   it('keeps the hub tabs pointing at the hub', () => {

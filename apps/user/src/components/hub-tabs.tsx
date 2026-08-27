@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Tabs, type TabItem } from '@ideeza/ui';
 
 /**
- * Client wrapper for the routed hub tabs.
+ * Client wrapper for routed tab rows.
  *
  * The design system tab row takes a link component so it stays framework
  * agnostic, and a function cannot cross from a server component into a client
@@ -14,12 +14,14 @@ import { Tabs, type TabItem } from '@ideeza/ui';
 export const HubTabs = ({
   items,
   activeId,
+  label = 'Manufacturing sections',
 }: {
   readonly items: readonly TabItem[];
   readonly activeId: string;
+  readonly label?: string;
 }) => (
   <Tabs
-    label="Manufacturing sections"
+    label={label}
     items={items}
     activeId={activeId}
     linkComponent={({ href, className, children, ...aria }) => (
