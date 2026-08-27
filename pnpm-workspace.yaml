@@ -5,7 +5,21 @@ packages:
 # Install scripts that are required for the toolchain to work:
 #   esbuild        - places the platform binary vitest runs on
 #   prisma/engines - downloads the query and schema engines the CLI needs
+#   sharp          - places the image binary Next uses
+#
+# Every embedded-postgres platform package is listed, not just this machine's.
+# pnpm fails an install when a dependency has a script it was not told about, so
+# a list that only named the Windows package meant a Linux build — a deployment,
+# CI, a colleague on a Mac — could not install at all. Only the package for the
+# machine in hand is ever downloaded, so naming them all costs nothing.
 allowBuilds:
+  '@embedded-postgres/darwin-arm64': true
+  '@embedded-postgres/darwin-x64': true
+  '@embedded-postgres/linux-arm': true
+  '@embedded-postgres/linux-arm64': true
+  '@embedded-postgres/linux-ia32': true
+  '@embedded-postgres/linux-ppc64': true
+  '@embedded-postgres/linux-x64': true
   '@embedded-postgres/windows-x64': true
   '@prisma/client': true
   '@prisma/engines': true
