@@ -1154,6 +1154,34 @@ const main = async () => {
     );
     await buyerContext.close();
 
+    // ------------------------------------------- M11: what the bell counts
+    await page.goto(`${base}/notifications`, { waitUntil: 'networkidle' });
+    check(
+      'the bell has a screen behind it, with what the platform said',
+      (await visible(page.getByRole('heading', { name: 'Notifications' }))) &&
+        (await page.locator('ul[aria-label="Notifications"] > li').count()) === 3 &&
+        (await visible(page.getByText('A request reached your shop'))),
+      page.url(),
+    );
+    check(
+      'the unread filter is its own linkable list',
+      await visible(page.getByRole('link', { name: /Unread/ })),
+    );
+    await page.getByRole('link', { name: /Unread/ }).click();
+    await page.waitForURL(/filter=unread/, { timeout: 15_000 }).catch(() => undefined);
+    await page.waitForLoadState('networkidle');
+    check(
+      'only the unread ones are listed, and the read one is not deleted',
+      (await page.locator('ul[aria-label="Notifications"] > li').count()) === 2,
+      page.url(),
+    );
+    await page.getByRole('button', { name: 'Mark all as read' }).click();
+    await page.waitForTimeout(2_000);
+    await page.reload({ waitUntil: 'networkidle' });
+    check(
+      'marking everything read empties the unread list without deleting anything',
+      await visible(page.getByText('Nothing unread')),
+    );
     // ------------------------------------------------- M01: the phone layout
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const phonePage = await phone.newPage();

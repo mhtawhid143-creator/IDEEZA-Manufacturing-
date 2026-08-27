@@ -107,15 +107,12 @@ export const QuoteShell = ({
               <Text tone="muted" size="xs">
                 An order is open against these terms, and they cannot change now.
               </Text>
-              <span
-                className={buttonAppearance({
-                  className: 'pointer-events-none justify-center opacity-60',
-                })}
-                aria-disabled="true"
-                title="Your orders arrive with the orders and production stage."
+              <Link
+                href={`/orders/${quote.orderId}`}
+                className={buttonAppearance({ className: 'justify-center' })}
               >
                 Open the order
-              </span>
+              </Link>
             </>
           ) : quote.revisable ? (
             <>

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Avatar, DropdownMenu, IconButton, Tooltip } from '@ideeza/ui';
 import { signOutAction } from '@/app/auth/actions.js';
-import { linkIfBuilt } from '@/lib/navigation.js';
 
 export interface NavbarProps {
   readonly displayName: string;
@@ -82,23 +81,14 @@ export const Navbar = ({
         </span>
       </Tooltip>
 
-      {linkIfBuilt('/notifications') === undefined ? (
-        <Tooltip content="Notifications arrive with the messaging stage.">
-          <span>
-            <IconButton label="Notifications" icon={BellIcon} badge={notificationCount} disabled />
-          </span>
-        </Tooltip>
-      ) : (
-        <Link href="/notifications" aria-label="Notifications" className="inline-flex">
-          <IconButton
-            label="Notifications"
-            icon={BellIcon}
-            badge={notificationCount}
-            // The link owns the navigation; the button is the visual affordance.
-            tabIndex={-1}
-          />
-        </Link>
-      )}
+      <Link href="/notifications" aria-label="Notifications" className="inline-flex">
+        <IconButton
+          label="Notifications"
+          icon={BellIcon}
+          badge={notificationCount}
+          className="pointer-events-none"
+        />
+      </Link>
 
       <DropdownMenu
         label="Account"

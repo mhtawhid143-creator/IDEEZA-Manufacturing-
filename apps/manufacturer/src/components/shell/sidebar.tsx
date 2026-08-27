@@ -7,7 +7,6 @@ import {
   PRIMARY_NAV,
   SECONDARY_NAV,
   isNavEntryActive,
-  linkIfBuilt,
   type NavEntry,
 } from '@/lib/navigation.js';
 import { NavIconGlyph } from './nav-icon.js';
@@ -102,18 +101,12 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
               style={{ width: `${profileCompleteness}%` }}
             />
           </div>
-          {linkIfBuilt('/profile') === undefined ? (
-            <p className="mt-3 text-xs font-semibold text-muted">
-              {profileCompleteness}% complete
-            </p>
-          ) : (
-            <Link
-              href="/profile"
-              className="mt-3 inline-flex text-xs font-semibold text-brand underline hover:no-underline"
-            >
-              {profileCompleteness}% complete — continue
-            </Link>
-          )}
+          <Link
+            href="/profile"
+            className="mt-3 inline-flex text-xs font-semibold text-brand underline hover:no-underline"
+          >
+            {profileCompleteness}% complete — continue
+          </Link>
         </div>
       )}
 

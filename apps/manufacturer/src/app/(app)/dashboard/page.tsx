@@ -134,19 +134,9 @@ const DashboardPage = async () => {
                 withDot
               />
             )}
-            {linkIfBuilt('/inventory') === undefined ? (
-              <span
-                className={buttonAppearance({ className: 'pointer-events-none opacity-60' })}
-                aria-disabled="true"
-                title="Inventory arrives with the inventory stage."
-              >
-                Add inventory
-              </span>
-            ) : (
-              <Link href="/inventory" className={buttonAppearance()}>
-                Add inventory
-              </Link>
-            )}
+            <Link href="/inventory" className={buttonAppearance()}>
+              Add inventory
+            </Link>
           </div>
         }
       />
@@ -595,7 +585,7 @@ const DashboardPage = async () => {
             title="What buyers match you on"
             description="A request only reaches shops whose published capabilities cover it."
             actions={
-              linkIfBuilt('/profile') === undefined ? undefined : (
+              (
                 <Link
                   href="/profile"
                   className={buttonAppearance({ variant: 'secondary', size: 'sm' })}

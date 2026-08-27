@@ -840,13 +840,63 @@ const liveOrder = async (): Promise<void> => {
   }
 };
 
+/**
+ * What the platform has told shop A.
+ *
+ * The bell in the navbar has always counted these rows; until the notifications
+ * screen existed there was nowhere for them to be read, so nothing seeded them.
+ * One of each kind a shop actually receives, one already read, each carrying the
+ * deep link to the screen that owns the thing it is about.
+ */
+const notificationsForShopA = async (): Promise<void> => {
+  const member = 'seed_user_member_a';
+  const rows = [
+    {
+      id: 'mfrfix_notif_request',
+      kind: 'rfq.routed',
+      title: 'A request reached your shop',
+      body: 'Gimbal Housing v2 — 150 units, printed housing. It has a reply deadline.',
+      deepLink: '/rfqs/mfrfix_rfq_driver',
+      readAt: null,
+      createdAt: hoursAgo(20),
+    },
+    {
+      id: 'mfrfix_notif_shortage',
+      kind: 'order.shortage_answered',
+      title: 'The buyer answered a part shortage',
+      body: 'Beacon Light Board — the substitute you suggested was approved, so production may continue.',
+      deepLink: '/orders/mfrfix_order_beacon',
+      readAt: null,
+      createdAt: hoursAgo(6),
+    },
+    {
+      id: 'mfrfix_notif_quote',
+      kind: 'quote.accepted',
+      title: 'Your quote was accepted',
+      body: 'An order is open against the terms you quoted, and they cannot change now.',
+      deepLink: '/orders/mfrfix_order_beacon',
+      readAt: hoursAgo(30),
+      createdAt: hoursAgo(34),
+    },
+  ];
+
+  for (const row of rows) {
+    await prisma.notification.upsert({
+      where: { id: row.id },
+      update: {},
+      create: { ...row, recipientId: member },
+    });
+  }
+};
+
 const main = async (): Promise<void> => {
   await boardRequest();
   await printedRequest();
   await stockForShopA();
   await liveOrder();
+  await notificationsForShopA();
   process.stdout.write(
-    'manufacturer fixtures: two unanswered requests in shop A’s inbox — one board with assembly, one printed housing — stock that covers one line, is short on another and misses two, and one funded order in production\n',
+    'manufacturer fixtures: two unanswered requests in shop A’s inbox — one board with assembly, one printed housing — stock that covers one line, is short on another and misses two, one funded order in production, and three notifications for its member\n',
   );
 };
 
