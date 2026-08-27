@@ -12,6 +12,9 @@
 
 generator client {
   provider = "prisma-client-js"
+  // The local machine, plus the Linux image Vercel builds and runs on. Without
+  // the second the deployed app finds no query engine at runtime.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
