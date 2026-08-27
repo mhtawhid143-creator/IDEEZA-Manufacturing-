@@ -30,5 +30,17 @@
     "@ideeza/auth": "workspace:*",
     "@ideeza/db": "workspace:*",
     "@prisma/client": "^6.19.3"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@embedded-postgres/darwin-arm64",
+      "@embedded-postgres/darwin-x64",
+      "@embedded-postgres/linux-arm",
+      "@embedded-postgres/linux-arm64",
+      "@embedded-postgres/linux-ia32",
+      "@embedded-postgres/linux-ppc64",
+      "@embedded-postgres/linux-x64",
+      "@embedded-postgres/windows-x64"
+    ]
   }
 }
