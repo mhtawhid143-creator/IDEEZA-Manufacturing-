@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --config.strict-dep-builds=false",
-  "buildCommand": "cd ../.. && pnpm --filter @ideeza/app-user... run build",
+  "installCommand": "cd ../.. && npm_config_strict_dep_builds=false pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && npm_config_strict_dep_builds=false pnpm --filter @ideeza/app-user... run build",
   "outputDirectory": ".next",
   "headers": [
     {
