@@ -13,7 +13,9 @@
     "test": "vitest run",
     "build": "pnpm -r --if-present run build",
     "verify": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
-    "verify:user-app": "node tools/verify-user-app.mjs"
+    "verify:user-app": "node tools/verify-user-app.mjs",
+    "verify:manufacturer-app": "node tools/verify-manufacturer-app.mjs",
+    "review": "node tools/review-environment.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

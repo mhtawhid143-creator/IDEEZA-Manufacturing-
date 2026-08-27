@@ -36,9 +36,25 @@ const ID = {
   addressBuyer: 'seed_address_buyer_primary',
   manufacturerA: 'seed_mfr_a',
   manufacturerB: 'seed_mfr_b',
+  manufacturerC: 'seed_mfr_c',
   membershipA: 'seed_membership_a',
   membershipB: 'seed_membership_b',
+  creatorA: 'seed_user_creator_a',
+  creatorB: 'seed_user_creator_b',
   product: 'seed_product_drone',
+  productStack: 'seed_product_fpv_stack',
+  productSensor: 'seed_product_sensor_hub',
+  productBeacon: 'seed_product_legacy_beacon',
+  productGimbal: 'seed_product_gimbal',
+  fileGimbalGerber: 'seed_file_gimbal_gerber',
+  fileGimbalModel: 'seed_file_gimbal_stl',
+  bomGimbalU1: 'seed_bom_gimbal_u1',
+  fileStackGerber: 'seed_file_stack_gerber',
+  fileStackBom: 'seed_file_stack_bom',
+  fileSensorStep: 'seed_file_sensor_step',
+  fileBeaconGerber: 'seed_file_beacon_gerber',
+  bomStackU1: 'seed_bom_stack_u1',
+  bomStackU2: 'seed_bom_stack_u2',
   fileGerber: 'seed_file_gerber',
   fileBom: 'seed_file_bom',
   fileStep: 'seed_file_step',
@@ -72,6 +88,8 @@ const ID = {
   evidenceQuote: 'seed_evidence_quote',
   evidenceQc: 'seed_evidence_qc',
   notification: 'seed_notification_1',
+  alertOpen: 'seed_alert_open',
+  alertDecided: 'seed_alert_decided',
 } as const;
 
 const CURRENCY = 'USD';
@@ -121,6 +139,8 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
     { id: ID.ops, email: 'ops@example.test', displayName: 'IDEEZA Operations', role: 'ops_admin' as const },
     { id: ID.memberA, email: 'ops@precisioncircuit.test', displayName: 'PrecisionCircuit Operator', role: 'manufacturer' as const },
     { id: ID.memberB, email: 'ops@shenzhenboards.test', displayName: 'Shenzhen Boards Operator', role: 'manufacturer' as const },
+    { id: ID.creatorA, email: 'studio@asterlabs.test', displayName: 'Aster Labs', role: 'buyer' as const },
+    { id: ID.creatorB, email: 'studio@kitesystems.test', displayName: 'Kite Systems', role: 'buyer' as const },
   ];
   for (const user of users) {
     await prisma.user.upsert({
@@ -157,7 +177,7 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       onTimeDeliveryRate: '0.9800',
       completedOrderCount: 128,
       capability: {
-        services: ['fabrication', 'assembly', 'parts_sourcing', 'testing'],
+        services: ['fabrication', 'assembly', 'parts_sourcing', 'testing', '3d_enclosure'],
         certifications: ['ISO 9001', 'UL', 'IPC-A-600 Class 3'],
         servedRegions: ['APAC', 'EU', 'NA'],
         minimumOrderQuantity: 5,
@@ -182,14 +202,35 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
         standardLeadTimeDays: 25,
       },
     },
+    {
+      // A print shop. The platform can send a 3D module to manufacture on its
+      // own, so the reference scenario has a manufacturer that only does that.
+      id: ID.manufacturerC,
+      legalName: 'AdditiveWorks Studio BV',
+      displayName: 'AdditiveWorks Studio',
+      addressLine1: '8 Hoogstraat',
+      city: 'Eindhoven',
+      countryCode: 'NL',
+      rating: '4.80',
+      onTimeDeliveryRate: '0.9600',
+      completedOrderCount: 41,
+      capability: {
+        services: ['3d_enclosure', 'testing'],
+        certifications: ['ISO 9001'],
+        servedRegions: ['EU', 'NA'],
+        minimumOrderQuantity: 1,
+        standardLeadTimeDays: 9,
+      },
+    },
   ];
 
   for (const manufacturer of manufacturers) {
     const { capability, ...profile } = manufacturer;
+    const verified = { ...profile, verifiedAt: T.requirementsLocked };
     await prisma.manufacturerProfile.upsert({
       where: { id: profile.id },
-      update: profile,
-      create: { ...profile, createdAt: T.requirementsLocked },
+      update: verified,
+      create: { ...verified, createdAt: T.requirementsLocked },
     });
     await prisma.manufacturerCapability.upsert({
       where: { manufacturerId: profile.id },
@@ -213,14 +254,133 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
   // -- product, files, bill of materials, package, requirements -----------
   await prisma.product.upsert({
     where: { id: ID.product },
-    update: { name: 'Complete Drone System' },
+    update: { name: 'Complete Drone System', availability: 'available' },
     create: {
       id: ID.product,
       ownerId: ID.buyer,
       name: 'Complete Drone System',
+      availability: 'available',
       createdAt: T.requirementsLocked,
     },
   });
+
+  // -- the catalogue behind the favourites list --------------------------
+  const catalogue = [
+    {
+      id: ID.productStack,
+      ownerId: ID.creatorA,
+      name: 'FPV Flight Stack F7',
+      availability: 'available' as const,
+      files: [
+        { id: ID.fileStackGerber, name: 'fpv-stack-gerber.zip', contentHash: 'seedhash-stack-gerber', byteSize: 391_442 },
+        { id: ID.fileStackBom, name: 'fpv-stack-bom.csv', contentHash: 'seedhash-stack-bom', byteSize: 9_112 },
+      ],
+      bom: [
+        { id: ID.bomStackU1, reference: 'U1', componentName: 'STM32F722 MCU', manufacturerPartNumber: 'STM32F722RET6', sku: 'MCU-STM32F722', quantityPerUnit: 1 },
+        { id: ID.bomStackU2, reference: 'U2', componentName: 'ICM-42688 IMU', manufacturerPartNumber: 'ICM-42688-P', sku: 'SENS-ICM42688', quantityPerUnit: 1 },
+      ],
+    },
+    {
+      id: ID.productSensor,
+      ownerId: ID.creatorB,
+      name: 'Industrial Sensor Hub',
+      availability: 'available' as const,
+      files: [
+        { id: ID.fileSensorStep, name: 'sensor-hub-enclosure.step', contentHash: 'seedhash-sensor-step', byteSize: 2_114_880 },
+      ],
+      bom: [],
+    },
+    {
+      // A product with boards and printed parts in it: the 3D module can be sent
+      // to manufacture on its own, which is what this product exercises.
+      id: ID.productGimbal,
+      ownerId: ID.creatorA,
+      name: 'Gimbal Damper Kit',
+      availability: 'available' as const,
+      files: [
+        {
+          id: ID.fileGimbalGerber,
+          name: 'gimbal-control-gerber.zip',
+          contentHash: 'seedhash-gimbal-gerber',
+          byteSize: 288_140,
+        },
+        {
+          id: ID.fileGimbalModel,
+          name: 'gimbal-damper.stl',
+          contentHash: 'seedhash-gimbal-stl',
+          byteSize: 1_902_336,
+        },
+      ],
+      bom: [
+        {
+          id: ID.bomGimbalU1,
+          reference: 'U1',
+          componentName: 'MP6500 stepper driver',
+          manufacturerPartNumber: 'MP6500GU',
+          sku: 'DRV-MP6500',
+          quantityPerUnit: 2,
+        },
+      ],
+    },
+    {
+      id: ID.productBeacon,
+      ownerId: ID.creatorB,
+      name: 'Legacy Asset Beacon',
+      availability: 'unavailable' as const,
+      files: [
+        { id: ID.fileBeaconGerber, name: 'beacon-gerber-rev-b.zip', contentHash: 'seedhash-beacon-gerber', byteSize: 204_881 },
+      ],
+      bom: [],
+    },
+  ];
+  for (const entry of catalogue) {
+    await prisma.product.upsert({
+      where: { id: entry.id },
+      update: { name: entry.name, availability: entry.availability },
+      create: {
+        id: entry.id,
+        ownerId: entry.ownerId,
+        name: entry.name,
+        availability: entry.availability,
+        createdAt: T.requirementsLocked,
+      },
+    });
+    for (const file of entry.files) {
+      await prisma.fileRef.upsert({
+        where: { id: file.id },
+        update: {},
+        create: { ...file, revision: 1, uploadedById: entry.ownerId, uploadedAt: T.requirementsLocked },
+      });
+      await prisma.productFile.upsert({
+        where: { productId_fileId: { productId: entry.id, fileId: file.id } },
+        update: {},
+        create: { productId: entry.id, fileId: file.id },
+      });
+    }
+    for (const line of entry.bom) {
+      await prisma.bomLine.upsert({
+        where: { id: line.id },
+        update: {},
+        create: { ...line, productId: entry.id, footprint: 'SMD' },
+      });
+    }
+  }
+
+  // Everything the buyer has kept, including the product whose creator has
+  // withdrawn it: the card has to be able to show that state.
+  // The mixed product is not a favourite: it exists to be sent to manufacture
+  // directly, and the favourites scenario stays as approved.
+  for (const [index, productId] of [ID.product, ID.productStack, ID.productSensor, ID.productBeacon].entries()) {
+    await prisma.productFavorite.upsert({
+      where: { userId_productId: { userId: ID.buyer, productId } },
+      update: {},
+      create: {
+        userId: ID.buyer,
+        productId,
+        createdAt: new Date(T.requirementsLocked.getTime() + index * 60_000),
+      },
+    });
+  }
 
   const files = [
     { id: ID.fileGerber, name: 'main-board-gerber.zip', contentHash: 'seedhash-gerber', byteSize: 482_133 },
@@ -717,6 +877,75 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       productionStageId: stageIds.get('quality_check') ?? null,
       submittedById: ID.memberA,
       capturedAt: T.productionStarted,
+    },
+  });
+
+  // -- a shortage the manufacturer hit in production ----------------------
+  //
+  // One is still open, because that is the state the buyer has to act on: the
+  // manufacturer cannot guess, and the accepted terms may not be edited. The
+  // other was already answered, so the record shows both sides of the decision.
+  await prisma.inventoryAlert.upsert({
+    where: { id: ID.alertOpen },
+    update: { status: 'open', decidedAt: null, decisionNote: null },
+    create: {
+      id: ID.alertOpen,
+      orderId: ID.order,
+      raisedByManufacturerId: ID.manufacturerA,
+      partReference: 'U2',
+      partName: 'BMP388 barometer',
+      shortfallQuantity: 180,
+      note: 'Stock covers 320 of the 500 boards. The remaining 180 cannot be built until this is settled.',
+      suggestedPartName: 'BMP390 barometer (pin compatible, tighter tolerance)',
+      technicalJustification:
+        'The BMP390 is pin and register compatible, in stock, and specified to the same pressure range with better noise figures.',
+      currency: CURRENCY,
+      priceImpactMinor: 9_000n,
+      creditMinor: 6_400n,
+      leadTimeImpactDays: 2,
+      restockLeadTimeDays: 26,
+      status: 'open',
+      raisedAt: T.productionStarted,
+    },
+  });
+
+  await prisma.inventoryAlert.upsert({
+    where: { id: ID.alertDecided },
+    update: {},
+    create: {
+      id: ID.alertDecided,
+      orderId: ID.order,
+      raisedByManufacturerId: ID.manufacturerA,
+      partReference: 'U3',
+      partName: 'SiK telemetry radio 915MHz',
+      shortfallQuantity: 500,
+      note: 'The 915MHz variant is out of stock with no restock date.',
+      suggestedPartName: 'SiK telemetry radio 868MHz',
+      suggestedInventoryItemId: ID.inventoryA2,
+      technicalJustification:
+        'Pin compatible and within the same power envelope. Already approved at quote stage for this order.',
+      currency: CURRENCY,
+      priceImpactMinor: 1_000n,
+      creditMinor: 0n,
+      leadTimeImpactDays: 0,
+      status: 'substitute_approved',
+      decidedAt: T.orderConfirmed,
+      decisionNote: 'Approved — same power envelope, no change to the enclosure.',
+      raisedAt: T.orderConfirmed,
+    },
+  });
+
+  await prisma.promoCode.upsert({
+    where: { code: 'IDEEZA10' },
+    update: { active: true },
+    create: {
+      id: 'seed_promo_ideeza10',
+      code: 'IDEEZA10',
+      description: '10% off the goods on your first manufacturing order.',
+      percentOff: 10,
+      maxRedemptions: 100,
+      active: true,
+      createdAt: T.requirementsLocked,
     },
   });
 

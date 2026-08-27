@@ -1,4 +1,13 @@
 export { cn, type ClassValue } from './lib/cn.js';
+// Framework-agnostic, so a server component can style a link like a button.
+export {
+  buttonAppearance,
+  BUTTON_SIZE,
+  BUTTON_VARIANT,
+  type ButtonAppearance,
+  type ButtonSize,
+  type ButtonVariant,
+} from './lib/button-appearance.js';
 export { tokens, type Tokens } from './tokens.js';
 
 export * from './components/typography.js';
@@ -12,6 +21,9 @@ export * from './components/form-field.js';
 export * from './components/input.js';
 export * from './components/select.js';
 export * from './components/choice.js';
+export * from './components/option-chips.js';
+export * from './components/stepper.js';
+export * from './components/timeline.js';
 export * from './components/tabs.js';
 export * from './components/breadcrumbs.js';
 export * from './components/dropdown-menu.js';

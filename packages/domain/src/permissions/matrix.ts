@@ -18,6 +18,8 @@ const OPS: ActorRole = 'ops_admin';
  */
 export const PERMISSION_MATRIX: Readonly<Record<Capability, readonly ActorRole[]>> =
   Object.freeze({
+    'product.browse': [BUYER],
+    'product.favorite': [BUYER],
     'rfq.create': [BUYER],
     'rfq.withdraw': [BUYER],
     'rfq.view': [BUYER, MANUFACTURER, OPS],
@@ -48,6 +50,12 @@ export const PERMISSION_MATRIX: Readonly<Record<Capability, readonly ActorRole[]
     'evidence.read': [BUYER, MANUFACTURER, OPS],
     'evidence.write': [BUYER, MANUFACTURER, OPS],
     'review.publish': [BUYER],
+    // A manufacturer publishes what it can do and what it has written; a buyer
+    // has no profile to be matched on, and operations edits neither.
+    'profile.manage': [MANUFACTURER],
+    'blog.publish': [MANUFACTURER],
+    // Every account manages its own settings.
+    'settings.manage': [BUYER, MANUFACTURER, OPS],
   } satisfies Record<Capability, readonly ActorRole[]>);
 
 /** Capabilities a role holds, useful for building navigation from the matrix. */

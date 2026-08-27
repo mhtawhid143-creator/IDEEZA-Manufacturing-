@@ -43,15 +43,21 @@ const requireDocumentedCompletion: TransitionGuard<OrderStatus, OrderTransitionC
 /**
  * Only IDEEZA operations may cancel a live order.
  *
- * A manufacturer that cannot continue raises a cancellation request or a
- * dispute; it can never reject or cancel the order on its own.
+ * "Live" means funded: from the moment the platform holds the money, material
+ * can be bought and time can be spent, so ending the order is a decision with
+ * two sides to it. Before that, the buyer may withdraw their own unfunded order
+ * outright — nothing has been made and nobody is out of pocket.
+ *
+ * A manufacturer is never on either path: it raises a cancellation request or a
+ * dispute, and can never reject or cancel an order on its own.
  */
 const onlyOperationsMayCancel: TransitionGuard<OrderStatus, OrderTransitionContext> = (
   context,
-) =>
-  context.actorRole === 'ops_admin'
-    ? null
-    : 'only IDEEZA operations may cancel an order; raise a cancellation request instead';
+) => {
+  if (context.actorRole === 'ops_admin') return null;
+  if (context.actorRole === 'buyer' && !fundingSecured(context)) return null;
+  return 'only IDEEZA operations may cancel a funded order; raise a cancellation request instead';
+};
 
 const onlyBuyerOrOperationsMayRaiseIssue: TransitionGuard<
   OrderStatus,

@@ -31,6 +31,25 @@ const freePort = async (): Promise<number> =>
     });
   });
 
+/**
+ * Removes the cluster directory, patiently.
+ *
+ * On Windows the server releases its files a moment after `stop()` resolves, so
+ * a single attempt fails with EBUSY and turns a passing suite red. The directory
+ * is in the system temp folder, so if it still cannot be removed the run carries
+ * on rather than failing over housekeeping.
+ */
+const removeDirectory = async (directory: string): Promise<void> => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    try {
+      rmSync(directory, { recursive: true, force: true });
+      return;
+    } catch {
+      await new Promise((wait) => setTimeout(wait, 500));
+    }
+  }
+};
+
 export interface TestDatabase {
   readonly prisma: PrismaClient;
   readonly url: string;
@@ -107,8 +126,16 @@ export const startTestDatabase = async (
     },
     stop: async () => {
       await prisma.$disconnect();
-      await server.stop();
-      rmSync(databaseDir, { recursive: true, force: true });
+      // The embedded server deletes its own data directory on stop, and on
+      // Windows `taskkill` returns before the child has released its handles —
+      // so that deletion is the thing that fails, not ours. It is housekeeping
+      // in the system temp folder either way, so it never fails a suite.
+      try {
+        await server.stop();
+      } catch {
+        /* the cluster is stopped; the directory is dealt with below */
+      }
+      await removeDirectory(databaseDir);
     },
   };
 };

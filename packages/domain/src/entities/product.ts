@@ -6,6 +6,7 @@ import type {
   RequirementsId,
   UserId,
 } from '../ids.js';
+import type { ProductAvailability } from '../status/product.js';
 
 /** An immutable pointer to a stored file revision. */
 export interface FileRef {
@@ -31,6 +32,8 @@ export interface Product {
   readonly id: ProductId;
   readonly ownerId: UserId;
   readonly name: string;
+  /** Whether the creator still lets this product be sent to manufacture. */
+  readonly availability: ProductAvailability;
   readonly files: readonly FileRef[];
   readonly bom: readonly BomLine[];
   readonly createdAt: IsoTimestamp;

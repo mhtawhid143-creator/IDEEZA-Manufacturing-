@@ -33,15 +33,27 @@ export const quoteMachine: StateMachine<QuoteStatus, QuoteTransitionContext> = {
   states: QUOTE_STATUSES,
   transitions: {
     draft: ['submitted', 'withdrawn'],
+    // A manufacturer may improve a quote that is still on the table without
+    // being asked to: a better price or a shorter lead time is not a change the
+    // buyer has to request first, and forcing a withdrawal to make one would
+    // throw away the history of what was offered when.
     submitted: [
       'revision_requested',
+      'revised',
       'accepted',
       'rejected',
       'expired',
       'withdrawn',
     ],
     revision_requested: ['revised', 'withdrawn', 'expired'],
-    revised: ['revision_requested', 'accepted', 'rejected', 'expired', 'withdrawn'],
+    revised: [
+      'revised',
+      'revision_requested',
+      'accepted',
+      'rejected',
+      'expired',
+      'withdrawn',
+    ],
     accepted: [],
     rejected: [],
     expired: [],

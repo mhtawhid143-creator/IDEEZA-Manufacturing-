@@ -16,3 +16,11 @@ Thumbs.db
 .idea/
 .verify-shots/
 next-env.d.ts
+
+.vercel
+.env*
+.verify-shots-manufacturer
+
+# The harnesses and the review environment take this so two of them never
+# share one built app.
+.build-lock

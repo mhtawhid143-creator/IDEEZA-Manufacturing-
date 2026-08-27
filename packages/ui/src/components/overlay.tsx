@@ -109,12 +109,12 @@ export const Modal = ({
         aria-describedby={description === undefined ? undefined : descriptionId}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full animate-slide-up rounded-xl bg-surface p-6 shadow-modal focus-visible:outline-none',
+          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col animate-slide-up rounded-xl bg-surface p-6 shadow-modal focus-visible:outline-none',
           MODAL_SIZE[size],
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex shrink-0 items-start justify-between gap-4">
           <div className="min-w-0">
             <Heading level={3} id={titleId}>
               {title}
@@ -127,9 +127,18 @@ export const Modal = ({
           </div>
           <IconButton label="Close" icon={CloseIcon} onClick={onClose} size="sm" />
         </div>
-        {children !== undefined && <div className="mt-4">{children}</div>}
+        {/*
+          A tall modal scrolls its own body rather than growing past the screen:
+          the footer is where the decision is, and a decision you cannot reach is
+          not a decision. The header and the footer stay put.
+        */}
+        {children !== undefined && (
+          <div className="mt-4 min-h-0 flex-1 overflow-y-auto">{children}</div>
+        )}
         {footer !== undefined && (
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-2">{footer}</div>
+          <div className="mt-6 flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {footer}
+          </div>
         )}
       </div>
     </div>

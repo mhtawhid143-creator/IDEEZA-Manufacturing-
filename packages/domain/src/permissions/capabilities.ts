@@ -6,6 +6,8 @@
  * domain can never be rendered by the other.
  */
 export const CAPABILITIES = [
+  'product.browse',
+  'product.favorite',
   'rfq.create',
   'rfq.withdraw',
   'rfq.view',
@@ -36,5 +38,11 @@ export const CAPABILITIES = [
   'evidence.read',
   'evidence.write',
   'review.publish',
+  /** Publishing and maintaining what buyers are matched against. */
+  'profile.manage',
+  /** Writing an article on the platform, which is moderated before it appears. */
+  'blog.publish',
+  /** An account's own settings: preferences, security, payout details. */
+  'settings.manage',
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];

@@ -29,6 +29,7 @@ import {
   Textarea,
   Tooltip,
   statusPresentation,
+  buttonAppearance,
 } from '../src/index.js';
 
 describe('Button', () => {
@@ -441,5 +442,43 @@ describe('Card', () => {
       </Card>,
     );
     expect(screen.getByText('Quote details')).toBeDefined();
+  });
+});
+
+describe('product availability presentation', () => {
+  it('reads available as a success state and unavailable as a plain one', () => {
+    expect(statusPresentation('available')).toEqual({
+      label: 'Available',
+      tone: 'success',
+    });
+    expect(statusPresentation('unavailable')).toEqual({
+      label: 'Currently unavailable',
+      tone: 'neutral',
+    });
+  });
+
+  it('renders the chip a product card uses', () => {
+    render(<StatusChip status="unavailable" />);
+    expect(screen.getByText('Currently unavailable')).toBeDefined();
+  });
+});
+
+describe('buttonAppearance', () => {
+  it('gives a link the same look as the button without nesting one inside it', () => {
+    const asLink = buttonAppearance({ variant: 'secondary', size: 'sm' });
+    render(
+      <a href="/favorites" className={asLink}>
+        Go to Favorites
+      </a>,
+    );
+    const link = screen.getByRole('link', { name: 'Go to Favorites' });
+    expect(link.className).toBe(asLink);
+    expect(link.querySelector('button')).toBeNull();
+  });
+
+  it('keeps the focus ring and the disabled treatment in the shared base', () => {
+    const classes = buttonAppearance();
+    expect(classes).toContain('focus-visible:ring-focus');
+    expect(classes).toContain('disabled:bg-disabled-bg');
   });
 });

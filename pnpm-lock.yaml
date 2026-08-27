@@ -45,7 +45,48 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.1)(jsdom@25.0.1)
 
-  apps/manufacturer: {}
+  apps/manufacturer:
+    dependencies:
+      '@ideeza/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@ideeza/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@ideeza/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@ideeza/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@ideeza/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      next:
+        specifier: ^15.1.3
+        version: 15.5.23(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.2
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.2
+        version: 19.2.5(@types/react@19.2.18)
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.5.4(postcss@8.5.26)
+      postcss:
+        specifier: ^8.4.49
+        version: 8.5.26
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.19(tsx@4.23.12)
 
   apps/ops: {}
 

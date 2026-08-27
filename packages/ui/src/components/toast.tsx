@@ -71,16 +71,21 @@ export const ToastProvider = ({ children }: { readonly children: ReactNode }) =>
     <ToastContext.Provider value={value}>
       {children}
       {/* A live region: a toast is announced without stealing focus. */}
+      {/*
+        Under the navbar, centred: a toast must never cover a primary action,
+        and primary actions sit at the bottom right of a form. Page headings do
+        not mind being covered for a few seconds.
+      */}
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
+        className="pointer-events-none fixed left-1/2 top-[calc(var(--ids-navbar-height)+12px)] z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-col gap-2"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             className={cn(
-              'pointer-events-auto animate-slide-up rounded-lg border bg-surface p-4 shadow-dropdown',
+              'pointer-events-auto animate-fade-in rounded-lg border bg-surface p-4 shadow-dropdown',
               TONE[toast.tone ?? 'info'],
             )}
           >

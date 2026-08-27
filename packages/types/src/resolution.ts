@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CANCELLATION_REASONS } from '@ideeza/domain';
 import { idSchema, isoTimestampSchema, moneySchema, positiveMoneySchema } from './common.js';
 import {
   disputeOutcomeSchema,
@@ -91,3 +92,25 @@ export const disputeSchema = z.object({
   resolvedAt: isoTimestampSchema.optional(),
   createdAt: isoTimestampSchema,
 });
+
+/**
+ * A buyer asking to stop an order.
+ *
+ * The reason comes from the cancellation list, not from the quality list a
+ * refund uses, and the note is required because someone at IDEEZA has to be
+ * able to decide the request without asking a follow-up question.
+ */
+export const cancelOrderSchema = z.object({
+  orderId: idSchema,
+  reason: z.enum(CANCELLATION_REASONS),
+  description: z.string().trim().min(10).max(4000),
+});
+export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;
+
+/** A further statement on a dispute that is still live. */
+export const addDisputeStatementSchema = z.object({
+  disputeId: idSchema,
+  statement: z.string().trim().min(10).max(8000),
+  evidenceFileIds: z.array(idSchema).max(20).default([]),
+});
+export type AddDisputeStatementInput = z.infer<typeof addDisputeStatementSchema>;

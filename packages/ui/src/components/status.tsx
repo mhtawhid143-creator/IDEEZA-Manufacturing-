@@ -29,6 +29,10 @@ export type DomainStatus =
  */
 const STATUS_PRESENTATION: Readonly<Record<string, { label: string; tone: Tone }>> = {
   // request
+  // Product availability, which decides whether manufacturing can start.
+  available: { label: 'Available', tone: 'success' },
+  unavailable: { label: 'Currently unavailable', tone: 'neutral' },
+
   draft: { label: 'Draft', tone: 'neutral' },
   submitted: { label: 'Submitted', tone: 'info' },
   closed: { label: 'Closed', tone: 'neutral' },
@@ -68,6 +72,19 @@ const STATUS_PRESENTATION: Readonly<Record<string, { label: string; tone: Tone }
   // production progress
   pending: { label: 'Pending', tone: 'neutral' },
   in_progress: { label: 'In progress', tone: 'info' },
+  // a dispute that is live, and a shortage that has not been answered: the
+  // shortage card overrides the label, because there the word means "your turn"
+  open: { label: 'Open', tone: 'warning' },
+  responded: { label: 'Responded', tone: 'info' },
+  under_review: { label: 'Under review', tone: 'info' },
+  escalated: { label: 'Escalated', tone: 'danger' },
+  mfr_responded: { label: 'Manufacturer answered', tone: 'info' },
+  ops_review: { label: 'With IDEEZA', tone: 'info' },
+  approved: { label: 'Approved', tone: 'success' },
+  partial: { label: 'Partly approved', tone: 'warning' },
+  substitute_approved: { label: 'Substitute approved', tone: 'success' },
+  part_dropped: { label: 'Part dropped', tone: 'neutral' },
+  stock_awaited: { label: 'Waiting for stock', tone: 'warning' },
 };
 
 export const statusPresentation = (

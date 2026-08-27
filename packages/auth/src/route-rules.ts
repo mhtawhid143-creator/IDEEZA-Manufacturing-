@@ -40,25 +40,37 @@ const SHARED_AUTH_ROUTES: readonly RouteRule[] = Object.freeze([
 
 const USER_RULES: readonly RouteRule[] = Object.freeze([
     ...SHARED_AUTH_ROUTES,
+    // Review mode only: signing in without a password when the review
+    // environment asks for it. The route itself answers 404 unless
+    // REVIEW_DIRECT_SIGN_IN is set, so a rule here grants nothing on its own.
+    { pattern: '/auth/enter', anonymous: true },
     { pattern: '/', capability: 'order.view' },
+    { pattern: '/favorites', capability: 'product.favorite' },
+    { pattern: '/products/*', capability: 'product.browse' },
     { pattern: '/manufacturing', capability: 'order.view' },
     { pattern: '/manufacturing/draft/**', capability: 'rfq.create' },
     { pattern: '/manufacturing/rfq', capability: 'rfq.view' },
     { pattern: '/manufacturing/rfq/new', capability: 'rfq.create' },
+    { pattern: '/manufacturing/rfq/new/**', capability: 'rfq.create' },
     { pattern: '/manufacturing/rfq/*', capability: 'rfq.view' },
     { pattern: '/manufacturing/rfq/*/quotes', capability: 'quote.view' },
     { pattern: '/manufacturing/rfq/*/quotes/*', capability: 'quote.view' },
     { pattern: '/manufacturing/rfq/*/compare', capability: 'quote.view' },
+    { pattern: '/manufacturing/rfq/*/accepted', capability: 'quote.view' },
+    { pattern: '/manufacturing/rfq/*/activity', capability: 'rfq.view' },
     { pattern: '/manufacturing/rfq/*/substitutions', capability: 'substitution.decide' },
     { pattern: '/manufacturing/checkout/**', capability: 'checkout.pay' },
     { pattern: '/manufacturing/orders', capability: 'order.view' },
     { pattern: '/manufacturing/history', capability: 'order.view' },
     { pattern: '/manufacturing/orders/*', capability: 'order.view' },
+    { pattern: '/manufacturing/orders/*/items', capability: 'order.view' },
+    { pattern: '/manufacturing/orders/*/progress', capability: 'order.view' },
     { pattern: '/manufacturing/orders/*/records', capability: 'evidence.read' },
     { pattern: '/manufacturing/orders/*/confirm-delivery', capability: 'delivery.confirm' },
     { pattern: '/manufacturing/orders/*/refund', capability: 'refund.request' },
     { pattern: '/manufacturing/orders/*/cancel', capability: 'cancellation.request' },
     { pattern: '/manufacturing/orders/*/dispute', capability: 'dispute.open' },
+    { pattern: '/manufacturing/orders/*/dispute/*', capability: 'dispute.open' },
     { pattern: '/messages', capability: 'messaging.participate' },
     { pattern: '/messages/**', capability: 'messaging.participate' },
     { pattern: '/notifications', capability: 'messaging.participate' },
@@ -66,22 +78,49 @@ const USER_RULES: readonly RouteRule[] = Object.freeze([
 
 const MANUFACTURER_RULES: readonly RouteRule[] = Object.freeze([
     ...SHARED_AUTH_ROUTES,
+    // Review mode only: signing in without a password when the review
+    // environment asks for it. The route itself answers 404 unless
+    // REVIEW_DIRECT_SIGN_IN is set, so a rule here grants nothing on its own.
+    { pattern: '/auth/enter', anonymous: true },
     { pattern: '/', capability: 'rfq.view' },
     { pattern: '/dashboard', capability: 'rfq.view' },
     { pattern: '/rfqs', capability: 'rfq.view' },
     { pattern: '/rfqs/*', capability: 'rfq.view' },
+    // The tabs of one request: reading a specification, the files or the bill of
+    // materials is the same permission as reading the request itself.
+    { pattern: '/rfqs/*/files', capability: 'rfq.view' },
+    { pattern: '/rfqs/*/specification', capability: 'rfq.view' },
+    { pattern: '/rfqs/*/bom', capability: 'rfq.view' },
     { pattern: '/rfqs/*/decline', capability: 'rfq.decline' },
     { pattern: '/rfqs/*/quote', capability: 'quote.create' },
     { pattern: '/rfqs/*/substitutions', capability: 'substitution.suggest' },
     { pattern: '/quotes', capability: 'quote.view' },
     { pattern: '/quotes/*', capability: 'quote.view' },
+    // The tabs of one quote: the request it answers, the substitutes it
+    // suggests, and what has happened to it. All reading, one permission.
+    { pattern: '/quotes/*/rfq', capability: 'quote.view' },
+    { pattern: '/quotes/*/substitutions', capability: 'quote.view' },
+    { pattern: '/quotes/*/activity', capability: 'quote.view' },
     { pattern: '/quotes/*/revise', capability: 'quote.revise' },
+    // Withdrawing is revising down to nothing: same authority over the same
+    // quote, and there is no separate capability for it.
+    { pattern: '/quotes/*/withdraw', capability: 'quote.revise' },
     { pattern: '/orders', capability: 'order.view' },
     { pattern: '/orders/*', capability: 'order.view' },
+    // The tabs of one order: the terms it was opened against, the files and the
+    // specification. All reading, and the same permission as the order itself.
+    { pattern: '/orders/*/quote', capability: 'order.view' },
+    { pattern: '/orders/*/files', capability: 'order.view' },
+    { pattern: '/orders/*/specification', capability: 'order.view' },
     { pattern: '/orders/*/production', capability: 'production.update' },
+    // Moving the line, recording what it produced, and saying a part is short.
+    { pattern: '/orders/*/evidence', capability: 'production.update' },
+    { pattern: '/orders/*/shipment', capability: 'production.update' },
+    { pattern: '/orders/*/shortage', capability: 'inventory.write' },
     { pattern: '/orders/*/cancel-request', capability: 'cancellation.request' },
     { pattern: '/orders/*/refund-response', capability: 'refund.respond' },
     { pattern: '/orders/*/dispute', capability: 'dispute.open' },
+    { pattern: '/orders/*/disputes/*', capability: 'dispute.open' },
     { pattern: '/messages', capability: 'messaging.participate' },
     { pattern: '/inventory', capability: 'inventory.read' },
     { pattern: '/inventory/**', capability: 'inventory.write' },
@@ -89,6 +128,12 @@ const MANUFACTURER_RULES: readonly RouteRule[] = Object.freeze([
     { pattern: '/payouts/**', capability: 'payout.withdraw' },
     { pattern: '/messages/**', capability: 'messaging.participate' },
     { pattern: '/notifications', capability: 'messaging.participate' },
+    { pattern: '/profile', capability: 'profile.manage' },
+    { pattern: '/profile/**', capability: 'profile.manage' },
+    { pattern: '/blog', capability: 'blog.publish' },
+    { pattern: '/blog/**', capability: 'blog.publish' },
+    { pattern: '/settings', capability: 'settings.manage' },
+    { pattern: '/settings/**', capability: 'settings.manage' },
 ]);
 
 const OPS_RULES: readonly RouteRule[] = Object.freeze([

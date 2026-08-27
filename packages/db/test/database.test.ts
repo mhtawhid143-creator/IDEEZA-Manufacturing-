@@ -36,6 +36,15 @@ describe('migrations apply to a clean database', () => {
       '20260517091000_guards',
       '20260825085934_auth_sessions',
       '20260825090000_auth_guards',
+      '20260825135719_product_favorites',
+      '20260825163246_rfq_requested_services',
+      '20260826041012_checkout_promo_shipping',
+      '20260826044820_inventory_alerts',
+      '20260826082901_message_read_state',
+      '20260826085713_print_specification',
+      '20260826115435_board_specification',
+      '20260827062618_quote_volume_prices',
+      '20260827065859_inventory_movements',
     ]);
   });
 
@@ -50,9 +59,18 @@ describe('migrations apply to a clean database', () => {
       JOIN pg_namespace n ON n.oid = t.typnamespace
       WHERE t.typtype = 'e' AND n.nspname = 'public'
     `);
-    // 41 business tables from T02 plus Session and UserCredential from T03.
-    expect(tables).toBe(43);
-    expect(enums).toBe(26);
+    // 41 business tables from T02, Session and UserCredential from T03,
+    // ProductFavorite from T05, PromoCode from the checkout work and
+    // InventoryAlert from production tracking. The enums gained
+    // ProductAvailability, AssemblySides, ShippingChoice and
+    // InventoryAlertStatus.
+    // QuoteVolumePrice arrived with quoting: a request may ask for alternative
+    // volumes, and the answers have to be comparable rather than prose.
+    expect(tables).toBe(49);
+    // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
+    // specification brought fourteen of its own, and InventoryMovementKind
+    // arrived with inventory management.
+    expect(enums).toBe(46);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {
@@ -90,6 +108,8 @@ describe('migrations apply to a clean database', () => {
       'session_expiry_window_ordered',
       'session_revocation_is_explained',
       'credential_counters_sane',
+      'inventory_movement_is_coherent',
+      'quote_volume_price_is_a_real_price',
     ]) {
       expect(names).toContain(expected);
     }
@@ -102,6 +122,10 @@ describe('migrations apply to a clean database', () => {
       'AcceptedQuoteSnapshot_reject_update',
       'DomainEvent_reject_delete',
       'DomainEvent_reject_update',
+      // A stock movement may never be edited. It is removable only with the
+      // part it belongs to, and the domain refuses to delete a part that has any
+      // history behind it.
+      'InventoryMovement_reject_update',
     ]);
   });
 });
@@ -111,9 +135,14 @@ describe('migrations apply to a clean database', () => {
 // ---------------------------------------------------------------------------
 describe('seed', () => {
   it('creates the reference scenario', async () => {
-    expect(await prisma.user.count()).toBe(4);
-    expect(await prisma.manufacturerProfile.count()).toBe(2);
-    expect(await prisma.product.count()).toBe(1);
+    // Four accounts plus the two creators whose products the buyer has kept.
+    expect(await prisma.user.count()).toBe(6);
+    // Two board houses and a print shop, because a 3D module can be sent to
+    // manufacture on its own.
+    expect(await prisma.manufacturerProfile.count()).toBe(3);
+    // Four favourites plus the mixed product the 3D route is exercised on.
+    expect(await prisma.product.count()).toBe(5);
+    expect(await prisma.productFavorite.count()).toBe(4);
     expect(await prisma.rfq.count()).toBe(1);
     expect(await prisma.rfqRecipient.count()).toBe(2);
     expect(await prisma.rfqItem.count()).toBe(3);
@@ -162,6 +191,95 @@ describe('seed', () => {
       events: await prisma.domainEvent.count(),
       evidence: await prisma.evidence.count(),
     }).toEqual(before);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 2b. Favourites and product availability
+// ---------------------------------------------------------------------------
+describe('favourites and product availability', () => {
+  it('keeps the buyer catalogue, including a product its creator withdrew', async () => {
+    const favorites = await prisma.productFavorite.findMany({
+      where: { userId: 'seed_user_buyer' },
+      include: { product: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    expect(favorites).toHaveLength(4);
+    expect(favorites.map((favorite) => favorite.productId)).toEqual([
+      'seed_product_drone',
+      'seed_product_fpv_stack',
+      'seed_product_sensor_hub',
+      'seed_product_legacy_beacon',
+    ]);
+    expect(
+      favorites.filter((favorite) => favorite.product.availability === 'unavailable'),
+    ).toHaveLength(1);
+  });
+
+  it('refuses the same product twice for one buyer', async () => {
+    await expect(
+      prisma.productFavorite.create({
+        data: { userId: 'seed_user_buyer', productId: 'seed_product_drone' },
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('lets two buyers keep the same product', async () => {
+    await prisma.productFavorite.create({
+      data: { userId: 'seed_user_creator_a', productId: 'seed_product_sensor_hub' },
+    });
+    const keepers = await prisma.productFavorite.findMany({
+      where: { productId: 'seed_product_sensor_hub' },
+    });
+    expect(keepers.length).toBeGreaterThanOrEqual(2);
+    await prisma.productFavorite.delete({
+      where: {
+        userId_productId: {
+          userId: 'seed_user_creator_a',
+          productId: 'seed_product_sensor_hub',
+        },
+      },
+    });
+  });
+
+  it('drops the favourite with the product, not the other way round', async () => {
+    await prisma.product.create({
+      data: { id: 'test_product_temp', ownerId: 'seed_user_creator_b', name: 'Temporary' },
+    });
+    await prisma.productFavorite.create({
+      data: { userId: 'seed_user_buyer', productId: 'test_product_temp' },
+    });
+    await prisma.product.delete({ where: { id: 'test_product_temp' } });
+    expect(
+      await prisma.productFavorite.count({ where: { productId: 'test_product_temp' } }),
+    ).toBe(0);
+    expect(await prisma.user.count({ where: { id: 'seed_user_buyer' } })).toBe(1);
+  });
+
+  it('defaults a new product to available', async () => {
+    const created = await prisma.product.create({
+      data: { id: 'test_product_default', ownerId: 'seed_user_buyer', name: 'Default' },
+    });
+    expect(created.availability).toBe('available');
+    await prisma.product.delete({ where: { id: 'test_product_default' } });
+  });
+
+  it('finds an open request for a product through its package', async () => {
+    const open = await prisma.rfq.findMany({
+      where: {
+        buyerId: 'seed_user_buyer',
+        status: { in: ['draft', 'submitted'] },
+        package: { productId: 'seed_product_drone' },
+      },
+    });
+    // The reference scenario has run to production, so its request is closed.
+    expect(open).toHaveLength(0);
+    const all = await prisma.rfq.findMany({
+      where: { package: { productId: 'seed_product_drone' } },
+    });
+    expect(all).toHaveLength(1);
+    expect(all[0]?.status).toBe('closed');
   });
 });
 

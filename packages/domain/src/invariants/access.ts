@@ -9,12 +9,17 @@ import type { Actor } from '../permissions/authorize.js';
  *
  * Without this, one manufacturer could read another manufacturer's request or
  * pricing, which would destroy the fairness of the comparison the buyer makes.
+ *
+ * Only the routing pair decides access, so any row carrying that pair may be
+ * handed in — a full entity or the two columns a panel selected.
  */
-export const assertManufacturerMayReadRfq = (input: {
-  readonly recipients: readonly RfqRecipient[];
+export const assertManufacturerMayReadRfq = <
+  Recipient extends Pick<RfqRecipient, 'rfqId' | 'manufacturerId'>,
+>(input: {
+  readonly recipients: readonly Recipient[];
   readonly manufacturerId: ManufacturerId;
   readonly rfqId: RfqId;
-}): RfqRecipient => {
+}): Recipient => {
   const recipient = input.recipients.find(
     (candidate) =>
       candidate.rfqId === input.rfqId &&

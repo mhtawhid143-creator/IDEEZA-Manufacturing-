@@ -38,10 +38,22 @@ enum SessionRevocationReason {
   account_suspended
 }
 
+/// Whether a product may still be sent to manufacture. An unavailable product
+/// stays readable and stays favourited; it simply cannot start a request.
+enum ProductAvailability {
+  available
+  unavailable
+}
+
 enum PackageKind {
   pcb
   module_3d
   full_product
+}
+
+enum AssemblySides {
+  single_side
+  double_side
 }
 
 enum AssemblyMode {
@@ -49,6 +61,117 @@ enum AssemblyMode {
   smt
   through_hole
   mixed
+}
+
+/// How a printed or machined part is made. Only meaningful when the package
+/// includes a 3D module, which is why every print column is optional.
+enum PrintTechnology {
+  fdm
+  sla
+  sls
+  mjf
+  cnc_machining
+}
+
+enum SurfaceFinish {
+  as_printed
+  sanded
+  bead_blasted
+  vapour_smoothed
+  painted
+}
+
+/// The board specification a buyer may ask for.
+///
+/// Every list is vendor neutral on purpose: one request goes to several
+/// manufacturers and they quote against it, so an option only one shop can
+/// honour would make the quotes incomparable. A shop's own brand names and
+/// internal workflow steps belong in its quote, not in the request.
+enum BaseMaterial {
+  fr4
+  flex
+  aluminium
+  rogers
+  ptfe_teflon
+}
+
+enum BoardColor {
+  green
+  black
+  white
+  blue
+  red
+  yellow
+  purple
+}
+
+enum SilkscreenColor {
+  white
+  black
+}
+
+enum BoardSurfaceFinish {
+  hasl_leaded
+  hasl_lead_free
+  enig
+  osp
+  immersion_silver
+  hard_gold
+}
+
+enum ViaCovering {
+  tented
+  untented
+  plugged
+  epoxy_filled_capped
+  copper_paste_filled_capped
+}
+
+enum DeliveryFormat {
+  single_pcb
+  panel_by_buyer
+  panel_by_manufacturer
+}
+
+enum ElectricalTest {
+  none
+  sample
+  flying_probe_full
+  fixture_full
+}
+
+enum UlMarking {
+  none
+  any_position
+  specified_position
+}
+
+enum MarkOnBoard {
+  none
+  order_number
+  order_number_specified_position
+  datamatrix_serial
+}
+
+enum WorkmanshipClass {
+  ipc_class_2
+  ipc_class_3
+}
+
+enum BoardPackaging {
+  manufacturer_standard
+  antistatic_bubble
+  vacuum_esd_bag
+}
+
+enum AssembledFace {
+  top
+  bottom
+}
+
+enum SuppliedBy {
+  buyer
+  manufacturer
 }
 
 enum SubstitutionPolicy {
@@ -100,6 +223,18 @@ enum SubstitutionStatus {
   rejected
 }
 
+/// How a shortage raised during production was settled.
+///
+/// A shortage found after the snapshot was frozen cannot silently change the
+/// agreed terms, so the buyer answers it in one of three ways and the answer is
+/// what the record carries.
+enum InventoryAlertStatus {
+  open
+  substitute_approved
+  part_dropped
+  stock_awaited
+}
+
 enum OrderStatus {
   awaiting_payment
   confirmed
@@ -143,6 +278,12 @@ enum PaymentStatus {
   released
   refunded
   partially_refunded
+}
+
+/// How the units travel. Chosen at checkout, priced on the order.
+enum ShippingChoice {
+  standard
+  express
 }
 
 enum PaymentMethodKind {
@@ -319,6 +460,7 @@ model User {
   addresses         PostalAddress[]
   memberships       ManufacturerMember[]
   products          Product[]
+  favoriteProducts  ProductFavorite[]
   rfqs              Rfq[]
   ordersAsBuyer     ManufacturingOrder[]
   payments          Payment[]
@@ -331,6 +473,7 @@ model User {
   disputesOpened    Dispute[]
   evidenceSubmitted Evidence[]
   domainEvents      DomainEvent[]
+  inventoryMoves    InventoryMovement[]
   credential        UserCredential?
   sessions          Session[]
 
@@ -418,17 +561,18 @@ model ManufacturerProfile {
   verifiedAt          DateTime?
   createdAt           DateTime  @default(now())
 
-  capability     ManufacturerCapability?
-  members        ManufacturerMember[]
-  rfqRecipients  RfqRecipient[]
-  quotes         Quote[]
-  orders         ManufacturingOrder[]
-  inventoryItems InventoryItem[]
-  payouts        Payout[]
-  withdrawals    WithdrawalRequest[]
-  reviews        Review[]
-  domainEvents   DomainEvent[]
-  sessions       Session[]
+  capability      ManufacturerCapability?
+  members         ManufacturerMember[]
+  rfqRecipients   RfqRecipient[]
+  quotes          Quote[]
+  orders          ManufacturingOrder[]
+  inventoryItems  InventoryItem[]
+  inventoryAlerts InventoryAlert[]
+  payouts         Payout[]
+  withdrawals     WithdrawalRequest[]
+  reviews         Review[]
+  domainEvents    DomainEvent[]
+  sessions        Session[]
 
   @@index([countryCode])
 }
@@ -464,17 +608,35 @@ model ManufacturerMember {
 // ---------------------------------------------------------------------------
 
 model Product {
-  id        String   @id
-  ownerId   String
-  name      String
-  createdAt DateTime @default(now())
+  id           String              @id
+  ownerId      String
+  name         String
+  availability ProductAvailability @default(available)
+  createdAt    DateTime            @default(now())
 
-  owner    User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  files    ProductFile[]
-  bomLines BomLine[]
-  packages ManufacturingPackage[]
+  owner     User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  files     ProductFile[]
+  bomLines  BomLine[]
+  packages  ManufacturingPackage[]
+  favorites ProductFavorite[]
 
   @@index([ownerId])
+  @@index([availability])
+}
+
+/// A product a buyer has kept. The favourites list is the buyer's own entry
+/// point into manufacturing, so the row belongs to the buyer, not the product.
+model ProductFavorite {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
 }
 
 /// An immutable pointer to one stored file revision. The storage provider is
@@ -575,17 +737,73 @@ model ManufacturingRequirements {
   leadTimeDays            Int
   shippingRequirement     String
   assembly                AssemblyMode
+  assemblySides           AssemblySides?
   qualityCheckRequirement String
   substitutionPolicy      SubstitutionPolicy
   notes                   String?
+  /// The print specification, set only when the package includes a 3D module.
+  /// A printer quotes on the process, the material and the finish, so these are
+  /// their own columns rather than prose in the notes.
+  printTechnology         PrintTechnology?
+  printMaterial           String?
+  printColor              String?
+  surfaceFinish           SurfaceFinish?
+  infillPercent           Int?
   lockedAt                DateTime?
   createdAt               DateTime           @default(now())
 
-  package ManufacturingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  files   RequirementsFile[]
-  rfqs    Rfq[]
+  package   ManufacturingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  files     RequirementsFile[]
+  boardSpec BoardSpecification?
+  rfqs      Rfq[]
 
   @@unique([packageId, version])
+}
+
+/// The detailed board specification, one row per requirements version.
+///
+/// It is a document of its own rather than columns on the requirements: it only
+/// applies to a package that contains a board, it is long, and it is frozen and
+/// versioned with the requirements it belongs to. Every column is optional and a
+/// missing value means "manufacturer's discretion", so a buyer is never forced
+/// to invent a specification they do not have.
+model BoardSpecification {
+  requirementsId      String              @id
+  baseMaterial        BaseMaterial?
+  layerCount          Int?
+  thicknessMm         Decimal?            @db.Decimal(3, 2)
+  boardColor          BoardColor?
+  silkscreenColor     SilkscreenColor?
+  surfaceFinish       BoardSurfaceFinish?
+  outerCopperOz       Decimal?            @db.Decimal(3, 1)
+  innerCopperOz       Decimal?            @db.Decimal(3, 1)
+  viaCovering         ViaCovering?
+  minViaHoleMm        Decimal?            @db.Decimal(3, 2)
+  outlineToleranceMm  Decimal?            @db.Decimal(3, 2)
+  deliveryFormat      DeliveryFormat?
+  distinctDesigns     Int?
+  electricalTest      ElectricalTest?
+  goldFingers         Boolean             @default(false)
+  castellatedHoles    Boolean             @default(false)
+  edgePlating         Boolean             @default(false)
+  blindOrBuriedVias   Boolean             @default(false)
+  ulMarking           UlMarking?
+  markOnBoard         MarkOnBoard?
+  workmanshipClass    WorkmanshipClass?
+  packaging           BoardPackaging?
+  /// Assembly detail. Only meaningful when the requirements ask for assembly.
+  assembledFace       AssembledFace?
+  partsSuppliedBy     SuppliedBy?
+  toolingHolesAddedBy SuppliedBy?
+  conformalCoating    Boolean             @default(false)
+  functionalTest      Boolean             @default(false)
+  /// Only meaningful when no assembly is asked for: the buyer populates it.
+  stencilRequired     Boolean             @default(false)
+  remarks             String?
+  updatedAt           DateTime            @updatedAt
+  createdAt           DateTime            @default(now())
+
+  requirements ManufacturingRequirements @relation(fields: [requirementsId], references: [id], onDelete: Cascade)
 }
 
 model RequirementsFile {
@@ -611,6 +829,7 @@ model Rfq {
   requirementsId    String
   status            RfqStatus @default(draft)
   quantity          Int
+  requestedServices String[]
   volumeTiers       Int[]
   targetPriceMinor  BigInt?
   currency          String    @db.Char(3)
@@ -719,6 +938,7 @@ model Quote {
   acceptedForRfq Rfq?                @relation("RfqAcceptedQuote", fields: [acceptedForRfqId], references: [id])
   manufacturer   ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
   items          QuoteItem[]
+  volumePrices   QuoteVolumePrice[]
   revisions      QuoteRevision[]
   substitutions  Substitution[]
   attachments    QuoteAttachment[]
@@ -750,6 +970,27 @@ model QuoteItem {
 }
 
 /// An immutable record of a superseded set of quote terms.
+/// A price for one of the extra volumes the request asked to have priced.
+///
+/// The buyer asks for alternative quantities on the request; without somewhere to
+/// put the answers the question could only be answered in prose, which is not
+/// comparable. One row per volume, and the volume has to be one the request
+/// actually asked for.
+model QuoteVolumePrice {
+  id              String @id
+  quoteId         String
+  quantity        Int
+  currency        String @db.Char(3)
+  unitPriceMinor  BigInt
+  totalPriceMinor BigInt
+  leadTimeDays    Int?
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, quantity])
+  @@index([quoteId])
+}
+
 model QuoteRevision {
   id                 String    @id
   quoteId            String
@@ -809,40 +1050,43 @@ model QuoteAttachment {
 /// A database check constraint added in the migration additionally refuses any
 /// row that has left awaiting_payment without a payment attached.
 model ManufacturingOrder {
-  id                 String      @id
+  id                 String         @id
   rfqId              String
-  acceptedQuoteId    String      @unique
+  acceptedQuoteId    String         @unique
   buyerId            String
   manufacturerId     String
-  paymentId          String?     @unique
-  status             OrderStatus @default(awaiting_payment)
+  paymentId          String?        @unique
+  status             OrderStatus    @default(awaiting_payment)
   shipToLine1        String
   shipToLine2        String?
   shipToCity         String
   shipToRegion       String?
   shipToPostalCode   String?
-  shipToCountryCode  String      @db.Char(2)
+  shipToCountryCode  String         @db.Char(2)
+  shippingChoice     ShippingChoice @default(standard)
   reviewWindowEndsAt DateTime?
   confirmedAt        DateTime?
   deliveredAt        DateTime?
   completedAt        DateTime?
-  createdAt          DateTime    @default(now())
+  createdAt          DateTime       @default(now())
 
-  rfq           Rfq                    @relation(fields: [rfqId], references: [id])
-  acceptedQuote Quote                  @relation(fields: [acceptedQuoteId], references: [id])
-  buyer         User                   @relation(fields: [buyerId], references: [id])
-  manufacturer  ManufacturerProfile    @relation(fields: [manufacturerId], references: [id])
-  payment       Payment?               @relation("OrderPayment", fields: [paymentId], references: [id])
-  snapshot      AcceptedQuoteSnapshot?
-  stages        ProductionStage[]
-  tasks         ProductionTask[]
-  payouts       Payout[]
-  evidence      Evidence[]
-  refunds       Refund[]
-  disputes      Dispute[]
-  threads       MessageThread[]
-  review        Review?
-  domainEvents  DomainEvent[]
+  rfq            Rfq                    @relation(fields: [rfqId], references: [id])
+  acceptedQuote  Quote                  @relation(fields: [acceptedQuoteId], references: [id])
+  buyer          User                   @relation(fields: [buyerId], references: [id])
+  manufacturer   ManufacturerProfile    @relation(fields: [manufacturerId], references: [id])
+  payment        Payment?               @relation("OrderPayment", fields: [paymentId], references: [id])
+  snapshot       AcceptedQuoteSnapshot?
+  stages         ProductionStage[]
+  tasks          ProductionTask[]
+  alerts         InventoryAlert[]
+  inventoryMoves InventoryMovement[]
+  payouts        Payout[]
+  evidence       Evidence[]
+  refunds        Refund[]
+  disputes       Dispute[]
+  threads        MessageThread[]
+  review         Review?
+  domainEvents   DomainEvent[]
 
   @@index([buyerId, status])
   @@index([manufacturerId, status])
@@ -923,6 +1167,45 @@ model ProductionTask {
 // Inventory (manufacturer owned; buyers never read this table)
 // ---------------------------------------------------------------------------
 
+/// Why a stock number changed.
+///
+/// Stock is never a number somebody typed over: every change is one of these,
+/// with what it was and what it became, so a shop can answer "where did those
+/// parts go" and a count that disagrees with reality is itself a recorded event.
+enum InventoryMovementKind {
+  stock_in
+  stock_out
+  stock_count
+  price_change
+  reserved
+  released
+}
+
+model InventoryMovement {
+  id                String                @id
+  itemId            String
+  kind              InventoryMovementKind
+  /// Signed change in stock. Zero for a price change.
+  quantityDelta     Int                   @default(0)
+  resultingStock    Int
+  resultingReserved Int
+  /// The new unit cost, on a price change.
+  unitCostMinor     BigInt?
+  effectiveFrom     DateTime?
+  note              String?
+  /// Set when the movement is a reservation for a confirmed order.
+  orderId           String?
+  actorUserId       String?
+  occurredAt        DateTime              @default(now())
+
+  item  InventoryItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  order ManufacturingOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  actor User?               @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([itemId, occurredAt])
+  @@index([orderId])
+}
+
 model InventoryItem {
   id                   String    @id
   manufacturerId       String
@@ -946,6 +1229,8 @@ model InventoryItem {
   substitutes   InventorySubstitute[] @relation("InventoryItemSubstitutes")
   substituteFor InventorySubstitute[] @relation("InventoryItemSubstituteFor")
   substitutions Substitution[]
+  orderAlerts   InventoryAlert[]
+  movements     InventoryMovement[]
 
   @@unique([manufacturerId, sku])
   @@index([manufacturerId, category])
@@ -960,6 +1245,41 @@ model InventorySubstitute {
   substitute InventoryItem @relation("InventoryItemSubstituteFor", fields: [substituteId], references: [id], onDelete: Cascade)
 
   @@id([itemId, substituteId])
+}
+
+/// A shortage the manufacturer hit while making a confirmed order.
+///
+/// This is the one inventory row a buyer reads, and only through the order it
+/// belongs to: it carries the shortfall, what the manufacturer suggests instead,
+/// and what the buyer decided. The frozen snapshot is never edited, so the money
+/// impact of the decision lives here and is settled as an adjustment.
+model InventoryAlert {
+  id                       String               @id
+  orderId                  String
+  raisedByManufacturerId   String
+  partReference            String
+  partName                 String
+  shortfallQuantity        Int
+  note                     String
+  suggestedInventoryItemId String?
+  suggestedPartName        String?
+  technicalJustification   String?
+  currency                 String               @db.Char(3)
+  priceImpactMinor         BigInt               @default(0)
+  creditMinor              BigInt               @default(0)
+  leadTimeImpactDays       Int                  @default(0)
+  restockLeadTimeDays      Int?
+  status                   InventoryAlertStatus @default(open)
+  decidedAt                DateTime?
+  decisionNote             String?
+  raisedAt                 DateTime             @default(now())
+
+  order                  ManufacturingOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  raisedBy               ManufacturerProfile @relation(fields: [raisedByManufacturerId], references: [id], onDelete: Cascade)
+  suggestedInventoryItem InventoryItem?      @relation(fields: [suggestedInventoryItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId, status])
+  @@index([raisedByManufacturerId, status])
 }
 
 // ---------------------------------------------------------------------------
@@ -978,15 +1298,19 @@ model Payment {
   shippingAmountMinor BigInt            @default(0)
   taxAmountMinor      BigInt            @default(0)
   platformFeeMinor    BigInt            @default(0)
+  discountAmountMinor BigInt            @default(0)
+  promoCodeId         String?
+  failureReason       String?
   totalChargedMinor   BigInt
   securedAt           DateTime?
   releasedAt          DateTime?
   createdAt           DateTime          @default(now())
 
-  quote   Quote               @relation(fields: [quoteId], references: [id])
-  buyer   User                @relation(fields: [buyerId], references: [id])
-  order   ManufacturingOrder? @relation("OrderPayment")
-  payouts Payout[]
+  quote     Quote               @relation(fields: [quoteId], references: [id])
+  buyer     User                @relation(fields: [buyerId], references: [id])
+  order     ManufacturingOrder? @relation("OrderPayment")
+  promoCode PromoCode?          @relation(fields: [promoCodeId], references: [id])
+  payouts   Payout[]
 
   @@index([buyerId, status])
   @@index([quoteId])
@@ -995,6 +1319,28 @@ model Payment {
 
 /// The manufacturer-facing side of the same money. releaseTriggerEventId points
 /// at the documented order event that justified the release.
+/// A discount code the platform issues. Either a percentage or a fixed amount
+/// off the goods total, with an expiry and a redemption cap.
+model PromoCode {
+  id                String    @id
+  code              String    @unique
+  description       String
+  percentOff        Int?
+  amountOffMinor    BigInt?
+  currency          String?   @db.Char(3)
+  minimumSpendMinor BigInt?
+  maxRedemptions    Int?
+  redeemedCount     Int       @default(0)
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+
+  payments Payment[]
+
+  @@index([active, expiresAt])
+}
+
 model Payout {
   id                    String       @id
   orderId               String
@@ -1063,9 +1409,12 @@ model MessageThread {
 }
 
 model MessageThreadParticipant {
-  threadId String
-  userId   String
-  joinedAt DateTime @default(now())
+  threadId   String
+  userId     String
+  joinedAt   DateTime  @default(now())
+  /// When this participant last opened the thread, which is what makes an
+  /// unread count possible without storing a read flag per message.
+  lastReadAt DateTime?
 
   thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
