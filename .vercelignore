@@ -1,0 +1,14 @@
+# What the Vercel upload must not carry. The build is produced on Vercel from
+# source, so local build output, caches and local environment files stay here.
+node_modules
+.git
+.next
+out
+dist
+coverage
+.turbo
+*.tsbuildinfo
+.verify-shots
+.env
+.env.*
+.vercel

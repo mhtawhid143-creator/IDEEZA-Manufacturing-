@@ -91,10 +91,16 @@ is refused, so adding a page without deciding who may see it fails closed.
 | `/auth/sign-in` | sign-in form | **working** |
 | `/design-system` | component gallery, no data, anonymous | **working** |
 | `/health` | liveness probe | **working** |
-| `/manufacturing` | hub, and its Draft tab | shell working, panel marked not built |
-| `/manufacturing/rfq`, `/manufacturing/orders`, `/manufacturing/history` | the Quote Requests, Active Orders and Order History tabs | shell working, panels marked not built |
-| `/manufacturing/draft/[draftId]` | package and requirements | placeholder |
-| `/manufacturing/rfq`, `/rfq/new`, `/rfq/[rfqId]` | request list, builder, status | placeholder |
+| `/favorites` | kept products, each with its call to action | **working** |
+| `/products/[productId]` | single product: details, creator, files, reviews, start manufacturing | **working** |
+| `/manufacturing` | hub, and its Draft tab | **working** |
+| `/manufacturing/rfq` | the Quote Requests tab | **working** |
+| `/manufacturing/orders`, `/manufacturing/history` | the Active Orders and Order History tabs | shell working, panels marked not built |
+| `/manufacturing/draft/new`, `/manufacturing/draft/[draftId]` | package and requirements | **working** |
+| `/manufacturing/rfq/new` | select manufacturers, with search, filters and fit | **working** |
+| `/manufacturing/rfq/new/compare` | the chosen manufacturers side by side | **working** |
+| `/manufacturing/rfq/new/request` | the request: services, assembly, recipients, volume, timeline | **working** |
+| `/manufacturing/rfq/[rfqId]` | request status and recipients | **working**, quotes panel marked not built |
 | `/manufacturing/rfq/[rfqId]/quotes`, `/quotes/[quoteId]`, `/compare`, `/substitutions` | quotes, details, comparison, replacement parts | placeholder |
 | `/manufacturing/checkout/[quoteId]` | secured checkout | placeholder |
 | `/manufacturing/orders`, `/orders/[orderId]`, `/records`, `/confirm-delivery`, `/refund`, `/cancel`, `/dispute` | order and issue paths | placeholder |

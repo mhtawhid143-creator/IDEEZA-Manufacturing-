@@ -98,6 +98,18 @@ design files: failed_quality_check, defective_units, wrong_specification,
 wrong_quantity, unapproved_substitution, late_delivery, damaged_in_transit,
 not_delivered, missing_documentation.
 
+### Cancellation authority, corrected in the user-side work
+
+The rule "only IDEEZA operations may cancel an order" is kept for every order the
+platform holds money against. It is relaxed in exactly one place: a buyer may
+withdraw their **own unfunded** order, because nothing has been made and nobody
+is out of pocket. A manufacturer still may not cancel anything, funded or not.
+
+A refund request is admitted only from `shipped`, `delivered` or `completed`,
+which is what the order lifecycle already allowed. A problem raised while the
+units are still being made is therefore a cancellation request or a dispute, not
+a refund — the screens say so and point at the right instrument.
+
 ## 7. Open product decisions
 
 These are undefined in the business model and are therefore *not* encoded. Each
