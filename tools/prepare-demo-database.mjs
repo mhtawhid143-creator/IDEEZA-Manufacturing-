@@ -41,11 +41,11 @@ if (databaseUrl === undefined || databaseUrl === '') {
  */
 const password = process.env['DEMO_PASSWORD'] ?? `Demo-${Math.random().toString(36).slice(2, 14)}`;
 
-const step = (label, args, extraEnv = {}) => {
+const step = (label, args, options = {}) => {
   process.stdout.write(`${label}…\n`);
   const result = spawnSync(process.execPath, args, {
-    cwd: root,
-    env: { ...process.env, DATABASE_URL: databaseUrl, ...extraEnv },
+    cwd: options.cwd ?? root,
+    env: { ...process.env, DATABASE_URL: databaseUrl, ...(options.env ?? {}) },
     encoding: 'utf8',
   });
   if (result.status !== 0) {
@@ -56,11 +56,15 @@ const step = (label, args, extraEnv = {}) => {
   }
 };
 
-step('applying the migrations', [prismaCli, 'migrate', 'deploy']);
+// The Prisma CLI finds the schema relative to where it runs, and the schema
+// lives in the database package — so this step runs there, exactly as both
+// verification harnesses do. Run from the repository root it reports
+// "Could not find Prisma Schema" and never reaches the database.
+step('applying the migrations', [prismaCli, 'migrate', 'deploy'], { cwd: dbPackage });
 step(
   'seeding the reference scenario and provisioning credentials',
   ['--import', 'tsx', join(root, 'tools', 'seed-and-provision.ts')],
-  { VERIFY_PASSWORD: password },
+  { env: { VERIFY_PASSWORD: password } },
 );
 step('buyer-side fixtures', [
   '--import',
