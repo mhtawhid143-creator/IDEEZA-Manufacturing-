@@ -117,7 +117,9 @@ const ProductPage = async ({
             </Link>
           }
         >
-          Request {product.openRequest.rfqId} is {product.openRequest.status}.
+          {product.openRequest.status === 'draft'
+            ? 'It is still a draft, so you can keep editing it — or withdraw it and start again.'
+            : 'It has been sent to the manufacturers you chose and is collecting quotes.'}
         </Alert>
       )}
 
