@@ -9,11 +9,14 @@ import {
   FormField,
   Input,
   Modal,
+  Radio,
+  RadioGroup,
   Text,
   Textarea,
   buttonAppearance,
   useToast,
 } from '@ideeza/ui';
+import { claimReference, issueReasonLabel } from '@ideeza/domain';
 import {
   approveRefundAction,
   challengeRefundAction,
@@ -59,6 +62,8 @@ export const RefundBanner = ({
   const [error, setError] = useState<string | undefined>(undefined);
   const [note, setNote] = useState('');
   const [amount, setAmount] = useState('0.00');
+  const [share, setShare] = useState<'full' | 'custom'>('full');
+  const [acceptAmount, setAcceptAmount] = useState(claimedMajor);
   const [statement, setStatement] = useState('');
   const router = useRouter();
   const { push } = useToast();
@@ -68,15 +73,23 @@ export const RefundBanner = ({
   const approve = (): void => {
     setError(undefined);
     startTransition(async () => {
-      const result = await approveRefundAction(orderId, refundId, note);
+      const result = await approveRefundAction(
+        orderId,
+        refundId,
+        note,
+        share === 'full' ? undefined : acceptAmount,
+      );
       if (!result.done) {
         setError(result.error ?? 'That answer was not recorded.');
         return;
       }
       setOpen(null);
       push({
-        title: 'Claim accepted',
-        body: 'IDEEZA records the outcome and moves the money; your objection is off the table.',
+        title: share === 'full' ? 'Claim accepted in full' : 'Amount offered',
+        body:
+          share === 'full'
+            ? 'IDEEZA records the outcome and moves the money; your objection is off the table.'
+            : 'IDEEZA weighs what you offered against the claim and decides.',
         tone: 'info',
       });
       router.refresh();
@@ -136,7 +149,7 @@ export const RefundBanner = ({
           )
         }
       >
-        {reason.replace(/_/g, ' ')} — {description}
+        {claimReference(refundId)} · {issueReasonLabel(reason)} — {description}
         {!answered && (
           <span className="mt-1 block font-medium text-heading">
             Answer by {respondByOn}. If you do not, IDEEZA decides on what is on the
@@ -148,8 +161,8 @@ export const RefundBanner = ({
       <Modal
         open={open === 'approve'}
         onClose={() => setOpen(null)}
-        title="Accept this refund claim?"
-        description="It takes your objection off the table. IDEEZA still records the outcome and moves the money."
+        title="Answer this refund claim"
+        description="Accepting in full ends your objection. Offering an amount is an answer IDEEZA weighs. Either way, IDEEZA moves the money."
         size="sm"
         footer={
           <div className="flex flex-wrap justify-end gap-2">
@@ -162,7 +175,7 @@ export const RefundBanner = ({
               disabled={!hydrated}
               onClick={approve}
             >
-              Accept the claim
+              {share === 'full' ? 'Accept the claim' : 'Offer this amount'}
             </Button>
           </div>
         }
@@ -173,6 +186,37 @@ export const RefundBanner = ({
             claim is fair; the payout on this order is reduced by whatever operations
             releases to them.
           </Text>
+
+          <RadioGroup legend="How much of the claim do you accept?">
+            <Radio
+              name="accepted-share"
+              label={`The full ${currency} ${claimedMajor}`}
+              description="You agree with the claim as it was made."
+              checked={share === 'full'}
+              onChange={() => setShare('full')}
+            />
+            <Radio
+              name="accepted-share"
+              label="An amount of your own"
+              description="An offer, not a settlement: operations weighs it against the claim."
+              checked={share === 'custom'}
+              onChange={() => setShare('custom')}
+            />
+          </RadioGroup>
+
+          {share === 'custom' && (
+            <FormField
+              label={`Amount you accept (${currency})`}
+              required
+              hint={`Above zero and no more than ${currency} ${claimedMajor}.`}
+            >
+              <Input
+                inputMode="decimal"
+                value={acceptAmount}
+                onChange={(event) => setAcceptAmount(event.target.value)}
+              />
+            </FormField>
+          )}
           <FormField label="Anything to add" hint="Optional, and both sides read it.">
             <Textarea
               rows={3}
@@ -212,7 +256,7 @@ export const RefundBanner = ({
       >
         <div className="flex flex-col gap-4">
           <FormField label="Claim" hint="What the buyer says went wrong.">
-            <Input value={reason.replace(/_/g, ' ')} readOnly disabled />
+            <Input value={issueReasonLabel(reason)} readOnly disabled />
           </FormField>
           <FormField
             label={`Amount you would accept (${currency})`}

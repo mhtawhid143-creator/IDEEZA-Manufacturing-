@@ -10,11 +10,20 @@ import {
   Text,
   buttonAppearance,
 } from '@ideeza/ui';
-import { asId, type OrderId } from '@ideeza/domain';
+import {
+  asId,
+  caseReference,
+  claimReference,
+  disputeOutcomeLabel,
+  disputeStatusLabel,
+  issueReasonLabel,
+  statementAuthorLabel,
+  type OrderId,
+} from '@ideeza/domain';
 import { Crumbs } from '@/components/crumbs.js';
 import { DisputeStatement } from '@/components/order/dispute-statement.js';
 import { getOrder } from '@/data/orders.js';
-import { getDisputeCase } from '@/data/resolution.js';
+import { attachableRecords, getDisputeCase } from '@/data/resolution.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
@@ -23,20 +32,6 @@ const when = (value: Date): string =>
   `${value.toISOString().slice(0, 10)} at ${value.toISOString().slice(11, 16)} UTC`;
 
 const major = (minor: number): string => (minor / 100).toFixed(2);
-
-const STATUS_LABEL: Readonly<Record<string, string>> = {
-  open: 'Open',
-  responded: 'Answered',
-  under_review: 'With IDEEZA',
-  resolved: 'Decided',
-  escalated: 'Escalated',
-};
-
-const ROLE_LABEL: Readonly<Record<string, string>> = {
-  manufacturer: 'You',
-  buyer: 'The buyer',
-  ops_admin: 'IDEEZA operations',
-};
 
 /**
  * One dispute, as both sides read it.
@@ -54,9 +49,10 @@ const DisputeCasePage = async ({
   const { orderId, disputeId } = await params;
   const actor = await requireManufacturer(`/orders/${orderId}/dispute`);
 
-  const [order, dispute] = await Promise.all([
+  const [order, dispute, attachable] = await Promise.all([
     getOrder(actor.manufacturerId, asId<OrderId>(orderId)),
     getDisputeCase(actor.manufacturerId, disputeId),
+    attachableRecords(actor.manufacturerId, asId<OrderId>(orderId)),
   ]);
   if (order === null || dispute === null || dispute.orderId !== orderId) notFound();
 
@@ -73,7 +69,7 @@ const DisputeCasePage = async ({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-heading">
-            Dispute case {dispute.id.slice(-8).toUpperCase()}
+            Dispute {caseReference(dispute.id)}
           </h1>
           <Text tone="muted" size="sm">
             {order.productName} · opened {when(dispute.createdAt)}
@@ -81,7 +77,7 @@ const DisputeCasePage = async ({
         </div>
         <StatusChip
           status={dispute.status}
-          label={STATUS_LABEL[dispute.status] ?? dispute.status}
+          label={disputeStatusLabel(dispute.status)}
           withDot
         />
       </div>
@@ -109,7 +105,7 @@ const DisputeCasePage = async ({
                         {statement.author}
                       </p>
                       <Text tone="muted" size="xs">
-                        {ROLE_LABEL[statement.authorRole] ?? statement.authorRole} ·{' '}
+                        {statementAuthorLabel(statement.authorRole, 'manufacturer')} ·{' '}
                         {when(statement.at)}
                       </Text>
                     </div>
@@ -126,7 +122,11 @@ const DisputeCasePage = async ({
           )}
 
           {dispute.status !== 'resolved' && (
-            <DisputeStatement orderId={orderId} disputeId={dispute.id} />
+            <DisputeStatement
+              orderId={orderId}
+              disputeId={dispute.id}
+              attachable={attachable}
+            />
           )}
         </div>
 
@@ -137,27 +137,27 @@ const DisputeCasePage = async ({
               className="mt-4"
               items={[
                 { label: 'Client', value: dispute.buyerName },
-                { label: 'Case', value: dispute.id.slice(-8).toUpperCase() },
+                { label: 'Case', value: caseReference(dispute.id) },
                 { label: 'Opened', value: when(dispute.createdAt) },
-                { label: 'Reason', value: dispute.reason.replace(/_/g, ' ') },
+                { label: 'Reason', value: issueReasonLabel(dispute.reason) },
                 {
                   label: 'Amount in question',
                   value: `${dispute.currency} ${major(dispute.claimedAmountMinor)}`,
                 },
+                ...(dispute.refundId === null
+                  ? []
+                  : [{ label: 'From claim', value: claimReference(dispute.refundId) }]),
                 {
                   label: 'Opened by',
                   value: dispute.openedByShop ? 'You' : 'The buyer',
                 },
                 {
                   label: 'Outcome',
-                  value:
-                    dispute.outcome === null
-                      ? 'Not decided yet'
-                      : `${dispute.outcome.replace(/_/g, ' ')}${
-                          dispute.outcomeAmountMinor === null
-                            ? ''
-                            : ` · ${dispute.currency} ${major(dispute.outcomeAmountMinor)}`
-                        }`,
+                  value: `${disputeOutcomeLabel(dispute.outcome)}${
+                    dispute.outcomeAmountMinor === null
+                      ? ''
+                      : ` · ${dispute.currency} ${major(dispute.outcomeAmountMinor)}`
+                  }`,
                 },
               ]}
             />

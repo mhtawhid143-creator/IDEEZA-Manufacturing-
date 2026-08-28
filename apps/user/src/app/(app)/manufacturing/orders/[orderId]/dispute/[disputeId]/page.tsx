@@ -17,37 +17,18 @@ import { DisputeStatementForm } from '@/components/order/dispute-statement-form.
 import { major } from '@/components/rfq/quote-money.js';
 import { getDispute, getIssueContext } from '@/data/resolution.js';
 import { requireBuyer } from '@/lib/auth.js';
-import { asId, type OrderId } from '@ideeza/domain';
+import {
+  asId,
+  caseReference,
+  claimReference,
+  disputeOutcomeLabel,
+  disputeStatusLabel,
+  issueReasonLabel,
+  statementAuthorLabel,
+  type OrderId,
+} from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
-
-const REASON_LABEL: Readonly<Record<string, string>> = {
-  failed_quality_check: 'Failed our quality check',
-  defective_units: 'Defective units',
-  wrong_specification: 'Built to the wrong specification',
-  wrong_quantity: 'Wrong quantity delivered',
-  unapproved_substitution: 'A part was substituted without approval',
-  late_delivery: 'Delivered late',
-  damaged_in_transit: 'Damaged in transit',
-  not_delivered: 'Never delivered',
-  missing_documentation: 'Missing documentation',
-};
-
-const OUTCOME_LABEL: Readonly<Record<string, string>> = {
-  no_issue_found: 'No issue found',
-  rework: 'Rework by the manufacturer',
-  partial_refund: 'Partial refund',
-  full_refund: 'Full refund',
-  replacement_shipment: 'Replacement shipment',
-  cancelled_before_production: 'Cancelled before production',
-  escalated_to_inspection: 'Escalated to an independent inspection',
-};
-
-const ROLE_LABEL: Readonly<Record<string, string>> = {
-  buyer: 'You',
-  manufacturer: 'The manufacturer',
-  ops_admin: 'IDEEZA',
-};
 
 const moment = (value: Date): string =>
   `${value.toISOString().slice(0, 10)} · ${value.toISOString().slice(11, 16)} UTC`;
@@ -81,7 +62,7 @@ const DisputeCasePage = async ({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={`Dispute case ${dispute.id}`}
+        title={`Dispute ${caseReference(dispute.id)}`}
         description={`${dispute.productName} · ${dispute.manufacturerName}`}
         breadcrumbs={
           <Crumbs
@@ -93,7 +74,13 @@ const DisputeCasePage = async ({
             ]}
           />
         }
-        actions={<StatusChip status={dispute.status} withDot />}
+        actions={
+          <StatusChip
+            status={dispute.status}
+            label={disputeStatusLabel(dispute.status)}
+            withDot
+          />
+        }
       />
 
       {justOpened && (
@@ -107,7 +94,7 @@ const DisputeCasePage = async ({
         <Alert tone="info" title="This case has been decided">
           {dispute.outcome === null
             ? 'The outcome is recorded against the order.'
-            : `Outcome: ${OUTCOME_LABEL[dispute.outcome] ?? dispute.outcome}${
+            : `Outcome: ${disputeOutcomeLabel(dispute.outcome)}${
                 dispute.outcomeMinor === null
                   ? ''
                   : ` · ${dispute.currency} ${major(BigInt(dispute.outcomeMinor))}`
@@ -134,7 +121,7 @@ const DisputeCasePage = async ({
                     <p className="truncate text-sm font-semibold text-heading">
                       {statement.authorName}
                       <span className="ml-1.5 font-normal text-muted">
-                        ({ROLE_LABEL[statement.authorRole] ?? statement.authorRole})
+                        ({statementAuthorLabel(statement.authorRole, 'buyer')})
                       </span>
                     </p>
                     <Text tone="muted" size="xs">
@@ -142,7 +129,10 @@ const DisputeCasePage = async ({
                     </Text>
                   </div>
                 </div>
-                <Text size="sm" className="mt-2 whitespace-pre-line">
+                <p className="mt-3 text-sm font-semibold text-heading">
+                  {statement.title}
+                </p>
+                <Text size="sm" className="mt-1 whitespace-pre-line">
                   {statement.body}
                 </Text>
               </li>
@@ -172,11 +162,11 @@ const DisputeCasePage = async ({
               items={[
                 { label: 'Buyer', value: dispute.buyerName },
                 { label: 'Manufacturer', value: dispute.manufacturerName },
-                { label: 'Case', value: dispute.id },
+                { label: 'Case', value: caseReference(dispute.id) },
                 { label: 'Opened', value: moment(dispute.createdAt) },
                 {
                   label: 'Reason',
-                  value: REASON_LABEL[dispute.reason] ?? dispute.reason.replace(/_/g, ' '),
+                  value: issueReasonLabel(dispute.reason),
                 },
                 {
                   label: 'Amount claimed',
@@ -190,7 +180,10 @@ const DisputeCasePage = async ({
                 },
                 {
                   label: 'From a refund claim',
-                  value: dispute.refundId === null ? 'No' : 'Yes',
+                  value:
+                    dispute.refundId === null
+                      ? 'No refund claim behind it'
+                      : claimReference(dispute.refundId),
                 },
               ]}
             />

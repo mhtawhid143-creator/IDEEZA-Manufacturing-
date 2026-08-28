@@ -1073,6 +1073,66 @@ const main = async () => {
     );
     await cancelModal.getByRole('button', { name: 'Keep building' }).click();
 
+
+    // ------------------------------------- M09: a refund claim, and the case
+    // The shop's side of refunds and disputes had no browser coverage at all,
+    // which is why the wording and the case reference could drift from the
+    // buyer's. This walks it: the claim, the two answers the design offers, the
+    // amount a shop may accept, and the case that comes out of a challenge.
+    await page.goto(`${base}/orders/verify_order_delivered`, { waitUntil: 'networkidle' });
+    const claimBody = ((await page.locator('main').innerText()) ?? '').replace(/\s+/g, ' ');
+    check(
+      'a refund claim reaches the shop with the two answers the design offers',
+      (await visible(page.getByText('has claimed a refund of', { exact: false }))) &&
+        (await visible(page.getByRole('button', { name: 'Approve' }))) &&
+        (await visible(page.getByRole('button', { name: 'Dispute' }))),
+      claimBody.slice(0, 130),
+    );
+    check(
+      'the claim is quoted by the shared reference, in shared words',
+      /CLAIM-[0-9A-Z]{8}/.test(claimBody) &&
+        /Failed the quality check/.test(claimBody) &&
+        !/failed_quality_check/.test(claimBody),
+      (claimBody.match(/CLAIM-[0-9A-Z]{8}[^.]*/) ?? ['(no reference)'])[0].slice(0, 110),
+    );
+    check(
+      'the claim says what silence costs, with a date on it',
+      /Answer by /.test(claimBody),
+    );
+
+    // The design lets a shop accept in full or accept an amount of its own.
+    await page.getByRole('button', { name: 'Approve' }).click();
+    const approveModal = page.getByRole('dialog', { name: /Answer this refund claim/ });
+    check(
+      'accepting offers the full claim or an amount of the shop’s own',
+      (await visible(approveModal.getByText('How much of the claim do you accept?'))) &&
+        (await visible(approveModal.getByRole('radio', { name: /The full/ }))) &&
+        (await visible(approveModal.getByRole('radio', { name: /An amount of your own/ }))),
+    );
+    await approveModal.getByRole('radio', { name: /An amount of your own/ }).check();
+    check(
+      'choosing an amount asks for it, bounded by what was claimed',
+      await visible(approveModal.getByLabel(/Amount you accept/)),
+    );
+    await approveModal.getByLabel(/Amount you accept/).fill('999999');
+    await approveModal.getByRole('button', { name: 'Offer this amount' }).click();
+    await page.waitForTimeout(2_000);
+    check(
+      'more than the claim is refused rather than recorded',
+      await visible(page.getByText('cannot accept more than the buyer claimed', { exact: false })),
+    );
+    await approveModal.getByLabel(/Amount you accept/).fill('120.00');
+    await approveModal.getByRole('button', { name: 'Offer this amount' }).click();
+    await page.waitForTimeout(2_500);
+    await page.goto(`${base}/orders/verify_order_delivered`, { waitUntil: 'networkidle' });
+    const answered = ((await page.locator('main').innerText()) ?? '').replace(/\s+/g, ' ');
+    check(
+      'the answer is recorded on the claim, and the shop cannot answer twice',
+      /You have answered/.test(answered) &&
+        (await page.getByRole('button', { name: 'Approve' }).count()) === 0,
+      answered.slice(0, 120),
+    );
+
     // ------------------------------------------------ M03: another shop row
     // A request that was never routed to this shop must show nothing of itself.
     // The status stays 200 because the shell streams behind its loading state

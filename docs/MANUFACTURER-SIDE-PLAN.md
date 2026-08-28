@@ -622,43 +622,72 @@ Figma: `75:21524` list, `75:21680`–`75:22787` the row menus per state,
 
 ## M09 — Refunds and disputes, from this side
 
-Figma: `2:57958` refund from the buyer, `2:58576`–`2:60609` get refund,
-`2:65163` refund raised here, `2:65352`–`2:65749` create dispute,
-`2:70024` and `2:70338` dispute details.
+Figma: `2:57958` the claim as the shop sees it, `2:58576`–`2:60609` answering it,
+`2:65163` the claim on the order, `2:65352`–`2:65749` sending a dispute,
+`2:70024` and `2:70338` the case itself.
 
 | # | Sub-task | State |
 | --- | --- | --- |
-| 9.1 | A refund the buyer raised: read the claim and its records, then accept it or challenge it with a written statement | done |
-| 9.2 | Add a statement to a case, on the same case the buyer sees | done |
-| 9.3 | The outcome IDEEZA records is shown here, and what it does to the payout | done |
-| 9.4 | Tests: a challenge appears in the buyer's case thread, and neither side resolves its own case | done |
+| 9.1 | A refund claim the buyer raised: read it, its record, and the deadline silence carries | done |
+| 9.2 | Answer it — accept in full, accept an amount of the shop's own, or challenge it | done |
+| 9.3 | Challenging opens the case, with the amount the shop would accept and its account | done |
+| 9.4 | The case: the statement thread, the summary, the records, and who decides | done |
+| 9.5 | Add a statement to a live case, carrying records already on the order | done |
+| 9.6 | The outcome IDEEZA records, and what it does to the payout | done |
+| 9.7 | Both panels read one claim and one case through `read/resolution-document.ts` | done |
+| 9.8 | Tests: 8 browser checks on the shop side, 2 alignment checks on the buyer side | done |
 
 **Decisions and corrections made here**
 
-- **A refund claim is answered, not decided.** The shop may accept the claim or
-  challenge it; the resolution is IDEEZA's. `approveRefund` records the shop's
-  agreement and `challengeRefund` records its statement — neither closes the case,
-  because a side that could close its own case is not an escrow.
-- **A challenge must say something.** An empty challenge is refused: the buyer
-  reads this text, and "disagree" with no reason leaves operations with nothing to
-  weigh.
-- **The order screen says a claim is open before the shop finds it.** The refund
-  banner sits on the order, not only on a separate cases screen, because a claim
-  changes what the shop should do next with the goods.
-- **A held payout and an open case are the same fact seen twice.** The case shows
-  the amount held against it, so the shop does not read the payouts screen as a
-  delay with no cause.
+- **A refund claim is answered, not decided.** The shop may accept it, offer an
+  amount, or challenge it; the resolution is IDEEZA's. None of the three moves
+  money, and each screen says so where a shop might assume otherwise.
+- **The design's "Give refund — Full amount / Custom" is an offer, not a
+  payment.** Accepting in full ends the shop's objection. Offering an amount is
+  recorded against the claim (`Refund.approvedAmountMinor`) and weighed by
+  operations — because a shop that could settle its own claim would make the
+  escrow pointless. The bound comes from the domain: above zero, never more than
+  was claimed.
+- **One claim, one case, one set of words.** Both panels used to keep their own
+  label maps: the buyer read "Failed our quality check" where the shop read
+  `failed_quality_check`, and the case the buyer called `dp_mtc9f2x1` the shop
+  called `9F2X1ABC`. Reason, outcome, status, the case reference and the claim
+  reference now come from `packages/domain/src/read/resolution-document.ts`, so
+  the two sides can quote the same case to each other.
+- **The buyer can see the shop's answer.** The claim screen and the order screen
+  now show what the manufacturer accepted, in money, as soon as it answers. The
+  figure was in the database and shown nowhere, which meant a buyer watching a
+  claim could not tell an answered claim from an ignored one.
+- **A shop statement may carry records.** The buyer side could attach the order's
+  files to a statement from the day the case screens were built; the shop side
+  could not. That asymmetry made one account look thinner than the other to
+  whoever decides the case.
+- **The dialog's heading does not move.** Choosing between accepting and offering
+  used to rewrite the modal's title under the reader; the title is fixed and the
+  button says which of the two it sends.
 
 **Design deviations (data, not layout)**
 
-- *The design gives the manufacturer a "Resolve dispute" action.* It is not
-  offered. The shop accepts, challenges, or adds a statement; only IDEEZA resolves.
-- *"Create dispute" as a first move on a refund* is folded into the challenge —
-  the design would produce two cases about one claim, which is how two threads end
-  up with two different outcomes.
-- *No evidence upload.* A statement carries text, its author and its timestamp;
-  the build holds no file bytes, and the form says so rather than showing a
-  control that drops what is attached to it.
+- *The design gives the shop a "Resolve dispute" action.* It is not offered. The
+  shop accepts, offers, challenges or adds a statement; only IDEEZA resolves.
+- *"Create dispute" as a separate first move on a claim* is folded into the
+  challenge — the design would produce two cases about one claim, which is how
+  two threads end up with two different outcomes.
+- *The response deadline in the design is a fixed date* ("by midnight Apr 24
+  2026"). How long a shop has to answer a claim is an **open business decision**
+  (`docs/DOMAIN.md` §7), so the screen shows the date the platform holds against
+  the claim and says plainly what silence means, without inventing a policy.
+- *"I accept Terms and Conditions"* on the refund form: there is no terms
+  document to accept in this build, so the form states the consequence — the
+  payout is reduced by whatever operations releases — rather than gating on a
+  checkbox nobody could read.
+- *Attachment thumbnails and an upload control.* The build holds a file's name,
+  revision and hash, not its bytes, so a statement attaches records the order
+  already carries, each named with where it came from.
+- *The case sample is a freelancing dispute* — Upwork wording, a $50 escrow,
+  "revisions", a video attachment. The layout is kept: statement thread on the
+  left, summary and records on the right, describe-and-submit at the bottom. The
+  data is this platform's.
 
 ## M10 — Payouts and earnings
 

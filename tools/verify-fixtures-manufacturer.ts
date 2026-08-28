@@ -889,14 +889,69 @@ const notificationsForShopA = async (): Promise<void> => {
   }
 };
 
+/**
+ * A refund claim the buyer has made and the shop has not answered.
+ *
+ * The shop's side of refunds and disputes had no fixture at all, which is why
+ * neither its banner nor its case screen was ever exercised in a browser. The
+ * claim sits on the delivered order — the only state the domain admits one from —
+ * with the record a claim is required to carry.
+ */
+const refundClaimForShopA = async (): Promise<void> => {
+  const order = await prisma.manufacturingOrder.findUnique({
+    where: { id: 'verify_order_delivered' },
+    select: {
+      id: true,
+      buyerId: true,
+      snapshot: { select: { currency: true } },
+    },
+  });
+  if (order === null) return;
+
+  const claimedAt = hoursAgo(9);
+
+  await prisma.refund.upsert({
+    where: { id: 'mfrfix_refund_open' },
+    update: {},
+    create: {
+      id: 'mfrfix_refund_open',
+      orderId: order.id,
+      requestedById: order.buyerId,
+      status: 'requested',
+      reason: 'failed_quality_check',
+      currency: order.snapshot?.currency ?? 'USD',
+      requestedAmountMinor: 24_000n,
+      description:
+        'Eleven boards out of 120 failed our incoming inspection: the RF pair reads 61 ohm against the 50 ohm on the specification.',
+      createdAt: claimedAt,
+    },
+  });
+
+  // A claim carries a record, which is the rule on both sides.
+  await prisma.evidence.upsert({
+    where: { id: 'mfrfix_refund_record' },
+    update: {},
+    create: {
+      id: 'mfrfix_refund_record',
+      contextKind: 'refund',
+      kind: 'measurement_data',
+      title: 'Incoming inspection sheet, 11 of 120 boards out of tolerance',
+      refundId: 'mfrfix_refund_open',
+      submittedById: order.buyerId,
+      capturedAt: claimedAt,
+    },
+  });
+};
+
 const main = async (): Promise<void> => {
   await boardRequest();
   await printedRequest();
   await stockForShopA();
   await liveOrder();
   await notificationsForShopA();
+  await refundClaimForShopA();
   process.stdout.write(
-    'manufacturer fixtures: two unanswered requests in shop A’s inbox — one board with assembly, one printed housing — stock that covers one line, is short on another and misses two, one funded order in production, and three notifications for its member\n',
+    'manufacturer fixtures: two unanswered requests in shop A’s inbox — one board with assembly, one printed housing — stock that covers one line, is short on another and misses two, one funded order in production, three notifications for its member, and one unanswered refund claim\n',
   );
 };
 

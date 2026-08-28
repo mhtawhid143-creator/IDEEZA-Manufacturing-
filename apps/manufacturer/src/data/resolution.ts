@@ -1,5 +1,6 @@
 import {
   asId,
+  assertAcceptableRefundAmount,
   type ManufacturerId,
   type OrderId,
   type UserId,
@@ -56,6 +57,8 @@ export interface DisputeCaseView {
   readonly statements: readonly DisputeStatementView[];
   readonly records: readonly { readonly id: string; readonly title: string }[];
   readonly openedByShop: boolean;
+  /** The claim this case came out of, when it came out of one. */
+  readonly refundId: string | null;
 }
 
 /**
@@ -182,6 +185,7 @@ export const listDisputes = async (
       )
       .map((record) => ({ id: record.id, title: record.title })),
     openedByShop: row.openedBy.role === 'manufacturer',
+    refundId: row.refundId,
   }));
 };
 
@@ -209,30 +213,71 @@ export const approveRefund = async (
   actorId: UserId,
   refundId: string,
   note: string,
+  acceptedAmountMinor: number | null = null,
   now: Date = new Date(),
 ): Promise<ResolutionOutcome> => {
   const refund = await database().refund.findFirst({
     where: { id: refundId, order: { manufacturerId } },
-    select: { id: true, orderId: true, status: true, requestedAmountMinor: true },
+    select: {
+      id: true,
+      orderId: true,
+      status: true,
+      currency: true,
+      requestedAmountMinor: true,
+    },
   });
   if (refund === null) return { ok: false, message: 'That claim is not on your order.' };
   if (refund.status !== 'requested') {
     return { ok: false, message: 'You have already answered this claim.' };
   }
 
+  const claimedMinor = Number(refund.requestedAmountMinor);
+  // The design lets a shop answer in full or with a figure of its own. A figure
+  // of its own is an offer, not a settlement — operations still moves the money —
+  // so it is bounded by what was actually claimed.
+  const inFull = acceptedAmountMinor === null || acceptedAmountMinor === claimedMinor;
+  if (!inFull) {
+    try {
+      assertAcceptableRefundAmount({
+        acceptedMinor: acceptedAmountMinor,
+        claimedMinor,
+      });
+    } catch (error) {
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : 'That amount cannot be accepted.',
+      };
+    }
+  }
+
+  const accepted = inFull ? claimedMinor : acceptedAmountMinor;
+  const money = (minor: number): string =>
+    `${refund.currency} ${(minor / 100).toFixed(2)}`;
+
   await database().$transaction(async (transaction) => {
     await transaction.refund.update({
       where: { id: refundId },
-      data: { status: 'mfr_responded', manufacturerRespondedAt: now },
+      data: {
+        status: 'mfr_responded',
+        manufacturerRespondedAt: now,
+        // What the shop agreed to, which is what operations decides against.
+        approvedAmountMinor: BigInt(accepted),
+      },
     });
     await transaction.evidence.create({
       data: {
         id: identifier('evd'),
         contextKind: 'refund',
         kind: 'manufacturer_statement',
-        title: 'The shop accepts this refund claim',
+        title: inFull
+          ? 'The shop accepts this refund claim in full'
+          : `The shop accepts ${money(accepted)} of a ${money(claimedMinor)} claim`,
         refundId,
-        ...(note.trim() === '' ? {} : { payload: { detail: note.trim() } }),
+        payload: {
+          acceptedAmountMinor: accepted,
+          claimedAmountMinor: claimedMinor,
+          ...(note.trim() === '' ? {} : { detail: note.trim() }),
+        },
         submittedById: actorId,
         capturedAt: now,
       },
@@ -247,7 +292,7 @@ export const approveRefund = async (
         subjectKind: 'refund',
         subjectId: refundId,
         orderId: refund.orderId,
-        payload: { amountMinor: Number(refund.requestedAmountMinor) },
+        payload: { amountMinor: accepted, claimedAmountMinor: claimedMinor },
         occurredAt: now,
       },
     });
@@ -381,6 +426,7 @@ export const addDisputeStatement = async (
   disputeId: string,
   title: string,
   body: string,
+  attachedFileIds: readonly string[] = [],
   now: Date = new Date(),
 ): Promise<ResolutionOutcome> => {
   const dispute = await database().dispute.findFirst({
@@ -410,6 +456,20 @@ export const addDisputeStatement = async (
         capturedAt: now,
       },
     });
+    for (const fileId of attachedFileIds) {
+      await transaction.evidence.create({
+        data: {
+          id: identifier('evd'),
+          contextKind: 'dispute',
+          kind: 'manufacturer_statement',
+          title: 'Attached to a statement from the shop',
+          disputeId,
+          fileId,
+          submittedById: actorId,
+          capturedAt: now,
+        },
+      });
+    }
     if (dispute.status === 'open') {
       await transaction.dispute.update({
         where: { id: disputeId },
@@ -433,4 +493,70 @@ export const addDisputeStatement = async (
   });
 
   return { ok: true, id: disputeId };
+};
+
+export interface AttachableRecord {
+  readonly fileId: string;
+  readonly name: string;
+  readonly origin: string;
+}
+
+/**
+ * What a shop can attach to a statement on a case.
+ *
+ * The buyer side has had this since the case screens were built; without it the
+ * shop could write about a quality report the case holds no copy of, which is
+ * exactly the asymmetry that makes one side's account look thinner than the
+ * other's to whoever decides it.
+ *
+ * Two sources, both already on the order: the files that came with the request,
+ * and any file attached to a production record.
+ */
+export const attachableRecords = async (
+  manufacturerId: ManufacturerId,
+  orderId: OrderId,
+): Promise<readonly AttachableRecord[]> => {
+  const order = await database().manufacturingOrder.findFirst({
+    where: { id: orderId, manufacturerId },
+    select: {
+      rfq: {
+        select: {
+          package: {
+            select: { files: { select: { file: { select: { id: true, name: true } } } } },
+          },
+        },
+      },
+      stages: {
+        select: {
+          evidence: {
+            select: { kind: true, file: { select: { id: true, name: true } } },
+          },
+        },
+      },
+      evidence: { select: { kind: true, file: { select: { id: true, name: true } } } },
+    },
+  });
+  if (order === null) return [];
+
+  const fromStages = order.stages.flatMap((stage) => stage.evidence);
+  const records = [...fromStages, ...order.evidence];
+
+  return [
+    ...order.rfq.package.files.map((link) => ({
+      fileId: link.file.id,
+      name: link.file.name,
+      origin: 'Sent with the request',
+    })),
+    ...records.flatMap((record) =>
+      record.file === null
+        ? []
+        : [
+            {
+              fileId: record.file.id,
+              name: record.file.name,
+              origin: `Record: ${record.kind.replace(/_/g, ' ')}`,
+            },
+          ],
+    ),
+  ];
 };

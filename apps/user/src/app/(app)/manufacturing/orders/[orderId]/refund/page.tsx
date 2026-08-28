@@ -1,6 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ORDER_ISSUE_REASONS, asId, type OrderId } from '@ideeza/domain';
+import {
+  ORDER_ISSUE_REASONS,
+  asId,
+  claimReference,
+  issueReasonLabel,
+  refundStatusLabel,
+  type OrderId,
+} from '@ideeza/domain';
 import { Card, CardHeader, StatusChip, Text, buttonAppearance } from '@ideeza/ui';
 import { IssuePage } from '@/components/order/issue-page.js';
 import { day, major } from '@/components/rfq/quote-money.js';
@@ -17,18 +24,6 @@ export const dynamic = 'force-dynamic';
  * of boards, so the approved manufacturing list is used and grouped by what a
  * buyer is actually looking at when they raise a claim.
  */
-const REASON_LABEL: Readonly<Record<string, string>> = {
-  failed_quality_check: 'Failed our quality check',
-  defective_units: 'Defective units',
-  wrong_specification: 'Built to the wrong specification',
-  wrong_quantity: 'Wrong quantity delivered',
-  unapproved_substitution: 'A part was substituted without approval',
-  late_delivery: 'Delivered late',
-  damaged_in_transit: 'Damaged in transit',
-  not_delivered: 'Never delivered',
-  missing_documentation: 'Missing documentation',
-};
-
 const RefundPage = async ({
   params,
 }: {
@@ -47,7 +42,7 @@ const RefundPage = async ({
       blockedReason={context.refundBlockedReason}
       reasons={ORDER_ISSUE_REASONS.map((reason) => ({
         value: reason,
-        label: REASON_LABEL[reason] ?? reason.replace(/_/g, ' '),
+        label: issueReasonLabel(reason),
       }))}
       submitLabel="Request refund"
       withAmount
@@ -69,12 +64,23 @@ const RefundPage = async ({
               <div className="flex flex-wrap items-center gap-2">
                 <StatusChip status={context.openRefund.status} withDot />
                 <Text tone="muted" size="xs">
-                  {REASON_LABEL[context.openRefund.reason] ?? context.openRefund.reason} ·{' '}
+                  {claimReference(context.openRefund.id)} ·{' '}
+                  {issueReasonLabel(context.openRefund.reason)} ·{' '}
                   {context.currency} {major(BigInt(context.openRefund.requestedMinor))} ·{' '}
                   {day(context.openRefund.createdAt)}
                 </Text>
               </div>
               <Text size="sm">“{context.openRefund.description}”</Text>
+              <Text size="sm" className="block">
+                <span className="font-medium text-heading">
+                  {refundStatusLabel(context.openRefund.status)}
+                </span>
+                {context.openRefund.acceptedMinor === null
+                  ? ' — the manufacturer has not answered it yet.'
+                  : ` — the manufacturer accepts ${context.currency} ${major(
+                      BigInt(context.openRefund.acceptedMinor),
+                    )} of it. IDEEZA decides the outcome.`}
+              </Text>
               <div>
                 <Link
                   href={`/manufacturing/orders/${orderId}/dispute`}

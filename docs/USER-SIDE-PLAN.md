@@ -207,6 +207,22 @@ flow was derived from the domain).
 | 12.8 | Dispute screen, and the case screen: the statement thread, the case summary, attachments, and who decides | done |
 | 12.9 | Order detail: open cancellation, refund and dispute banners with a way into each | done |
 | 12.10 | Tests: 18 domain, 18 database, 12 browser checks | done |
+| 12.11 | Aligned with the shop side through `read/resolution-document.ts`: the reason, the outcome, both states, the author, and the case and claim references | done |
+| 12.12 | The manufacturer's answer is visible here — what it accepted, in money, on the claim screen and on the order | done |
+| 12.13 | Each statement carries its heading, as the shop side has always shown | done |
+
+**Alignment, added after reading the shop side against this one**
+
+- *The same case had two names.* This panel quoted `dp_mtch8uqcv5hkrp`; the shop
+  quoted `9F2X1ABC`. Both now read `CASE-QCV5HKRP`, and a claim reads
+  `CLAIM-FUNDOPEN` — one form, quotable, letters and digits only.
+- *The same reason had two spellings.* This screen read "Failed our quality
+  check" where the shop read `failed_quality_check`, and the outcome, the states
+  and the author were each spelled twice. Every word about a claim or a case now
+  comes from the domain.
+- *The manufacturer's answer was invisible here.* `Refund.approvedAmountMinor`
+  was written when the shop answered and shown on no buyer screen, so an answered
+  claim looked exactly like one nobody had touched.
 
 **Design deviations (data, not layout)**
 

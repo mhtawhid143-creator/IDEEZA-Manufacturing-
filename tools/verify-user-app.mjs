@@ -1522,7 +1522,30 @@ const main = async () => {
     );
     await page.screenshot({ path: join(shotDir, 'dispute-case.png'), fullPage: false });
 
-    await page.getByLabel('Describe').fill('Adding the incoming inspection sheet reference.');
+    // The case has to be quotable: the reference the buyer reads here is the one
+    // the shop reads on its own screen, and the words for the reason and the
+    // state come from the domain rather than from each panel’s own copy.
+    const caseHeading = (await page.locator('h1').first().innerText()) ?? '';
+    check(
+      'the case is quoted by a shared reference, not a raw database id',
+      /Dispute CASE-[0-9A-Z]{8}/.test(caseHeading) && !/dp_[a-z0-9]{6,}/.test(caseHeading),
+      caseHeading.trim().slice(0, 60),
+    );
+    // The reason sits in the case summary, as its own definition row.
+    const summaryReason =
+      (await page
+        .locator('dt:text-is("Reason") + dd')
+        .first()
+        .innerText({ timeout: 20_000 })
+        .catch(() => '')) ?? '';
+    check(
+      'the reason reads as words, not as a database value',
+      summaryReason.trim() !== '' && !/_/.test(summaryReason),
+      summaryReason.trim().slice(0, 60),
+    );
+    await page.getByLabel('Describe').fill(
+      'Adding the incoming inspection sheet reference.',
+    );
     await page.getByRole('button', { name: 'Submit' }).click();
     await page.waitForTimeout(2_500);
     await page.reload({ waitUntil: 'networkidle' });

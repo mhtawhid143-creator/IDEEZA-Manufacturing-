@@ -23,7 +23,15 @@ import { getOrderSummary, getProduction, listInventoryAlerts } from '@/data/prod
 import { threadForContext } from '@/data/messaging.js';
 import { listOrderIssues } from '@/data/resolution.js';
 import { requireBuyer } from '@/lib/auth.js';
-import { asId, type OrderId } from '@ideeza/domain';
+import {
+  asId,
+  caseReference,
+  claimReference,
+  disputeStatusLabel,
+  issueReasonLabel,
+  refundStatusLabel,
+  type OrderId,
+} from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,9 +172,19 @@ const OrderPage = async ({
             </Link>
           }
         >
-          {order.currency} {major(BigInt(liveRefund.requestedMinor))} claimed ·{' '}
-          {liveRefund.reason.replace(/_/g, ' ')} · {liveRefund.status.replace(/_/g, ' ')}.
-          No money reaches the manufacturer while this is open.
+          {claimReference(liveRefund.id)} · {order.currency}{' '}
+          {major(BigInt(liveRefund.requestedMinor))} claimed ·{' '}
+          {issueReasonLabel(liveRefund.reason)} ·{' '}
+          {refundStatusLabel(liveRefund.status)}.
+          {liveRefund.approvedMinor === null ? (
+            ' No money reaches the manufacturer while this is open.'
+          ) : (
+            <span className="mt-1 block font-medium text-heading">
+              {order.manufacturerName} accepts {order.currency}{' '}
+              {major(BigInt(liveRefund.approvedMinor))} of it. IDEEZA decides the
+              outcome, and no money reaches the manufacturer while this is open.
+            </span>
+          )}
         </Alert>
       )}
 
@@ -183,9 +201,9 @@ const OrderPage = async ({
             </Link>
           }
         >
-          {liveDispute.reason.replace(/_/g, ' ')} · {order.currency}{' '}
-          {major(BigInt(liveDispute.claimedMinor))} claimed. IDEEZA decides it on the
-          record.
+          {caseReference(liveDispute.id)} · {issueReasonLabel(liveDispute.reason)} ·{' '}
+          {order.currency} {major(BigInt(liveDispute.claimedMinor))} claimed ·{' '}
+          {disputeStatusLabel(liveDispute.status)}. IDEEZA decides it on the record.
         </Alert>
       )}
 

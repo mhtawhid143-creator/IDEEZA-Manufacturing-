@@ -59,6 +59,9 @@ export interface IssueContext {
     readonly status: RefundStatus;
     readonly reason: OrderIssueReason;
     readonly requestedMinor: number;
+    /** What the manufacturer said it accepts, once it has answered. */
+    readonly acceptedMinor: number | null;
+    readonly respondedAt: Date | null;
     readonly description: string;
     readonly createdAt: Date;
   } | null;
@@ -196,6 +199,11 @@ export const getIssueContext = async (
             status: openRefund.status,
             reason: openRefund.reason,
             requestedMinor: Number(openRefund.requestedAmountMinor),
+            acceptedMinor:
+              openRefund.approvedAmountMinor === null
+                ? null
+                : Number(openRefund.approvedAmountMinor),
+            respondedAt: openRefund.manufacturerRespondedAt,
             description: openRefund.description,
             createdAt: openRefund.createdAt,
           },
@@ -510,6 +518,8 @@ export interface DisputeStatement {
   readonly id: string;
   readonly authorName: string;
   readonly authorRole: string;
+  /** The heading the record was written with — the same one the shop reads. */
+  readonly title: string;
   readonly body: string | null;
   readonly fileName: string | null;
   readonly capturedAt: Date;
@@ -568,6 +578,7 @@ export const getDispute = async (
       id: record.id,
       authorName: record.submittedBy?.displayName ?? 'IDEEZA',
       authorRole: record.submittedBy?.role ?? 'ops_admin',
+      title: record.title,
       body:
         typeof record.payload === 'object' &&
         record.payload !== null &&

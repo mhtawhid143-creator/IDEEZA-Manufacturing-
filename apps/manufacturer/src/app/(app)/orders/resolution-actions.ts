@@ -28,19 +28,31 @@ const failed = (error: unknown): ResolutionState => {
   throw error;
 };
 
-/** Accepts a refund claim as the buyer made it. */
+/**
+ * Accepts a refund claim — in full, or for an amount of the shop’s own.
+ *
+ * The design offers both, and they mean different things: accepting in full
+ * ends the shop’s objection, while accepting an amount is an offer operations
+ * weighs. Either way the shop is not moving the money.
+ */
 export const approveRefundAction = async (
   orderId: string,
   refundId: string,
   note: string,
+  acceptedMajor?: string,
 ): Promise<ResolutionState> => {
   const actor = await requireManufacturer(`/orders/${orderId}/refund-response`);
+  const accepted = acceptedMajor === undefined ? null : minorOf(acceptedMajor);
+  if (accepted !== null && Number.isNaN(accepted)) {
+    return { done: false, error: 'That amount is not a number.' };
+  }
   try {
     const result = await approveRefund(
       actor.manufacturerId,
       actor.userId,
       refundId,
       note,
+      accepted,
     );
     return result.ok ? { done: true } : { done: false, error: result.message };
   } catch (error) {
@@ -80,6 +92,7 @@ export const addStatementAction = async (
   disputeId: string,
   title: string,
   body: string,
+  attachedFileIds: readonly string[] = [],
 ): Promise<ResolutionState> => {
   const actor = await requireManufacturer(`/orders/${orderId}/dispute`);
   try {
@@ -89,6 +102,7 @@ export const addStatementAction = async (
       disputeId,
       title,
       body,
+      attachedFileIds,
     );
     return result.ok ? { done: true } : { done: false, error: result.message };
   } catch (error) {
