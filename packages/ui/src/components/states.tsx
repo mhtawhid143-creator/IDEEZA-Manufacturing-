@@ -21,7 +21,7 @@ export const EmptyState = ({ title, description, action, icon, className }: Empt
     )}
   >
     {icon !== undefined && <div className="text-muted">{icon}</div>}
-    <Heading level={4}>{title}</Heading>
+    <Heading level={3}>{title}</Heading>
     {description !== undefined && (
       <Text tone="muted" className="max-w-md">
         {description}
@@ -67,7 +67,7 @@ export const ErrorState = ({
       className,
     )}
   >
-    <Heading level={4}>{title}</Heading>
+    <Heading level={3}>{title}</Heading>
     <Text tone="muted" className="max-w-md">
       {description}
     </Text>
@@ -130,7 +130,7 @@ export const NotBuiltYet = ({ title, plannedIn, children, className }: NotBuiltY
     <p className="text-xs font-semibold uppercase tracking-wide text-brand">
       Not implemented yet
     </p>
-    <Heading level={4} className="mt-2">
+    <Heading level={3} className="mt-2">
       {title}
     </Heading>
     <Text tone="muted" className="mx-auto mt-2 max-w-lg">

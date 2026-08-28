@@ -35,7 +35,7 @@ const NavRow = ({ entry, depth = 0 }: { readonly entry: NavEntry; readonly depth
           >
             <NavIconGlyph name={entry.icon} />
             <span className="truncate">{entry.label}</span>
-            <span className="ml-auto text-[10px] uppercase tracking-wide text-muted">
+            <span className="ml-auto text-[11px] uppercase tracking-wide text-muted">
               n/a
             </span>
           </span>

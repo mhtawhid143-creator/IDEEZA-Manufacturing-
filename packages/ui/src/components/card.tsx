@@ -47,12 +47,24 @@ export interface CardHeaderProps {
   readonly description?: ReactNode;
   readonly actions?: ReactNode;
   readonly className?: string;
+  /**
+   * Where this card sits in the page outline. A card directly under the page
+   * title is a level 2; one nested inside another section is a 3. Screen
+   * readers navigate by these, so a skipped level is a broken outline.
+   */
+  readonly level?: 2 | 3 | 4;
 }
 
-export const CardHeader = ({ title, description, actions, className }: CardHeaderProps) => (
+export const CardHeader = ({
+  title,
+  description,
+  actions,
+  className,
+  level = 2,
+}: CardHeaderProps) => (
   <div className={cn('flex flex-wrap items-start justify-between gap-3', className)}>
     <div className="min-w-0">
-      {typeof title === 'string' ? <Heading level={3}>{title}</Heading> : title}
+      {typeof title === 'string' ? <Heading level={level}>{title}</Heading> : title}
       {description !== undefined && (
         <Text tone="muted" className="mt-1">
           {description}

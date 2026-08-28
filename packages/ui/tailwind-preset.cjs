@@ -21,6 +21,7 @@ module.exports = {
           'surface-pressed': 'var(--ids-color-brand-surface-pressed)',
         },
         accent: 'var(--ids-color-accent)',
+        'accent-strong': 'var(--ids-color-accent-strong)',
         heading: 'var(--ids-color-heading)',
         body: 'var(--ids-color-body)',
         muted: 'var(--ids-color-muted)',

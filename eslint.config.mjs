@@ -39,6 +39,13 @@ export default tseslint.config(
       '**/next-env.d.ts',
       '**/.verify-shots/**',
       'packages/config/eslint/**',
+      // Tooling installed into the repository by an agent-skill installer
+      // (impeccable). Third-party sources, linted by whoever ships them.
+      '.agent/**',
+      '.agents/**',
+      '.claude/**',
+      '.codex/**',
+      '.gemini/**',
     ],
   },
   js.configs.recommended,

@@ -24,3 +24,12 @@ next-env.d.ts
 # The harnesses and the review environment take this so two of them never
 # share one built app.
 .build-lock
+
+# Agent-skill tooling installed into the repository (impeccable). Each developer
+# installs it for the harness they use; the design rules it enforces live in
+# DESIGN docs and the detector run, not in these folders.
+.agent/
+.agents/
+.claude/
+.codex/
+.gemini/

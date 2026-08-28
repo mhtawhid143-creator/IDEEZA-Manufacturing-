@@ -24,13 +24,17 @@
   --ids-color-brand-surface-hover: #ede5ff;
   --ids-color-brand-surface-pressed: #d9cafe;
   --ids-color-accent: #fe2ad4;
+  /* The same pink, deep enough to carry white text at AA (4.5:1). Use it
+     wherever text sits directly on the accent; the accent itself keeps the
+     Figma value so the brand hue is untouched. */
+  --ids-color-accent-strong: #d323b0;
 
   /* Text ----------------------------------------------------------------- */
   --ids-color-heading: #0e0515;
   --ids-color-body: #4a4450;
-  --ids-color-muted: #b2afb4;
+  --ids-color-muted: #727073;
   --ids-color-on-brand: #ffffff;
-  --ids-color-disabled-text: #cbd5e1;
+  --ids-color-disabled-text: #868d95;
 
   /* Surfaces ------------------------------------------------------------- */
   --ids-color-surface: #ffffff;
@@ -45,16 +49,16 @@
   --ids-color-border-input-hover: #94a3b8;
 
   /* Status --------------------------------------------------------------- */
-  --ids-color-danger: #f2415a;
-  --ids-color-danger-strong: #dc2626;
+  --ids-color-danger: #d73a50;
+  --ids-color-danger-strong: #ca2323;
   --ids-color-danger-weak: #fee2e2;
   --ids-color-warning: #eab308;
   --ids-color-warning-weak: #fef3c7;
-  --ids-color-success: #16a34a;
+  --ids-color-success: #11813a;
   --ids-color-success-weak: #dcfce7;
-  --ids-color-info: #2563eb;
+  --ids-color-info: #245fe2;
   --ids-color-info-weak: #dbeafe;
-  --ids-color-neutral: #64748b;
+  --ids-color-neutral: #617187;
   --ids-color-neutral-weak: #f1f5f9;
 
   /* Focus ---------------------------------------------------------------- */
