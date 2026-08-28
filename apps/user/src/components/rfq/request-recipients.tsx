@@ -125,12 +125,12 @@ export const RequestRecipients = ({
   return (
     <Card padded={false} className="flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 md:px-6">
-        <h3 className="text-sm font-semibold text-heading">
+        <h2 className="text-sm font-semibold text-heading">
           Requested proposals
           <Badge tone="neutral" className="ml-2 align-middle">
             {recipients.length}
           </Badge>
-        </h3>
+        </h2>
         {open && (
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setAdding(true)}>

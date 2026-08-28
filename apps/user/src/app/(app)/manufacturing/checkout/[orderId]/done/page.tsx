@@ -129,7 +129,7 @@ const CheckoutDonePage = async ({
 
         <div className="flex flex-col gap-4">
           <Card tone="brand">
-            <Heading level={4}>{secured ? 'What happens next' : 'What you can do'}</Heading>
+            <Heading level={3}>{secured ? 'What happens next' : 'What you can do'}</Heading>
             <ol className="mt-3 flex flex-col gap-2 text-sm text-body">
               {(secured
                 ? [

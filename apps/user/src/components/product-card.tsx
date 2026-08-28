@@ -63,11 +63,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           ) : (
             <span
               aria-disabled
-              className={buttonAppearance({
-                fullWidth: true,
-                className:
-                  'cursor-not-allowed bg-disabled-bg text-disabled-text shadow-none hover:bg-disabled-bg',
-              })}
+              className={buttonAppearance({ fullWidth: true, unavailable: true })}
             >
               Currently unavailable
             </span>

@@ -117,7 +117,7 @@ const ManufacturingPage = async ({
     </Card>
 
     <Card tone="brand">
-      <Heading level={4}>Where the money sits at each step</Heading>
+      <Heading level={3}>Where the money sits at each step</Heading>
       <Text className="mt-2">
         Nothing is charged to send a request or to receive quotes. Accepting a
         quote opens an order that is <span className="font-semibold">not</span>{' '}

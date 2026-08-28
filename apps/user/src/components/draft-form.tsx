@@ -350,7 +350,7 @@ export const DraftForm = ({ product, values, draftId }: DraftFormProps) => {
           Cancel
         </Link>
         <div className="flex items-center gap-2">
-          <Heading level={4} className="sr-only">
+          <Heading level={2} className="sr-only">
             Save
           </Heading>
           <Button type="submit" size="lg" loading={pending || !ready} disabled={!ready}>

@@ -135,9 +135,9 @@ export const SpecSection = ({
   >
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-raised px-4 py-3 md:px-6">
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-heading">{title}</h3>
+        <h2 className="text-sm font-semibold text-heading">{title}</h2>
         {description !== undefined && (
-          <p className="mt-0.5 text-xs text-muted">{description}</p>
+          <p className="ids-measure mt-0.5 text-xs text-muted">{description}</p>
         )}
       </div>
       {actions}

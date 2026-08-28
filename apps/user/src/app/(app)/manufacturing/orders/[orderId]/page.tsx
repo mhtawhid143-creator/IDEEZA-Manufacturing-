@@ -513,7 +513,7 @@ const OrderPage = async ({
           )}
 
           <Card tone="brand">
-            <Heading level={4}>Where this order is</Heading>
+            <Heading level={3}>Where this order is</Heading>
             <Text className="mt-2" size="sm">
               {production === null || production.stages.length === 0
                 ? 'The ten production stages appear as soon as the funds are held.'

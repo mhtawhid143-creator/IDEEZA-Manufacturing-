@@ -146,9 +146,9 @@ const RecordsPage = async ({
           {production.stages.map((stage) => (
             <li
               key={stage.id}
-              className="flex items-center justify-between gap-3 text-sm"
+              className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3"
             >
-              <span className="min-w-0 truncate text-body">{stage.label}</span>
+              <span className="min-w-0 text-body">{stage.label}</span>
               <span className="flex shrink-0 items-center gap-2">
                 <Text tone="muted" size="xs">
                   {stage.evidenceCount} record{stage.evidenceCount === 1 ? '' : 's'}

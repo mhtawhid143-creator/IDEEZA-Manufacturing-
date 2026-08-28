@@ -175,7 +175,7 @@ const ProductPage = async ({
 
           <Card padded={false}>
             <div className="border-b border-line px-4 py-3 md:px-6">
-              <Heading level={4}>Bill of materials</Heading>
+              <Heading level={3}>Bill of materials</Heading>
             </div>
             {product.bomLines.length === 0 ? (
               <div className="p-4 md:p-6">
@@ -245,6 +245,7 @@ const ProductPage = async ({
             {product.reviews.length === 0 ? (
               <div className="mt-4">
                 <EmptyState
+                  framed={false}
                   title="No reviews yet"
                   description="A review is written after an order from this product has been delivered."
                 />
@@ -273,14 +274,14 @@ const ProductPage = async ({
           </Card>
 
           <Card tone="brand">
-            <Heading level={4}>What happens next</Heading>
+            <Heading level={3}>What happens next</Heading>
             <ol className="mt-3 flex flex-col gap-2">
               {[
                 'Choose the package and fill in the manufacturing requirements.',
                 'Select the manufacturers the request goes to, and send it.',
                 'Compare the quotes that come back, then pay to confirm the order.',
               ].map((step, index) => (
-                <li key={step} className="flex gap-2 text-sm text-body">
+                <li key={step} className="ids-measure flex gap-2 text-sm text-body">
                   <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand">
                     {index + 1}
                   </span>

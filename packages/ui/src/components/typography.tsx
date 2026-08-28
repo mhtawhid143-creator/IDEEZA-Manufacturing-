@@ -71,7 +71,10 @@ export const Text = ({
 }: TextProps) => {
   const Tag = as as ElementType;
   return (
-    <Tag className={cn(SIZE[size], TONE[tone], WEIGHT[weight], className)} {...rest}>
+    <Tag
+      className={cn('ids-measure', SIZE[size], TONE[tone], WEIGHT[weight], className)}
+      {...rest}
+    >
       {children}
     </Tag>
   );

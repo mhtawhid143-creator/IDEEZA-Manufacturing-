@@ -94,7 +94,7 @@ export const DesignSystemGallery = () => {
     <div className="flex flex-col gap-10">
       <header className="flex flex-col gap-2">
         <Heading level={1}>Design system</Heading>
-        <Text tone="muted" className="max-w-[70ch]">
+        <Text tone="muted">
           Every component the buyer surface is built from, with the tokens taken
           from the IDEEZA design system and the User Panel V2 file.
         </Text>

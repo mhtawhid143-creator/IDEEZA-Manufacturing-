@@ -118,7 +118,7 @@ export const Sidebar = ({ onNavigate, className }: SidebarProps) => (
         <button
           type="button"
           disabled
-          className="mt-3 w-full cursor-not-allowed rounded-md bg-disabled-bg px-3 py-2 text-sm font-semibold text-disabled-text"
+          className="mt-3 w-full cursor-not-allowed rounded-md bg-disabled-bg px-3 py-2 text-sm font-semibold text-muted"
         >
           Upgrade Plus
         </button>

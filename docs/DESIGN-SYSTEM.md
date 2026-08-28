@@ -168,3 +168,63 @@ built app and then checks it over HTTP and in a real Chromium: anonymous
 redirect, wrong password refused, sign-in, the shell, hub tabs, deep protected
 routes, a manufacturer account refused, unknown paths refused, console errors,
 failed requests, and the layout at 1440, 768 and 390 with screenshots.
+
+## 10. What the design detector measures, and what it is told to leave alone
+
+Both panels are scanned route by route with the `impeccable` detector — 52
+routes, at 1440×900 and at 390×844 — against the same design brief the Figma
+files were drawn to. What it found split into three kinds, and each kind is
+handled differently.
+
+### Fixed in the design system, so no screen has to remember it
+
+| Rule | Where it now lives |
+| --- | --- |
+| Text contrast at AA | every token in `styles/tokens.css` is measured, not judged by eye; `muted` sits at 4.54:1 on the canvas it is drawn on |
+| The measure of prose | `.ids-measure` — 40em, about 80 characters at any type size — applied by `Text`, so all 412 paragraphs keep it |
+| A card is the frame | `.ids-card .ids-state` drops the second outline when an empty or failed state lands inside a card |
+| Heading continuity | `CardHeader` and `SpecSection` title at level 2, states at level 2; no screen skips a level |
+| A control that is shown but inert | `buttonAppearance({ unavailable: true })` — readable text on a grey ground, not white on grey |
+| Buttons state their own padding | the Figma height stays exact; the vertical padding says what space that height already leaves |
+
+### Fixed on the screen it belonged to
+
+- The stage rows on the order records screen stacked their name above the count
+  on a phone. They had been truncating the stage name — the one thing the row
+  exists to say.
+- The buyer's rail read "Upgrade Plus" in disabled grey, which is not a disabled
+  control.
+- The save group on the draft form carried a level-4 screen-reader heading under
+  a level-2 section.
+
+### Deliberate, and why
+
+- **Inter everywhere.** The detector flags a single typeface as overuse. The
+  Figma brief pins Inter; a brief outranks a warning about variety.
+- **The brand purple on headings.** `#7c2db9` is the IDEEZA purple from the
+  brief, not a colour picked for effect.
+- **Disabled text at 3.1:1.** A disabled control that reads like an enabled one
+  is the worse defect.
+- **"Card inside card" on controls.** The rule counts any rounded, bordered box
+  with a background, so a button or a selectable chip inside a card counts as a
+  nested card. Fifteen of the remaining findings are buttons and option chips.
+- **The package groups on the draft form.** Four outlined boxes inside one card,
+  one radius step down, each holding a different kind of file. They are
+  sub-items of one section, and the outline is what separates them.
+- **Full-bleed tables and panes.** A table inside a card carries its inset in
+  the cells, which is why the card is `padded={false}`. The rule reads the card
+  and sees no padding.
+- **A truncated message preview.** A preview line is meant to be a preview; the
+  order records screen is the case where truncation hid something that mattered,
+  and that one is fixed.
+- **The author's name on every message in a thread.** The rule reads repeated
+  text inside one container as a template wired wrong. In a conversation it is
+  who is speaking.
+- **The tall left column on a request detail.** Main content left, summary
+  right, is the layout the Figma detail screens are drawn to.
+
+Three screens are not covered by this scan: the two checkout steps and the case
+screen, which exist only after a buyer has accepted a quote or opened a case,
+and the review database does not hold those states. They are built from the same
+components as the 52 that were scanned, and both browser harnesses drive them
+end to end.

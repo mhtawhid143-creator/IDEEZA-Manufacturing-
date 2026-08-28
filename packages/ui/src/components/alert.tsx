@@ -30,7 +30,7 @@ export const Alert = ({ tone = 'info', title, children, actions, className }: Al
   >
     <div className="min-w-0 flex-1">
       <p className="text-sm font-semibold">{title}</p>
-      {children !== undefined && <div className="mt-1 text-sm">{children}</div>}
+      {children !== undefined && <div className="ids-measure mt-1 text-sm">{children}</div>}
     </div>
     {actions !== undefined && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
   </div>

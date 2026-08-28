@@ -69,7 +69,7 @@ export const FormField = ({
         </label>
         {children}
         {hint !== undefined && error === undefined && (
-          <p id={hintId} className="text-xs text-muted">
+          <p id={hintId} className="ids-measure text-xs text-muted">
             {hint}
           </p>
         )}

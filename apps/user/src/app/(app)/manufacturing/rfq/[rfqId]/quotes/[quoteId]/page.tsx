@@ -146,7 +146,7 @@ const QuoteDetailPage = async ({
           {quote.volumePrices.length > 0 && (
             <Card padded={false}>
               <div className="border-b border-line px-4 py-3 md:px-6">
-                <Heading level={4}>Priced at other volumes</Heading>
+                <Heading level={3}>Priced at other volumes</Heading>
                 <Text tone="muted" size="xs" className="mt-0.5 block">
                   You asked for these volumes on the request, and this manufacturer
                   priced them.
@@ -191,7 +191,7 @@ const QuoteDetailPage = async ({
           {quote.items.length > 0 && (
             <Card padded={false}>
               <div className="border-b border-line px-4 py-3 md:px-6">
-                <Heading level={4}>Priced lines</Heading>
+                <Heading level={3}>Priced lines</Heading>
               </div>
               <DataTable
                 caption={`Priced lines in ${quote.manufacturerName}'s quote`}
@@ -352,7 +352,7 @@ const QuoteDetailPage = async ({
           )}
 
           <Card tone="brand">
-            <Heading level={4}>What happens if you accept</Heading>
+            <Heading level={3}>What happens if you accept</Heading>
             <ol className="mt-3 flex flex-col gap-2 text-sm text-body">
               {[
                 'The request closes and every other quote on it loses.',

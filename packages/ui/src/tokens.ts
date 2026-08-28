@@ -13,7 +13,7 @@ export const tokens = {
     accentStrong: '#d323b0',
     heading: '#0e0515',
     body: '#4a4450',
-    muted: '#727073',
+    muted: '#716f72',
     surface: '#ffffff',
     canvas: '#f8f5f9',
     border: '#f3eafa',

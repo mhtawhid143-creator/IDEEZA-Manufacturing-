@@ -9,19 +9,36 @@ export interface EmptyStateProps {
   readonly description?: ReactNode;
   readonly action?: ReactNode;
   readonly icon?: ReactNode;
+  /**
+   * Whether it draws its own outline. Inside a card the card is already the
+   * frame, and a frame inside a frame is two boxes for one absence. The
+   * stylesheet takes the outline away in that case either way; saying it here
+   * means the markup says it too.
+   */
+  readonly framed?: boolean | undefined;
   readonly className?: string;
 }
 
 /** Nothing here yet, and what to do about it. */
-export const EmptyState = ({ title, description, action, icon, className }: EmptyStateProps) => (
+export const EmptyState = ({
+  title,
+  description,
+  action,
+  icon,
+  framed = true,
+  className,
+}: EmptyStateProps) => (
   <div
     className={cn(
-      'flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-surface px-6 py-12 text-center',
+      'ids-state flex flex-col items-center justify-center gap-3 px-6 text-center',
+      framed
+        ? 'rounded-xl border border-dashed border-line-strong bg-surface py-12'
+        : 'py-8',
       className,
     )}
   >
     {icon !== undefined && <div className="text-muted">{icon}</div>}
-    <Heading level={3}>{title}</Heading>
+    <Heading level={2}>{title}</Heading>
     {description !== undefined && (
       <Text tone="muted" className="max-w-md">
         {description}
@@ -63,11 +80,11 @@ export const ErrorState = ({
   <div
     role="alert"
     className={cn(
-      'flex flex-col items-center justify-center gap-3 rounded-xl border border-danger/30 bg-danger-weak/40 px-6 py-12 text-center',
+      'ids-state flex flex-col items-center justify-center gap-3 rounded-xl border border-danger/30 bg-danger-weak/40 px-6 py-12 text-center',
       className,
     )}
   >
-    <Heading level={3}>{title}</Heading>
+    <Heading level={2}>{title}</Heading>
     <Text tone="muted" className="max-w-md">
       {description}
     </Text>
@@ -130,7 +147,7 @@ export const NotBuiltYet = ({ title, plannedIn, children, className }: NotBuiltY
     <p className="text-xs font-semibold uppercase tracking-wide text-brand">
       Not implemented yet
     </p>
-    <Heading level={3} className="mt-2">
+    <Heading level={2} className="mt-2">
       {title}
     </Heading>
     <Text tone="muted" className="mx-auto mt-2 max-w-lg">
