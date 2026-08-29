@@ -7,7 +7,6 @@ import {
   Alert,
   Button,
   DataTable,
-  DropdownMenu,
   EmptyState,
   FormField,
   Input,
@@ -18,6 +17,7 @@ import {
   StatusChip,
   Text,
 } from '@ideeza/ui';
+import { RowMenu } from '@/components/row-menu.js';
 
 export interface PayoutListRow {
   readonly id: string;
@@ -244,7 +244,7 @@ export const PayoutList = ({
             header: <span className="ids-sr-only">Actions</span>,
             align: 'right',
             cell: (row) => (
-              <DropdownMenu
+              <RowMenu
                 label={`Actions for payout ${row.id.slice(-8)}`}
                 items={[
                   { id: 'order', label: 'Open the order', href: `/orders/${row.orderId}` },

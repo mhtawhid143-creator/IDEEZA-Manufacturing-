@@ -126,8 +126,8 @@ export const Navbar = ({
 
       <DropdownMenu
         label="Account"
+        heading={email}
         items={[
-          { id: 'email', label: email, disabled: true },
           {
             id: 'sign-out',
             label: 'Sign out',

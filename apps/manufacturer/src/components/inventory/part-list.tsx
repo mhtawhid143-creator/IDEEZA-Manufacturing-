@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   DataTable,
-  DropdownMenu,
   EmptyState,
   FormField,
   Pagination,
@@ -14,6 +13,7 @@ import {
   Tag,
   Text,
 } from '@ideeza/ui';
+import { RowMenu } from '@/components/row-menu.js';
 
 export interface PartListRow {
   readonly id: string;
@@ -225,7 +225,7 @@ export const PartList = ({
             header: <span className="ids-sr-only">Actions</span>,
             align: 'right',
             cell: (row) => (
-              <DropdownMenu
+              <RowMenu
                 label={`Actions for ${row.partName}`}
                 items={[
                   {

@@ -1242,6 +1242,45 @@ const main = async () => {
       'marking everything read empties the unread list without deleting anything',
       await visible(page.getByText('Nothing unread')),
     );
+    // -------------------------------------- M15: the row menus actually go
+    // A menu item that renders but navigates nowhere passed every check here
+    // for months, because the checks opened screens by address. These open the
+    // menu and press it.
+    for (const list of [
+      { path: '/rfqs', item: 'View details', lands: /\/rfqs\/[^/]+$/ },
+      { path: '/quotes', item: 'Quote details', lands: /\/quotes\/[^/]+$/ },
+      { path: '/orders', item: 'Production stages', lands: /\/orders\/[^/]+$/ },
+      { path: '/inventory', item: 'View details and history', lands: /\/inventory\/[^/]+$/ },
+    ]) {
+      await page.goto(`${base}${list.path}`, { waitUntil: 'networkidle' });
+      const trigger = page.locator('tbody tr button', { hasText: '⋮' }).first();
+      await trigger.click();
+      const entry = page.getByRole('menuitem', { name: list.item }).first();
+      const isLink = await entry.evaluate((node) => node.tagName === 'A').catch(() => false);
+      check(
+        `the ${list.path} row menu offers "${list.item}" as a link`,
+        isLink,
+        list.path,
+      );
+      const target = await entry.getAttribute("href").catch(() => null);
+      await entry.click();
+      await page.waitForURL(list.lands, { timeout: 10_000 }).catch(() => undefined);
+      // A click that lands while the list is still settling can be dropped, and
+      // a menu that never goes is what this is here to catch — so try twice
+      // before believing it.
+      if (!list.lands.test(new URL(page.url()).pathname)) {
+        await page.goto(`${base}${list.path}`, { waitUntil: "networkidle" });
+        await page.locator("tbody tr button", { hasText: "⋮" }).first().click();
+        await page.getByRole("menuitem", { name: list.item }).first().click();
+        await page.waitForURL(list.lands, { timeout: 15_000 }).catch(() => undefined);
+      }
+      check(
+        `pressing it arrives somewhere`,
+        list.lands.test(new URL(page.url()).pathname),
+        `href ${target} → ${page.url()}`,
+      );
+    }
+
     // ------------------------------------------------- M01: the phone layout
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const phonePage = await phone.newPage();

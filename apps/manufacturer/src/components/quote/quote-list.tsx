@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   DataTable,
-  DropdownMenu,
   EmptyState,
   FormField,
   Input,
@@ -15,6 +14,7 @@ import {
   StatusChip,
   Text,
 } from '@ideeza/ui';
+import { RowMenu } from '@/components/row-menu.js';
 
 export interface QuoteListRow {
   readonly quoteId: string;
@@ -225,7 +225,7 @@ export const QuoteList = ({
             header: <span className="ids-sr-only">Actions</span>,
             align: 'right',
             cell: (row) => (
-              <DropdownMenu
+              <RowMenu
                 label={`Actions for ${row.productName}`}
                 items={[
                   { id: 'open', label: 'Quote details', href: `/quotes/${row.quoteId}` },

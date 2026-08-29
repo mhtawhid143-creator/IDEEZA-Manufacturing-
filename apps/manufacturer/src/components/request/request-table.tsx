@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   DataTable,
-  DropdownMenu,
   EmptyState,
   Pagination,
   StatusChip,
   Text,
 } from '@ideeza/ui';
+import { RowMenu } from '@/components/row-menu.js';
 
 export interface InboxRow {
   readonly rfqId: string;
@@ -149,7 +149,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
             header: <span className="ids-sr-only">Actions</span>,
             align: 'right',
             cell: (row) => (
-              <DropdownMenu
+              <RowMenu
                 label={`Actions for ${row.productName}`}
                 items={[
                   { id: 'open', label: 'View details', href: `/rfqs/${row.rfqId}` },

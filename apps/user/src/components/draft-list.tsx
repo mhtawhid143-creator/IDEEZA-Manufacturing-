@@ -5,7 +5,6 @@ import { useState } from 'react';
 import {
   Badge,
   Button,
-  DropdownMenu,
   EmptyState,
   IconButton,
   Modal,
@@ -14,6 +13,7 @@ import {
   buttonAppearance,
   cn,
 } from '@ideeza/ui';
+import { RowMenu } from '@/components/row-menu.js';
 import { PACKAGE_COPY, selectHref } from '@/lib/rfq-copy.js';
 import type { PackageKind } from '@ideeza/domain';
 
@@ -197,7 +197,7 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                 <Link href={selectHref(draft.rfqId)} className={buttonAppearance({ size: 'sm' })}>
                   Select manufacturer
                 </Link>
-                <DropdownMenu
+                <RowMenu
                   label={`More actions for ${draft.productName}`}
                   align="end"
                   items={[

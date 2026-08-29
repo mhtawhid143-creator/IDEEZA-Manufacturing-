@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Badge,
-  DropdownMenu,
   EmptyState,
   StatusChip,
   Tag,
@@ -13,6 +12,7 @@ import {
   buttonAppearance,
   type MenuItem,
 } from '@ideeza/ui';
+import { RowMenu } from '@/components/row-menu.js';
 import { goTo } from '@/lib/navigate.js';
 
 export interface OrderRow {
@@ -215,7 +215,7 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
               </Badge>
             )}
             <StatusChip status={row.status} withDot />
-            <DropdownMenu
+            <RowMenu
               label={`Actions for ${row.productName}`}
               items={menuFor(row, (href) => goTo(router, href))}
               trigger={(props) => (

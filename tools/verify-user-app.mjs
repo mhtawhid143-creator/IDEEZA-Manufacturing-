@@ -1840,6 +1840,27 @@ const main = async () => {
       'printed parts are told there is no board specification',
       await visible(page.getByText('There is no board in this package')),
     );
+    // The draft row menu, pressed rather than routed around. An item that
+    // renders but goes nowhere is invisible to a check that opens screens by
+    // address, which is how the shop side kept four dead ones.
+    await page.goto(`${base}/manufacturing`, { waitUntil: 'networkidle' });
+    const draftMenu = page.getByRole('button', { name: /More actions for/ }).first();
+    if (await draftMenu.count() > 0) {
+      await draftMenu.click();
+      const edit = page.getByRole('menuitem', { name: 'Edit the draft' }).first();
+      check(
+        'the draft row menu offers the draft as a link',
+        await edit.evaluate((node) => node.tagName === 'A').catch(() => false),
+      );
+      await edit.click();
+      await page.waitForURL(/\/manufacturing\/draft\/[^/]+$/, { timeout: 20_000 }).catch(() => undefined);
+      check(
+        'pressing it opens the draft',
+        /\/manufacturing\/draft\/[^/]+$/.test(new URL(page.url()).pathname),
+        page.url(),
+      );
+    }
+
     // Keyboard reachability of the skip-free shell.
     await page.goto(`${base}/manufacturing`, { waitUntil: 'networkidle' });
     await page.keyboard.press('Tab');
