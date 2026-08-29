@@ -94,3 +94,33 @@ again when a migration is added:
 ```bash
 DATABASE_URL="«…»" node tools/prepare-demo-database.mjs
 ```
+
+## The commit author has to be a GitHub account
+
+Vercel refuses to build a commit whose author email it cannot match to a GitHub
+account, and it refuses quietly: the deployment sits at *Building* with no log
+and no failure, so it reads as a slow build or an exhausted quota. The
+deployment page is the only place that says what happened —
+
+> Deployment Blocked — the deployment was blocked because the commit email
+> `…` could not be matched to a GitHub account.
+
+Four deployments were lost to this before anyone read that page, and a hung
+deployment keeps its build slot, so everything queued behind it hangs too.
+
+Either address works, as long as the author email belongs to the GitHub account
+that owns the connected repository:
+
+```bash
+# The account's own address, which needs nothing set up:
+git config user.email "«github-username»@users.noreply.github.com"
+```
+
+or add the address you already commit under to that GitHub account, under
+Settings → Emails, and verify it.
+
+Set it on the repository rather than globally — the deploying identity is a
+property of this project, not of the machine.
+
+If a deployment is already blocked, a redeploy of the same commit stays blocked:
+the author is part of the commit. Fix the address, make a commit, and push.
