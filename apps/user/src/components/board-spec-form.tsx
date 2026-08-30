@@ -88,6 +88,13 @@ export interface BoardSpecFormProps {
   readonly boardFiles: readonly string[];
 }
 
+/**
+ * The colour a solder mask actually is.
+ *
+ * Not design tokens and deliberately not taken from the design system: these
+ * stand for the physical finish the board will be made in, so a buyer choosing
+ * green is looking at green. A theme change must not repaint them.
+ */
 const SWATCH: Readonly<Record<string, string>> = {
   green: '#0f7b3f',
   black: '#111111',

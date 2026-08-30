@@ -12,9 +12,8 @@
  * components would be a large change that carries no meaning; one file that
  * says which is which carries all of it, and re-theming stays a token edit.
  *
- * Where the system offers no equivalent — the pink accent the panels are drawn
- * with, the layout measurements taken from the panel frames — the value stays
- * here and says so.
+ * Where the system offers no equivalent — the layout measurements taken from
+ * the panel frames — the value stays here and says so.
  */
 
 @import '@ideeza/tokens/css';
@@ -30,11 +29,14 @@
   --ids-color-brand-surface-hover: var(--color-violet-100);
   --ids-color-brand-surface-pressed: var(--color-violet-200);
 
-  /* The panels' pink, which the system does not carry. It is the second brand
-     colour of the User Panel file; when the system takes it, this goes. */
-  --ids-color-accent: #fe2ad4;
-  /* The same pink, deep enough to carry white text at AA (4.5:1). */
-  --ids-color-accent-strong: #d323b0;
+  /* The second colour, for the few marks that must not read as the brand:
+     a count on the bell, the money line in the feed. The older Figma files
+     used a pink here; the design system has no pink, and orange is what it
+     offers for attention that is not an error. */
+  --ids-color-accent: var(--color-bg-warning);
+  /* The step deep enough to carry the white count drawn on it: 600 reads
+     3.6:1, under AA for text that small; 700 reads 5.2:1. */
+  --ids-color-accent-strong: var(--color-orange-700);
 
   /* Text ----------------------------------------------------------------- */
   --ids-color-heading: var(--color-text-primary);
@@ -67,6 +69,9 @@
   --ids-color-info-weak: var(--color-blue-100);
   --ids-color-neutral: var(--color-gray-600);
   --ids-color-neutral-weak: var(--color-gray-100);
+  /* Ink that sits on the warning tint, and the scrim behind a dialog. */
+  --ids-color-warning-ink: var(--color-text-warning);
+  --ids-color-overlay: var(--color-bg-overlay);
 
   /* Focus ---------------------------------------------------------------- */
   --ids-color-focus: var(--color-border-focus);
@@ -108,11 +113,9 @@
  *
  * The design system carries a dark value for every semantic token and switches
  * them on `[data-theme="dark"]`, so the mapping above is the whole of it: these
- * names follow wherever the system takes them. What stays here is the pink,
- * which the system does not hold, and the shadow the pink casts.
+ * names follow wherever the system takes them. The one line here is the brand
+ * shadow, which is a shape rather than a colour the system names.
  */
 :root[data-theme='dark'] {
-  --ids-color-accent: #fe2ad4;
-  --ids-color-accent-strong: #ff5ce0;
   --ids-shadow-brand: 0 8px 24px rgba(145, 38, 217, 0.4);
 }

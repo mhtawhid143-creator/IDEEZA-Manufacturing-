@@ -22,6 +22,8 @@ module.exports = {
         },
         accent: 'var(--ids-color-accent)',
         'accent-strong': 'var(--ids-color-accent-strong)',
+        'warning-ink': 'var(--ids-color-warning-ink)',
+        overlay: 'var(--ids-color-overlay)',
         heading: 'var(--ids-color-heading)',
         body: 'var(--ids-color-body)',
         muted: 'var(--ids-color-muted)',

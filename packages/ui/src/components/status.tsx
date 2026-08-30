@@ -105,7 +105,7 @@ const CHIP: Record<Tone, string> = {
   neutral: 'bg-neutral-weak text-neutral',
   brand: 'bg-brand-weak text-brand',
   success: 'bg-success-weak text-success',
-  warning: 'bg-warning-weak text-[#8a5a00]',
+  warning: 'bg-warning-weak text-warning-ink',
   danger: 'bg-danger-weak text-danger-strong',
   info: 'bg-info-weak text-info',
 };

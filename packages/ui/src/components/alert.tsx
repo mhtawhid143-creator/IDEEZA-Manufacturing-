@@ -12,7 +12,7 @@ export interface AlertProps {
 
 const TONE = {
   info: 'border-info/30 bg-info-weak text-info',
-  warning: 'border-warning/40 bg-warning-weak text-[#8a5a00]',
+  warning: 'border-warning/40 bg-warning-weak text-warning-ink',
   danger: 'border-danger/40 bg-danger-weak text-danger-strong',
   success: 'border-success/30 bg-success-weak text-success',
   brand: 'border-brand/30 bg-brand-weak text-brand',

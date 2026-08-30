@@ -8,7 +8,6 @@ export {
   type ButtonSize,
   type ButtonVariant,
 } from './lib/button-appearance.js';
-export { tokens, type Tokens } from './tokens.js';
 
 export * from './components/typography.js';
 export * from './components/button.js';

@@ -97,7 +97,7 @@ export const Modal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onKeyDown={onKeyDown}>
       <div
-        className="absolute inset-0 animate-fade-in bg-[#0e0515]/40"
+        className="absolute inset-0 animate-fade-in bg-overlay/40"
         onClick={onClose}
         aria-hidden
       />
@@ -171,7 +171,7 @@ export const Drawer = ({
 
   return (
     <div className="fixed inset-0 z-50" onKeyDown={onKeyDown}>
-      <div className="absolute inset-0 animate-fade-in bg-[#0e0515]/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade-in bg-overlay/40" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
