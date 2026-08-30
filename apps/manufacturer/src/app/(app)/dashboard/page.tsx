@@ -57,6 +57,7 @@ const ACTIVITY_DOT: Readonly<Record<string, string>> = {
   quote: 'bg-bg-success',
   order: 'bg-bg-info',
   money: 'bg-orange-700',
+  problem: 'bg-bg-error',
 };
 
 /** The donut's slices, in the fixed order the palette was validated in. */
@@ -121,30 +122,65 @@ const WorkMixRing = ({
  * up — unreadable is better than hidden.
  */
 const ACTIVITY_LABEL: Readonly<Record<string, string>> = {
-  'rfq.submitted': 'Request received',
-  'rfq.recipient_viewed': 'Request opened',
-  'rfq.recipient_declined': 'Request declined',
-  'quote.submitted': 'Quote sent',
-  'quote.revised': 'Quote revised',
-  'quote.withdrawn': 'Quote withdrawn',
-  'quote.accepted': 'Quote accepted',
-  'quote.rejected': 'Quote rejected',
-  'substitution.suggested': 'Substitute suggested',
-  'substitution.approved': 'Substitute approved',
-  'substitution.rejected': 'Substitute rejected',
-  'order.created': 'Order created',
-  'order.payment_captured': 'Payment held by IDEEZA',
-  'order.production_started': 'Production started',
-  'order.stage_completed': 'Stage completed',
-  'order.evidence_attached': 'Evidence attached',
-  'order.shipped': 'Shipment recorded',
-  'order.delivered': 'Delivery confirmed',
-  'order.cancel_requested': 'Cancellation asked for',
-  'order.refund_requested': 'Refund asked for',
-  'dispute.opened': 'Issue opened',
-  'dispute.resolved': 'Issue resolved',
-  'payout.released': 'Payout released',
+  rfq_submitted: 'Request received',
+  rfq_withdrawn: 'Request withdrawn',
+  rfq_recipient_viewed: 'Request opened',
+  rfq_recipient_declined: 'Request declined',
+  rfq_recipient_expired: 'Request expired',
+  rfq_clarification_requested: 'Clarification asked for',
+  quote_submitted: 'Quote sent',
+  quote_revision_requested: 'Revision asked for',
+  quote_revised: 'Quote revised',
+  quote_accepted: 'Quote accepted',
+  quote_rejected: 'Quote rejected',
+  quote_expired: 'Quote expired',
+  quote_withdrawn: 'Quote withdrawn',
+  substitution_suggested: 'Substitute suggested',
+  substitution_approved: 'Substitute approved',
+  substitution_rejected: 'Substitute rejected',
+  payment_initiated: 'Payment started',
+  payment_secured: 'Payment held by IDEEZA',
+  payment_failed: 'Payment failed',
+  order_created: 'Order created',
+  order_confirmed: 'Order confirmed',
+  order_production_started: 'Production started',
+  order_stage_advanced: 'Stage advanced',
+  order_task_updated: 'Task updated',
+  order_shipped: 'Shipment recorded',
+  order_delivered: 'Delivery recorded',
+  order_delivery_confirmed: 'Delivery confirmed',
+  order_completed: 'Order completed',
+  order_cancel_requested: 'Cancellation asked for',
+  order_cancelled: 'Order cancelled',
+  refund_requested: 'Refund asked for',
+  refund_approved: 'Refund approved',
+  refund_rejected: 'Refund declined',
+  dispute_opened: 'Issue opened',
+  dispute_statement_added: 'Statement added',
+  dispute_resolved: 'Issue resolved',
+  payout_released: 'Payout released',
+  inventory_low_stock: 'Part running low',
+  inventory_out_of_stock: 'Part out of stock',
 };
+
+/**
+ * What kind of news a line is, which is what its dot says before the words are
+ * read. Anything that blocks work is the one that has to carry across a room.
+ */
+const ACTIVITY_TONE: Readonly<Record<string, 'request' | 'quote' | 'order' | 'money' | 'problem'>> =
+  {
+    rfq_recipient_declined: 'problem',
+    rfq_recipient_expired: 'problem',
+    quote_rejected: 'problem',
+    quote_expired: 'problem',
+    payment_failed: 'problem',
+    order_cancel_requested: 'problem',
+    order_cancelled: 'problem',
+    refund_requested: 'problem',
+    dispute_opened: 'problem',
+    inventory_low_stock: 'problem',
+    inventory_out_of_stock: 'problem',
+  };
 
 interface TileProps {
   readonly label: string;
@@ -670,29 +706,52 @@ const DashboardPage = async () => {
           </div>
         ) : (
           <ol aria-label="Recent activity" className="border-t border-border-subtle">
-            {sections.activity.map((entry) => (
-              <li
-                key={entry.id}
-                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-subtle px-4 py-2.5 last:border-b-0 md:px-6"
-              >
-                <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm text-text-secondary">
-                  <span
-                    aria-hidden
-                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${ACTIVITY_DOT[entry.tone] ?? 'bg-gray-600'}`}
-                  />
-                  <span className="font-semibold text-text-primary">
-                    {ACTIVITY_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}
+            {sections.activity.map((entry) => {
+              const tone = ACTIVITY_TONE[entry.kind] ?? entry.tone;
+              return (
+                <li
+                  key={entry.id}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-3 transition-colors last:border-b-0 hover:bg-bg-surface-raised/60 md:px-6"
+                >
+                  <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'h-2 w-2 shrink-0 rounded-sm',
+                        ACTIVITY_DOT[tone] ?? 'bg-gray-600',
+                      )}
+                    />
+                    <span className="font-medium text-text-secondary">
+                      {ACTIVITY_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}
+                    </span>
+                    <span aria-hidden className="text-text-tertiary">
+                      ·
+                    </span>
+                    {entry.href === null ? (
+                      <span className="font-medium text-text-brand">{entry.reference}</span>
+                    ) : (
+                      <Link
+                        href={entry.href}
+                        className="font-medium text-text-brand underline decoration-transparent underline-offset-2 transition-colors hover:decoration-current"
+                      >
+                        {entry.reference}
+                      </Link>
+                    )}
+                    {entry.detail !== null && (
+                      <>
+                        <span aria-hidden className="text-text-tertiary">
+                          ·
+                        </span>
+                        <span className="truncate text-xs text-text-tertiary">{entry.detail}</span>
+                      </>
+                    )}
                   </span>
-                  <span className="font-medium text-text-brand">{entry.reference}</span>
-                  {entry.detail !== null && (
-                    <span className="text-text-tertiary">· {entry.detail}</span>
-                  )}
-                </p>
-                <Text tone="muted" size="xs">
-                  {ago(entry.at, now)}
-                </Text>
-              </li>
-            ))}
+                  <Text tone="muted" size="xs" className="shrink-0">
+                    {ago(entry.at, now)}
+                  </Text>
+                </li>
+              );
+            })}
           </ol>
         )}
       </Card>

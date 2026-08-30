@@ -214,6 +214,8 @@ export interface DashboardActivityRow {
    */
   readonly reference: string;
   readonly detail: string | null;
+  /** Where the record can be read, when this shop has a screen for it. */
+  readonly href: string | null;
   /** Which of the four kinds of news this is, for the dot beside it. */
   readonly tone: 'request' | 'quote' | 'order' | 'money';
   readonly at: Date;
@@ -252,7 +254,7 @@ const PACKAGE_LABEL: Readonly<Record<string, string>> = {
 export const getDashboardSections = async (
   manufacturerId: ManufacturerId,
 ): Promise<DashboardSections> => {
-  const [orders, requests, parts, payouts, payoutTotals, events] = await Promise.all([
+  const [orders, requests, parts, payouts, shopQuotes, payoutTotals, events] = await Promise.all([
     database().manufacturingOrder.findMany({
       where: { manufacturerId },
       include: {
@@ -304,6 +306,15 @@ export const getDashboardSections = async (
       },
       orderBy: { createdAt: 'desc' },
       take: 6,
+    }),
+    database().quote.findMany({
+      where: { manufacturerId },
+      select: {
+        id: true,
+        rfq: { select: { package: { select: { product: { select: { name: true } } } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 60,
     }),
     database().payout.groupBy({
       by: ['status'],
@@ -377,6 +388,9 @@ export const getDashboardSections = async (
       (recipient) => [recipient.rfq.id, recipient.rfq.package.product.name] as const,
     ),
   );
+  const quoteNames = new Map(
+    shopQuotes.map((quote) => [quote.id, quote.rfq.package.product.name] as const),
+  );
 
   const describe = (
     kind: string,
@@ -384,28 +398,41 @@ export const getDashboardSections = async (
   ): {
     readonly reference: string;
     readonly detail: string | null;
+    readonly href: string | null;
     readonly tone: 'request' | 'quote' | 'order' | 'money';
   } => {
     if (kind.startsWith('payout')) {
+      const name = orderNames.get(subjectId) ?? null;
       return {
         reference: orderReference(subjectId),
-        detail: orderNames.get(subjectId) ?? null,
+        detail: name,
+        href: name === null ? null : `/orders/${subjectId}`,
         tone: 'money',
       };
     }
     if (kind.startsWith('order') || kind.startsWith('production') || kind.startsWith('stage')) {
+      const name = orderNames.get(subjectId) ?? null;
       return {
         reference: orderReference(subjectId),
-        detail: orderNames.get(subjectId) ?? null,
+        detail: name,
+        href: name === null ? null : `/orders/${subjectId}`,
         tone: 'order',
       };
     }
     if (kind.startsWith('quote') || kind.startsWith('substitution')) {
-      return { reference: quoteReference(subjectId), detail: null, tone: 'quote' };
+      const name = quoteNames.get(subjectId) ?? null;
+      return {
+        reference: quoteReference(subjectId),
+        detail: name,
+        href: name === null ? null : `/quotes/${subjectId}`,
+        tone: 'quote',
+      };
     }
+    const name = requestNames.get(subjectId) ?? null;
     return {
       reference: requestReference(subjectId),
-      detail: requestNames.get(subjectId) ?? null,
+      detail: name,
+      href: name === null ? null : `/rfqs/${subjectId}`,
       tone: 'request',
     };
   };
@@ -474,6 +501,7 @@ export const getDashboardSections = async (
         subject: event.subjectId,
         reference: named.reference,
         detail: named.detail,
+        href: named.href,
         tone: named.tone,
         at: event.occurredAt,
       };
