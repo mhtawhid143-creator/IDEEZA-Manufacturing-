@@ -110,3 +110,21 @@ table,
 [data-numeric] {
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * A screen-reader-only label is taken out of the flow with `position: absolute`,
+ * and an absolutely positioned box with no positioned ancestor is placed against
+ * the page rather than against the thing it belongs to. Inside a table that
+ * scrolls sideways on a phone, that puts a one-pixel box at the far edge of the
+ * full table width — 825px out on a 390px screen — and the page itself scrolls
+ * to reach it, so a swipe right lands the reader on empty paper.
+ *
+ * Anchoring the cell keeps the label where it looks like it is. Cells do not
+ * position anything else, and a menu that opens from a row carries its own
+ * anchor, so nothing that should overhang a row stops overhanging it.
+ */
+th,
+td,
+caption {
+  position: relative;
+}

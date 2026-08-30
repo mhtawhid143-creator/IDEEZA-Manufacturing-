@@ -1289,11 +1289,38 @@ const main = async () => {
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const phonePage = await phone.newPage();
     await signIn(phonePage, base, MEMBER_EMAIL);
-    const overflow = await phonePage.evaluate(
-      () =>
-        document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    check('the dashboard does not scroll sideways on a phone', overflow <= 1, `${overflow}px`);
+    //
+    // Asked as a swipe rather than as a measurement. `scrollWidth` answers a
+    // different question and answers it wrongly here: it counts boxes that are
+    // clipped out of sight, so it reports trouble on pages that have none, and
+    // it stayed quiet on the pages that did. What the reader feels is whether
+    // the page moves, so the page is told to move and asked where it went.
+    //
+    // One screen was never enough either. The dashboard has no wide table on
+    // it; every list does, and every list was sliding.
+    const slide = async (target) => {
+      await phonePage.goto(`${base}${target}`, { waitUntil: 'networkidle' });
+      return phonePage.evaluate(() => {
+        window.scrollTo(9999, 0);
+        const x = window.scrollX;
+        window.scrollTo(0, 0);
+        return x;
+      });
+    };
+
+    for (const target of [
+      '/dashboard',
+      '/rfqs',
+      '/quotes',
+      '/orders',
+      '/inventory',
+      '/payouts',
+      '/notifications',
+    ]) {
+      const slipped = await slide(target);
+      check(`${target} does not scroll sideways on a phone`, slipped <= 1, `${slipped}px`);
+    }
+    await phonePage.goto(`${base}/dashboard`, { waitUntil: 'networkidle' });
     await phonePage.getByRole('button', { name: 'Open navigation' }).click();
     check(
       'the rail becomes a drawer on a phone',

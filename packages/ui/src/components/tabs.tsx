@@ -55,10 +55,10 @@ export const Tabs = ({
     const inner = (
       <>
         {item.label}
+        {/* A count of one is one: the padding this carried made every small
+            number read as a two-digit field on a form. */}
         {item.count !== undefined && (
-          <Badge tone={active ? 'brand' : 'neutral'}>
-            {String(item.count).padStart(2, '0')}
-          </Badge>
+          <Badge tone={active ? 'brand' : 'neutral'}>{item.count}</Badge>
         )}
       </>
     );

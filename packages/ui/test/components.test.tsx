@@ -190,7 +190,12 @@ describe('Tabs', () => {
     expect(tabs).toHaveLength(2);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('tabpanel').textContent).toBe('Overview panel');
-    expect(screen.getByText('04')).toBeDefined();
+    // Four things, written as four. The badge used to pad to two digits, which
+    // turned a tab holding nothing into "00" and read as a code rather than a
+    // count — so the test that fixed the padding in place is now the test that
+    // keeps it out.
+    expect(screen.getByText('4')).toBeDefined();
+    expect(screen.queryByText('04')).toBeNull();
 
     await userEvent.click(screen.getByRole('tab', { name: /Files/ }));
     expect(onSelect).toHaveBeenCalledWith('b');
