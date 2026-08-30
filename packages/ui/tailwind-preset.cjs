@@ -192,13 +192,16 @@ module.exports = {
       spacing: {
         2.5: "10px",
         7: "28px",
-        navbar: "var(--ids-navbar-height)",
-        sidebar: "var(--ids-sidebar-width)",
-        gutter: "var(--ids-content-gutter)",
+        navbar: "var(--layout-navbar-height)",
+        sidebar: "var(--layout-sidebar-width)",
+        gutter: "var(--layout-gutter)",
       },
 
       maxWidth: {
-        content: 'var(--ids-content-max)',
+        content: 'var(--layout-content-max)',
+        // The measure a line of prose is read at: about 80 characters, at any
+        // size, because it scales with the type rather than being a pixel.
+        measure: '40em',
       },
 
       screens: {
@@ -218,24 +221,24 @@ module.exports = {
       },
 
       keyframes: {
-        'ids-fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
-        'ids-slide-up': {
+        'ui-fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'ui-slide-up': {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
-        'ids-slide-in-right': {
+        'ui-slide-in-right': {
           from: { transform: 'translateX(100%)' },
           to: { transform: 'translateX(0)' },
         },
-        'ids-spin': { to: { transform: 'rotate(360deg)' } },
+        'ui-spin': { to: { transform: 'rotate(360deg)' } },
       },
 
       animation: {
-        'fade-in': 'ids-fade-in var(--motion-duration-fast) var(--motion-easing-standard)',
-        'slide-up': 'ids-slide-up var(--motion-duration-normal) var(--motion-easing-decelerate)',
+        'fade-in': 'ui-fade-in var(--motion-duration-fast) var(--motion-easing-standard)',
+        'slide-up': 'ui-slide-up var(--motion-duration-normal) var(--motion-easing-decelerate)',
         'slide-in-right':
-          'ids-slide-in-right var(--motion-duration-slow) var(--motion-easing-decelerate)',
-        spin: 'ids-spin 900ms linear infinite',
+          'ui-slide-in-right var(--motion-duration-slow) var(--motion-easing-decelerate)',
+        spin: 'ui-spin 900ms linear infinite',
       },
     },
   },

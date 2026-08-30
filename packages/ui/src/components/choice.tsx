@@ -77,7 +77,7 @@ export interface RadioGroupProps {
 /** A radio group needs a fieldset and a legend to be announced as a group. */
 export const RadioGroup = ({ legend, children, className, legendHidden = false }: RadioGroupProps) => (
   <fieldset className={cn('flex flex-col gap-2', className)}>
-    <legend className={cn('mb-1 text-sm font-medium text-text-primary', legendHidden && 'ids-sr-only')}>
+    <legend className={cn('mb-1 text-sm font-medium text-text-primary', legendHidden && 'sr-only')}>
       {legend}
     </legend>
     {children}
@@ -116,7 +116,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
         )}
         {...rest}
       />
-      <label htmlFor={inputId} className={cn('text-sm text-text-primary', labelHidden && 'ids-sr-only')}>
+      <label htmlFor={inputId} className={cn('text-sm text-text-primary', labelHidden && 'sr-only')}>
         {label}
       </label>
     </div>

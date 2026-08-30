@@ -39,7 +39,7 @@ export const AppShell = ({
       />
 
       <div className="flex">
-        <div className="sticky top-navbar hidden h-[calc(100dvh-var(--ids-navbar-height))] lg:block">
+        <div className="sticky top-navbar hidden h-[calc(100dvh-var(--layout-navbar-height))] lg:block">
           <Sidebar />
         </div>
 

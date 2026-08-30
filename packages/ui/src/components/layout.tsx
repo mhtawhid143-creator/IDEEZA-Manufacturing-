@@ -73,7 +73,7 @@ export const Avatar = ({ name, size = 'md', imageUrl, className }: AvatarProps) 
       // image component; the app supplies an already sized avatar url.
       <img src={imageUrl} alt="" className="h-full w-full object-cover" />
     )}
-    <span className="ids-sr-only">{name}</span>
+    <span className="sr-only">{name}</span>
   </span>
 );
 

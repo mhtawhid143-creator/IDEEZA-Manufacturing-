@@ -118,7 +118,7 @@ export const ManufacturerCard = ({
           </div>
         </div>
         <label className="flex shrink-0 items-center gap-2">
-          <span className="ids-sr-only">
+          <span className="sr-only">
             {blocked
               ? `${manufacturer.displayName} cannot build this request`
               : `Select ${manufacturer.displayName}`}

@@ -7,7 +7,7 @@ import './globals.css';
 const manrope = Manrope({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--ids-font-loaded',
+  variable: '--font-loaded',
 });
 
 export const metadata: Metadata = {

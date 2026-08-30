@@ -137,7 +137,7 @@ export const SpecSection = ({
       <div className="min-w-0">
         <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
         {description !== undefined && (
-          <p className="ids-measure mt-0.5 text-xs text-text-tertiary">{description}</p>
+          <p className="max-w-measure mt-0.5 text-xs text-text-tertiary">{description}</p>
         )}
       </div>
       {actions}

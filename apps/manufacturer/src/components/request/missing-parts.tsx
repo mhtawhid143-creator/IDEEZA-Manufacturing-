@@ -200,7 +200,7 @@ export const MissingParts = ({
 
           <div className="w-full overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-              <caption className="ids-sr-only">
+              <caption className="sr-only">
                 Parts this shop cannot cover from stock
               </caption>
               <thead>

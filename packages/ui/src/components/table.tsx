@@ -44,7 +44,7 @@ export const DataTable = <TRow,>({
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
       <table className="w-full border-collapse text-sm">
-        <caption className={cn('text-left text-sm text-text-tertiary', captionHidden && 'ids-sr-only')}>
+        <caption className={cn('text-left text-sm text-text-tertiary', captionHidden && 'sr-only')}>
           {caption}
         </caption>
         <thead>

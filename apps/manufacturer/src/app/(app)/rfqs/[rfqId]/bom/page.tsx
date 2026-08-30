@@ -172,7 +172,7 @@ const BomPage = async ({
         ) : (
           <div className="w-full overflow-x-auto border-t border-border-subtle">
             <table className="w-full border-collapse text-sm">
-              <caption className="ids-sr-only">
+              <caption className="sr-only">
                 Bill of materials for {request.productName}
               </caption>
               <thead>

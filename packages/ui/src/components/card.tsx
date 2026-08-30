@@ -28,7 +28,7 @@ export const Card = ({
 }: CardProps) => (
   <div
     className={cn(
-      'ids-card rounded-xl border bg-bg-surface',
+      'ui-card rounded-xl border bg-bg-surface',
       TONE[tone],
       padded && 'p-4 md:p-6',
       interactive &&

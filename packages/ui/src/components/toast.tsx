@@ -80,7 +80,7 @@ export const ToastProvider = ({ children }: { readonly children: ReactNode }) =>
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed left-1/2 top-[calc(var(--ids-navbar-height)+12px)] z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-col gap-2"
+        className="pointer-events-none fixed left-1/2 top-[calc(var(--layout-navbar-height)+12px)] z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-col gap-2"
       >
         {toasts.map((toast) => (
           <div

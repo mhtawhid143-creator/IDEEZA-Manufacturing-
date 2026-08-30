@@ -47,31 +47,14 @@ h6 {
   }
 }
 
-/* The measure a line of prose is read at: about 80 characters, at any size. */
-.ids-measure {
-  max-width: 40em;
-}
-
 /*
  * A card is already a frame. An empty or failed state that lands inside one
  * keeps its words and its centring and drops its own outline, so the reader
  * sees one box instead of a box in a box.
  */
-.ids-card .ids-state {
+.ui-card .ui-state {
   border-width: 0;
   background-color: transparent;
   padding-block: 2rem;
 }
 
-/* Screen reader only, used for labels that are visually implied. */
-.ids-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}

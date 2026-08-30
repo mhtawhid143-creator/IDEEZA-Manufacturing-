@@ -72,7 +72,7 @@ export const Text = ({
   const Tag = as as ElementType;
   return (
     <Tag
-      className={cn('ids-measure', SIZE[size], TONE[tone], WEIGHT[weight], className)}
+      className={cn('max-w-measure', SIZE[size], TONE[tone], WEIGHT[weight], className)}
       {...rest}
     >
       {children}

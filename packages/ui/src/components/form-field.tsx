@@ -57,7 +57,7 @@ export const FormField = ({
           htmlFor={inputId}
           className={cn(
             'text-sm font-medium text-text-primary',
-            labelHidden && 'ids-sr-only',
+            labelHidden && 'sr-only',
           )}
         >
           {label}
@@ -69,7 +69,7 @@ export const FormField = ({
         </label>
         {children}
         {hint !== undefined && error === undefined && (
-          <p id={hintId} className="ids-measure text-xs text-text-tertiary">
+          <p id={hintId} className="max-w-measure text-xs text-text-tertiary">
             {hint}
           </p>
         )}

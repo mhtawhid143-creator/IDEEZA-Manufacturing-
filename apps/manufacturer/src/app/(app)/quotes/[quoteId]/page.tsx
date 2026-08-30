@@ -140,7 +140,7 @@ const QuoteDetailPage = async ({
           </div>
           <div className="w-full overflow-x-auto border-t border-border-subtle">
             <table className="w-full border-collapse text-sm">
-              <caption className="ids-sr-only">Prices at other volumes</caption>
+              <caption className="sr-only">Prices at other volumes</caption>
               <thead>
                 <tr className="border-b border-border-subtle bg-bg-surface-raised">
                   {['Volume', 'Unit price', 'Total', 'Lead time'].map((header) => (

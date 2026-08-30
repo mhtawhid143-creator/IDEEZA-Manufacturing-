@@ -392,7 +392,7 @@ const DashboardPage = async () => {
           ) : (
             <div className="overflow-x-auto border-t border-border-subtle">
               <table className="w-full border-collapse text-sm">
-                <caption className="ids-sr-only">Orders in production</caption>
+                <caption className="sr-only">Orders in production</caption>
                 <thead>
                   <tr className="bg-bg-page">
                     <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary md:px-6">
@@ -528,7 +528,7 @@ const DashboardPage = async () => {
           ) : (
             <div className="w-full overflow-x-auto border-t border-border-subtle">
               <table className="w-full border-collapse text-sm">
-                <caption className="ids-sr-only">Inventory health</caption>
+                <caption className="sr-only">Inventory health</caption>
                 <thead>
                   <tr className="border-b border-border-subtle bg-bg-surface-raised">
                     {['Part', 'MOQ', 'Available', 'Status'].map((header) => (
@@ -708,7 +708,7 @@ const DashboardPage = async () => {
             'You move the ten production stages and attach the evidence. The buyer reads them.',
             'The money is released against a documented event: delivery confirmed, the review window closing, or a resolved issue.',
           ].map((line, index) => (
-            <li key={line} className="ids-measure flex gap-2 text-sm text-text-secondary">
+            <li key={line} className="max-w-measure flex gap-2 text-sm text-text-secondary">
               <span
                 aria-hidden
                 className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand"

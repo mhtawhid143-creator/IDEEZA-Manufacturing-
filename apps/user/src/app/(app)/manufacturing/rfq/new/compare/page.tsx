@@ -168,7 +168,7 @@ const CompareManufacturersPage = async ({
         <Card padded={false} className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-sm">
-              <caption className="ids-sr-only">
+              <caption className="sr-only">
                 Manufacturers compared for {draft.productName}
               </caption>
               <thead>

@@ -19,8 +19,8 @@
 @import '@ideeza/tokens/css';
 
 :root {
-  --ids-navbar-height: 68px;
-  --ids-sidebar-width: 232px;
-  --ids-content-gutter: 32px;
-  --ids-content-max: 1440px;
+  --layout-navbar-height: 68px;
+  --layout-sidebar-width: 232px;
+  --layout-gutter: 32px;
+  --layout-content-max: 1440px;
 }

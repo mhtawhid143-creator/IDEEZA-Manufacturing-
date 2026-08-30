@@ -27,6 +27,6 @@ export const Spinner = ({ size = 'md', label, className, ...rest }: SpinnerProps
         SIZE[size],
       )}
     />
-    {label !== undefined && <span className="ids-sr-only">{label}</span>}
+    {label !== undefined && <span className="sr-only">{label}</span>}
   </span>
 );

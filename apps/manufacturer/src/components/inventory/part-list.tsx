@@ -222,7 +222,7 @@ export const PartList = ({
           },
           {
             id: 'actions',
-            header: <span className="ids-sr-only">Actions</span>,
+            header: <span className="sr-only">Actions</span>,
             align: 'right',
             cell: (row) => (
               <RowMenu

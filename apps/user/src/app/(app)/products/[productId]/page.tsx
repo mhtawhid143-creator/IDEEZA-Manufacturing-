@@ -266,7 +266,7 @@ const ProductPage = async ({
                 'Select the manufacturers the request goes to, and send it.',
                 'Compare the quotes that come back, then pay to confirm the order.',
               ].map((step, index) => (
-                <li key={step} className="ids-measure flex gap-2 text-sm text-text-secondary">
+                <li key={step} className="max-w-measure flex gap-2 text-sm text-text-secondary">
                   <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand">
                     {index + 1}
                   </span>

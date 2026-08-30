@@ -30,7 +30,7 @@ export const EmptyState = ({
 }: EmptyStateProps) => (
   <div
     className={cn(
-      'ids-state flex flex-col items-center justify-center gap-3 px-6 text-center',
+      'ui-state flex flex-col items-center justify-center gap-3 px-6 text-center',
       framed
         ? 'rounded-xl border border-dashed border-border bg-bg-surface py-12'
         : 'py-8',
@@ -80,7 +80,7 @@ export const ErrorState = ({
   <div
     role="alert"
     className={cn(
-      'ids-state flex flex-col items-center justify-center gap-3 rounded-xl border border-border-error/30 bg-red-100/40 px-6 py-12 text-center',
+      'ui-state flex flex-col items-center justify-center gap-3 rounded-xl border border-border-error/30 bg-red-100/40 px-6 py-12 text-center',
       className,
     )}
   >
