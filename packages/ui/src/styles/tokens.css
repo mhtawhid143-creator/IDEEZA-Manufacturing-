@@ -1,11 +1,14 @@
 /**
  * The design system, and the four measurements it does not carry.
  *
- * Colour, type, spacing, radius and elevation all come from `@ideeza/tokens`
- * under the system's own names. There is no translation layer any more: the
+ * Colour, type, radius and elevation come from `@ideeza/tokens` under the
+ * system's own names, and there is no translation layer any more: the
  * components ask for `bg-bg-surface` and `text-text-primary`, which is what the
  * system's own components ask for, so a component from either side can be read
  * — and eventually moved — without a vocabulary in between.
+ *
+ * Spacing is the exception. The system numbers its ladder its own way, and the
+ * preset says why where the ladder is defined.
  *
  * What is left is the shell. The system describes colour and components; it
  * does not describe how tall this product's navigation bar stands or how wide

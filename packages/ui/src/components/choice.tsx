@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { Icon } from './icon.js';
 import { cn } from '../lib/cn.js';
 
 interface ChoiceBaseProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -28,14 +29,7 @@ export const Checkbox = forwardRef<HTMLInputElement, ChoiceBaseProps>(function C
     <div className={cn('flex items-start gap-2.5', className)}>
       <span className="relative mt-0.5 inline-flex">
         <input ref={ref} id={inputId} type="checkbox" className={boxClasses(false)} {...rest} />
-        <svg
-          className="pointer-events-none absolute left-0 top-0 h-4 w-4 text-text-on-brand opacity-0 peer-checked:opacity-100"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden
-        >
-          <path d="m4 8.5 2.5 2.5L12 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
+        <Icon name="check" size={12} />
       </span>
       <span className="min-w-0">
         <label htmlFor={inputId} className="block text-sm text-text-primary">

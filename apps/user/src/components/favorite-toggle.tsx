@@ -1,19 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { IconButton, useToast } from '@ideeza/ui';
+import { Icon, IconButton, useToast } from '@ideeza/ui';
 import { toggleFavoriteAction } from '@/app/(app)/favorites/actions.js';
 
 const HeartIcon = ({ filled }: { readonly filled: boolean }) => (
-  <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden>
-    <path
-      d="M10 17s-6.5-4.1-6.5-8.2A3.8 3.8 0 0 1 10 6.2a3.8 3.8 0 0 1 6.5 2.6C16.5 12.9 10 17 10 17Z"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-  </svg>
+  <Icon name="heart" size={18} filled={filled} />
 );
 
 export interface FavoriteToggleProps {

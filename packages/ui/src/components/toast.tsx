@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { cn } from '../lib/cn.js';
+import { Icon } from './icon.js';
 import { IconButton } from './icon-button.js';
 import type { Tone } from './badge.js';
 
@@ -101,14 +102,7 @@ export const ToastProvider = ({ children }: { readonly children: ReactNode }) =>
                 size="sm"
                 onClick={() => dismiss(toast.id)}
                 icon={
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-                    <path
-                      d="m4 4 8 8M12 4l-8 8"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <Icon name="close" size={14} />
                 }
               />
             </div>

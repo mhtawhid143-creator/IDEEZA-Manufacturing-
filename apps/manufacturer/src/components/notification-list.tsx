@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
-import { Badge, Button, EmptyState, Text, useToast } from '@ideeza/ui';
+import { Badge, Button, EmptyState, Icon, Text, useToast } from '@ideeza/ui';
 import { markReadAction } from '@/app/(app)/notifications/actions.js';
 import { goTo } from '@/lib/navigate.js';
 
@@ -16,17 +16,6 @@ export interface NotificationRow {
   readonly read: boolean;
   readonly when: string;
 }
-
-const BellIcon = (
-  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M10 3a4 4 0 0 0-4 4v3l-1 2h10l-1-2V7a4 4 0 0 0-4-4Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 /**
  * The shop's notification list.
@@ -108,7 +97,7 @@ export const NotificationList = ({
               aria-hidden
               className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-text-brand"
             >
-              {BellIcon}
+              <Icon name="bell" />
             </span>
 
             <div className="min-w-0 flex-1">

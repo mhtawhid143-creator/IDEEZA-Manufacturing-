@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, type SelectHTMLAttributes } from 'react';
+import { Icon } from './icon.js';
 import { cn } from '../lib/cn.js';
 import { fieldControlClasses, useFieldContext } from './form-field.js';
 
@@ -53,16 +54,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           </option>
         ))}
       </select>
-      <svg
+      <Icon
+        name="chevron-down"
+        size={14}
         className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-        width="12"
-        height="12"
-        viewBox="0 0 12 12"
-        fill="none"
-        aria-hidden
-      >
-        <path d="m2 4 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
+      />
     </div>
   );
 });

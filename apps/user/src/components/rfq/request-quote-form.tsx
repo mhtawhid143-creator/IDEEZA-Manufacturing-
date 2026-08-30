@@ -3,20 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  FormField,
-  IconButton,
-  Input,
-  Tag,
-  Text,
-  Textarea,
-  buttonAppearance,
-  cn,
-} from '@ideeza/ui';
+import { Alert, Badge, Button, buttonAppearance, Card, cn, FormField, Icon, IconButton, Input, Tag, Text, Textarea } from '@ideeza/ui';
 import {
   ASSEMBLY_COPY,
   SERVICE_COPY,
@@ -69,12 +56,6 @@ export interface RequestQuoteFormProps {
     readonly countryCode: string;
   };
 }
-
-const CloseIcon = (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-    <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
 
 const SectionHeader = ({
   title,
@@ -239,10 +220,7 @@ export const RequestQuoteForm = ({
                   background: `linear-gradient(135deg, hsl(${boardHue} 45% 74%), hsl(${(boardHue + 40) % 360} 50% 58%))`,
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden>
-                  <rect x="3" y="3" width="14" height="14" rx="2" stroke="white" strokeWidth="1.3" opacity="0.85" />
-                  <path d="M7 7h2v2H7zM11 7h2v2h-2zM7 11h6v2H7z" fill="white" opacity="0.85" />
-                </svg>
+                <Icon name="board" size={24} className="opacity-85" />
               </span>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-text-primary">{productName}</p>
@@ -414,7 +392,7 @@ export const RequestQuoteForm = ({
                     label={`Remove ${recipient.displayName}`}
                     size="sm"
                     variant="ghost"
-                    icon={CloseIcon}
+                    icon={<Icon name="close" />}
                     onClick={() => removeRecipient(recipient.id)}
                   />
                 </li>
@@ -511,7 +489,7 @@ export const RequestQuoteForm = ({
                       label={`Remove extra volume ${index + 1}`}
                       size="sm"
                       variant="ghost"
-                      icon={CloseIcon}
+                      icon={<Icon name="close" />}
                       onClick={() =>
                         setTiers((current) => current.filter((_entry, position) => position !== index))
                       }

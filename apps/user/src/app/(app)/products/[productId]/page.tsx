@@ -1,19 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {
-  Alert,
-  Avatar,
-  Card,
-  CardHeader,
-  DataTable,
-  DefinitionList,
-  EmptyState,
-  Heading,
-  PageHeader,
-  StatusChip,
-  Text,
-  buttonAppearance,
-} from '@ideeza/ui';
+import { Alert, Avatar, buttonAppearance, Card, CardHeader, DataTable, DefinitionList, EmptyState, Heading, Icon, PageHeader, StatusChip, Text } from '@ideeza/ui';
 import { Crumbs } from '@/components/crumbs.js';
 import { FavoriteToggle } from '@/components/favorite-toggle.js';
 import { ModelPreview } from '@/components/model-preview.js';
@@ -36,15 +23,13 @@ const sizeOf = (bytes: number): string =>
 const Stars = ({ rating }: { readonly rating: number }) => (
   <span className="inline-flex items-center gap-0.5" aria-label={`${rating} out of 5`}>
     {[1, 2, 3, 4, 5].map((step) => (
-      <svg key={step} width="14" height="14" viewBox="0 0 20 20" aria-hidden>
-        <path
-          d="M10 2.5l2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.5-4.6 2.5.9-5.2L2.5 8l5.2-.8L10 2.5Z"
-          fill={step <= Math.round(rating) ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          strokeWidth="1.2"
-          className={step <= Math.round(rating) ? 'text-text-warning' : 'text-border-strong'}
-        />
-      </svg>
+      <Icon
+        key={step}
+        name="star"
+        size={14}
+        filled={step <= Math.round(rating)}
+        className={step <= Math.round(rating) ? 'text-text-warning' : 'text-border-strong'}
+      />
     ))}
   </span>
 );

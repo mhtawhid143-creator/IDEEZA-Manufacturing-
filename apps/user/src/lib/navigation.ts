@@ -15,6 +15,12 @@ export interface NavEntry {
 }
 
 export type NavIcon =
+  | 'invoice'
+  | 'orders'
+  | 'payouts'
+  | 'settings'
+  | 'shop'
+  | 'stock'
   | 'grid'
   | 'folder'
   | 'parts'
@@ -50,7 +56,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
   { id: 'my-project', label: 'My Project', icon: 'folder', unavailableReason: OTHER_MODULE },
   { id: 'parts', label: 'Parts & Agile Module', icon: 'parts', unavailableReason: OTHER_MODULE },
   { id: 'marketplace', label: 'Explore Marketplace', icon: 'compass', unavailableReason: OTHER_MODULE },
-  { id: 'newsfeed', label: 'Newsfeed', icon: 'feed', unavailableReason: OTHER_MODULE },
+  { id: 'newsfeed', label: 'Newsfeed', icon: 'blog', unavailableReason: OTHER_MODULE },
   {
     id: 'favorites',
     label: 'Favorites',
@@ -69,7 +75,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
   {
     id: 'manage-works',
     label: 'Manage Works',
-    icon: 'works',
+    icon: 'orders',
     children: Object.freeze<readonly NavEntry[]>([
       {
         id: 'manufacturing',

@@ -2,16 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Badge,
-  EmptyState,
-  StatusChip,
-  Tag,
-  Text,
-  Tooltip,
-  buttonAppearance,
-  type MenuItem,
-} from '@ideeza/ui';
+import { Badge, buttonAppearance, EmptyState, Icon, StatusChip, Tag, Text, Tooltip, type MenuItem } from '@ideeza/ui';
 import { RowMenu } from '@/components/row-menu.js';
 import { goTo } from '@/lib/navigate.js';
 
@@ -110,14 +101,6 @@ const menuFor = (row: OrderRow, go: (href: string) => void): readonly MenuItem[]
   });
   return items;
 };
-
-const DotsIcon = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-    <circle cx="3" cy="8" r="1.4" />
-    <circle cx="8" cy="8" r="1.4" />
-    <circle cx="13" cy="8" r="1.4" />
-  </svg>
-);
 
 /**
  * The Active Orders and Order History lists.
@@ -229,7 +212,7 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
                   className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised hover:text-text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   <span className="sr-only">Actions</span>
-                  {DotsIcon}
+                  <Icon name="more" />
                 </button>
               )}
             />

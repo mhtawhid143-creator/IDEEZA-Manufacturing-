@@ -1,48 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Alert,
-  Avatar,
-  Badge,
-  Breadcrumbs,
-  Button,
-  Card,
-  CardFooter,
-  CardHeader,
-  Checkbox,
-  DataTable,
-  DefinitionList,
-  Divider,
-  DropdownMenu,
-  Drawer,
-  EmptyState,
-  ErrorState,
-  FormField,
-  Heading,
-  IconButton,
-  Input,
-  LoadingState,
-  Modal,
-  Pagination,
-  Radio,
-  RadioGroup,
-  SearchInput,
-  Select,
-  Skeleton,
-  SkeletonRows,
-  Spinner,
-  StatusChip,
-  StatusDot,
-  Switch,
-  TabPanel,
-  Tabs,
-  Tag,
-  Text,
-  Textarea,
-  Tooltip,
-  useToast,
-} from '@ideeza/ui';
+import { Alert, Avatar, Badge, Breadcrumbs, Button, Card, CardFooter, CardHeader, Checkbox, DataTable, DefinitionList, Divider, Drawer, DropdownMenu, EmptyState, ErrorState, FormField, Heading, Icon, IconButton, Input, LoadingState, Modal, Pagination, Radio, RadioGroup, SearchInput, Select, Skeleton, SkeletonRows, Spinner, StatusChip, StatusDot, Switch, TabPanel, Tabs, Tag, Text, Textarea, Tooltip, useToast } from '@ideeza/ui';
 
 const Section = ({
   title,
@@ -160,9 +119,7 @@ export const DesignSystemGallery = () => {
               label="Notifications"
               badge={3}
               icon={
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-                  <path d="M10 3a4 4 0 0 0-4 4v3l-1 2h10l-1-2V7a4 4 0 0 0-4-4Z" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
+                <Icon name="bell" />
               }
             />
             <Spinner label="Working" />

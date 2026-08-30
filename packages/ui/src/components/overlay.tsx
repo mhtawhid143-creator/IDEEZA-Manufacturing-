@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { Icon } from './icon.js';
 import { cn } from '../lib/cn.js';
 import { IconButton } from './icon-button.js';
 import { Heading, Text } from './typography.js';
@@ -58,12 +59,6 @@ const useOverlayBehaviour = (open: boolean, onClose: () => void) => {
 
   return { panelRef, onKeyDown };
 };
-
-const CloseIcon = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-    <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
 
 export interface ModalProps {
   readonly open: boolean;
@@ -125,7 +120,7 @@ export const Modal = ({
               </Text>
             )}
           </div>
-          <IconButton label="Close" icon={CloseIcon} onClick={onClose} size="sm" />
+          <IconButton label="Close" icon={<Icon name="close" />} onClick={onClose} size="sm" />
         </div>
         {/*
           A tall modal scrolls its own body rather than growing past the screen:
@@ -197,7 +192,7 @@ export const Drawer = ({
               </Text>
             )}
           </div>
-          <IconButton label="Close" icon={CloseIcon} onClick={onClose} size="sm" />
+          <IconButton label="Close" icon={<Icon name="close" />} onClick={onClose} size="sm" />
         </div>
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
         {footer !== undefined && (

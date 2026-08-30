@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Avatar, DropdownMenu, IconButton, Tooltip, cn } from '@ideeza/ui';
+import { Avatar, cn, DropdownMenu, Icon, IconButton, Tooltip } from '@ideeza/ui';
 import { signOutAction } from '@/app/auth/actions.js';
 
 export interface NavbarProps {
@@ -10,49 +10,6 @@ export interface NavbarProps {
   readonly notificationCount?: number;
   readonly onOpenNavigation: () => void;
 }
-
-const HelpIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.5" />
-    <path
-      d="M8 8a2 2 0 1 1 3 1.7c-.6.4-1 .8-1 1.6M10 14h.01"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const CartIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M3 4h2l1.6 8.2A2 2 0 0 0 8.6 14h6.2a2 2 0 0 0 2-1.6L18 7H6"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <circle cx="9" cy="17" r="1" fill="currentColor" />
-    <circle cx="15" cy="17" r="1" fill="currentColor" />
-  </svg>
-);
-
-const BellIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M10 3a4 4 0 0 0-4 4v3l-1 2h10l-1-2V7a4 4 0 0 0-4-4Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-    <path d="M8 14a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-const MenuIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
 
 /**
  * The 68px top bar from the Figma frames.
@@ -71,7 +28,7 @@ export const Navbar = ({
   <header className="sticky top-0 z-30 flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
     <IconButton
       label="Open navigation"
-      icon={MenuIcon}
+      icon={<Icon name="menu" />}
       onClick={onOpenNavigation}
       className="lg:hidden"
     />
@@ -106,18 +63,18 @@ export const Navbar = ({
     <div className="ml-auto flex items-center gap-1">
       <Tooltip content="Help centre is not part of this task.">
         <span>
-          <IconButton label="Help" icon={HelpIcon} disabled />
+          <IconButton label="Help" icon={<Icon name="help" />} disabled />
         </span>
       </Tooltip>
       <Tooltip content="The manufacturing cart is waiting on a product decision, so it is inert.">
         <span>
-          <IconButton label="Manufacturing cart" icon={CartIcon} disabled />
+          <IconButton label="Manufacturing cart" icon={<Icon name="cart" />} disabled />
         </span>
       </Tooltip>
       <Link href="/notifications" aria-label="Notifications" className="inline-flex">
         <IconButton
           label="Notifications"
-          icon={BellIcon}
+          icon={<Icon name="bell" />}
           badge={notificationCount}
           // The link owns the navigation; the button is the visual affordance.
           tabIndex={-1}

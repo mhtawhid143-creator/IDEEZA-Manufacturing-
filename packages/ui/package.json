@@ -14,6 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.3.0",
+    "@hugeicons/react": "^1.1.10",
     "@ideeza/domain": "workspace:*",
     "@ideeza/tokens": "github:mehediuid/IDEEZA-Design-System#path:/packages/tokens"
   },

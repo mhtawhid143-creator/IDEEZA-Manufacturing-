@@ -2,17 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import {
-  Badge,
-  Button,
-  EmptyState,
-  IconButton,
-  Modal,
-  Text,
-  Tooltip,
-  buttonAppearance,
-  cn,
-} from '@ideeza/ui';
+import { Badge, Button, buttonAppearance, cn, EmptyState, Icon, IconButton, Modal, Text, Tooltip } from '@ideeza/ui';
 import { RowMenu } from '@/components/row-menu.js';
 import { PACKAGE_COPY, selectHref } from '@/lib/rfq-copy.js';
 import type { PackageKind } from '@ideeza/domain';
@@ -43,43 +33,12 @@ const hueOf = (seed: string): number => {
   return hash;
 };
 
-const BoardIcon = (
-  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.4" />
-    <path d="M7 7h2v2H7zM11 7h2v2h-2zM7 11h6v2H7z" fill="currentColor" />
-  </svg>
-);
-
-const CubeIcon = (
-  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M10 2.8 3.8 6v8L10 17.2 16.2 14V6L10 2.8Z"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-    />
-    <path d="M3.8 6 10 9.4 16.2 6M10 9.4v7.8" stroke="currentColor" strokeWidth="1.3" />
-  </svg>
-);
-
-const FileIcon = (
-  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M5 3h6l4 4v10H5V3Z"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
-    <path d="M11 3v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-  </svg>
-);
-
 const TYPE_ICONS: Readonly<Record<PackageKind, readonly { readonly key: string; readonly icon: React.ReactNode; readonly label: string }[]>> = {
-  pcb: [{ key: 'board', icon: BoardIcon, label: 'Printed circuit board' }],
-  module_3d: [{ key: 'cube', icon: CubeIcon, label: '3D module' }],
+  pcb: [{ key: 'board', icon: <Icon name="board" size={16} />, label: 'Printed circuit board' }],
+  module_3d: [{ key: 'cube', icon: <Icon name="cube" size={16} />, label: '3D module' }],
   full_product: [
-    { key: 'board', icon: BoardIcon, label: 'Printed circuit board' },
-    { key: 'cube', icon: CubeIcon, label: 'Enclosure' },
+    { key: 'board', icon: <Icon name="board" size={16} />, label: 'Printed circuit board' },
+    { key: 'cube', icon: <Icon name="cube" size={16} />, label: 'Enclosure' },
   ],
 };
 
@@ -126,10 +85,7 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                     background: `linear-gradient(135deg, hsl(${hue} 45% 74%), hsl(${(hue + 40) % 360} 50% 58%))`,
                   }}
                 >
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
-                    <rect x="3" y="3" width="14" height="14" rx="2" stroke="white" strokeWidth="1.3" opacity="0.85" />
-                    <path d="M7 7h2v2H7zM11 7h2v2h-2zM7 11h6v2H7z" fill="white" opacity="0.85" />
-                  </svg>
+                  <Icon name="board" size={18} className="opacity-85" />
                 </span>
                 <div className="min-w-0">
                   <Link
@@ -223,11 +179,7 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                       label={`More actions for ${draft.productName}`}
                       variant="ghost"
                       icon={
-                        <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden>
-                          <circle cx="4" cy="10" r="1.5" fill="currentColor" />
-                          <circle cx="10" cy="10" r="1.5" fill="currentColor" />
-                          <circle cx="16" cy="10" r="1.5" fill="currentColor" />
-                        </svg>
+                        <Icon name="more" size={18} />
                       }
                     />
                   )}
@@ -264,7 +216,7 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                   key={file.id}
                   className="flex items-center gap-2 rounded-lg border border-border-subtle px-3 py-2"
                 >
-                  <span className={cn('text-text-tertiary')}>{FileIcon}</span>
+                  <span className={cn('text-text-tertiary')}><Icon name="file" /></span>
                   <span className="min-w-0 flex-1 truncate text-sm text-text-primary">{file.name}</span>
                   <Badge tone="neutral">rev {file.revision}</Badge>
                 </li>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { Alert, Avatar, Button, Text, buttonAppearance, cn } from '@ideeza/ui';
+import { Alert, Avatar, Button, buttonAppearance, cn, Icon, Text } from '@ideeza/ui';
 import {
   markThreadReadAction,
   sendMessageAction,
@@ -35,17 +35,6 @@ export interface ConversationProps {
   readonly messages: readonly MessageView[];
   readonly actions: readonly { readonly label: string; readonly href: string }[];
 }
-
-const SendIcon = (
-  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M3 10l14-6-6 14-2-6-6-2Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 /**
  * One conversation, with the platform's own events in it.
@@ -234,7 +223,7 @@ export const Conversation = ({
           onClick={send}
           disabled={pending || body.trim() === ''}
           loading={pending}
-          leadingIcon={SendIcon}
+          leadingIcon=<Icon name="send" />
         >
           Send
         </Button>

@@ -2,16 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Modal,
-  Text,
-  Textarea,
-  useToast,
-  cn,
-} from '@ideeza/ui';
+import { Alert, Button, Checkbox, cn, Icon, Modal, Text, Textarea, useToast } from '@ideeza/ui';
 import { publishReviewAction } from '@/app/(app)/manufacturing/orders/delivery-actions.js';
 
 export interface ReviewModalProps {
@@ -22,15 +13,7 @@ export interface ReviewModalProps {
 }
 
 const StarIcon = ({ filled }: { readonly filled: boolean }) => (
-  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden>
-    <path
-      d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6 6.1 20.7l1.2-6.6L2.5 9.5l6.6-.9z"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
-  </svg>
+  <Icon name="star" size={26} filled={filled} />
 );
 
 /**

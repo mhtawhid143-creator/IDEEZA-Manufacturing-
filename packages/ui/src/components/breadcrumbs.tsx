@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Icon } from './icon.js';
 import { cn } from '../lib/cn.js';
 
 export interface Crumb {
@@ -42,9 +43,7 @@ export const Breadcrumbs = ({ items, className, linkComponent }: BreadcrumbsProp
                 <span className="text-text-secondary">{crumb.label}</span>
               ))}
             {!isLast && (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="text-text-tertiary">
-                <path d="m4.5 3 3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
+              <Icon name="chevron-right" size={12} className="text-text-tertiary" />
             )}
           </li>
         );

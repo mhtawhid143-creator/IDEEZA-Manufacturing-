@@ -3,17 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import {
-  Badge,
-  DropdownMenu,
-  EmptyState,
-  StatusChip,
-  Tag,
-  Text,
-  buttonAppearance,
-  useToast,
-  type MenuItem,
-} from '@ideeza/ui';
+import { Badge, buttonAppearance, DropdownMenu, EmptyState, Icon, StatusChip, Tag, Text, type MenuItem, useToast } from '@ideeza/ui';
 import { ReviewModal } from './review-modal.js';
 import { reorderAction } from '@/app/(app)/manufacturing/orders/delivery-actions.js';
 import { goTo } from '@/lib/navigate.js';
@@ -34,14 +24,6 @@ export interface HistoryRowView {
   readonly canReview: boolean;
   readonly reviewWindowDaysLeft: number;
 }
-
-const DotsIcon = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-    <circle cx="3" cy="8" r="1.4" />
-    <circle cx="8" cy="8" r="1.4" />
-    <circle cx="13" cy="8" r="1.4" />
-  </svg>
-);
 
 /**
  * Order History: what happened, and what can still be done about it.
@@ -207,7 +189,7 @@ export const HistoryList = ({ orders }: { readonly orders: readonly HistoryRowVi
                     className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised hover:text-text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   >
                     <span className="sr-only">Actions</span>
-                    {DotsIcon}
+                    <Icon name="more" />
                   </button>
                 )}
               />

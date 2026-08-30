@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Avatar, DropdownMenu, IconButton, Tooltip } from '@ideeza/ui';
+import { Avatar, DropdownMenu, Icon, IconButton, Tooltip } from '@ideeza/ui';
 import { signOutAction } from '@/app/auth/actions.js';
 
 export interface NavbarProps {
@@ -11,31 +11,6 @@ export interface NavbarProps {
   readonly notificationCount?: number;
   readonly onOpenNavigation: () => void;
 }
-
-const HelpIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M8 9h4M8 12h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-const BellIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path
-      d="M10 3a4 4 0 0 0-4 4v3l-1 2h10l-1-2V7a4 4 0 0 0-4-4Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-    <path d="M8 14a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
-
-const MenuIcon = (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-    <path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-);
 
 /**
  * The top bar of the manufacturer frames.
@@ -54,7 +29,7 @@ export const Navbar = ({
   <header className="sticky top-0 z-30 flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
     <IconButton
       label="Open navigation"
-      icon={MenuIcon}
+      icon={<Icon name="menu" />}
       onClick={onOpenNavigation}
       className="lg:hidden"
     />
@@ -77,14 +52,14 @@ export const Navbar = ({
     <div className="ml-auto flex items-center gap-1">
       <Tooltip content="Help centre is part of the wider IDEEZA product.">
         <span>
-          <IconButton label="Help" icon={HelpIcon} disabled />
+          <IconButton label="Help" icon={<Icon name="help" />} disabled />
         </span>
       </Tooltip>
 
       <Link href="/notifications" aria-label="Notifications" className="inline-flex">
         <IconButton
           label="Notifications"
-          icon={BellIcon}
+          icon={<Icon name="bell" />}
           badge={notificationCount}
           className="pointer-events-none"
         />

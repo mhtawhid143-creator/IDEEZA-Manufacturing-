@@ -1,6 +1,12 @@
 import type { Capability } from '@ideeza/domain';
 
 export type NavIcon =
+  | 'invoice'
+  | 'orders'
+  | 'payouts'
+  | 'settings'
+  | 'shop'
+  | 'stock'
   | 'grid'
   | 'folder'
   | 'parts'
@@ -69,28 +75,28 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
     label: 'Quotes',
     href: '/quotes',
     capability: 'quote.view',
-    icon: 'feed',
+    icon: 'invoice',
   },
   {
     id: 'orders',
     label: 'My Orders',
     href: '/orders',
     capability: 'order.view',
-    icon: 'works',
+    icon: 'orders',
   },
   {
     id: 'inventory',
     label: 'Inventory',
     href: '/inventory',
     capability: 'inventory.read',
-    icon: 'parts',
+    icon: 'stock',
   },
   {
     id: 'payouts',
     label: 'Payouts & Earnings',
     href: '/payouts',
     capability: 'payout.withdraw',
-    icon: 'compass',
+    icon: 'payouts',
   },
   {
     id: 'messages',
@@ -104,7 +110,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
     label: 'Profile',
     href: '/profile',
     capability: 'profile.manage',
-    icon: 'factory',
+    icon: 'shop',
   },
   {
     id: 'blog',
@@ -118,7 +124,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
     label: 'Settings',
     href: '/settings',
     capability: 'settings.manage',
-    icon: 'compass',
+    icon: 'settings',
   },
 ]);
 

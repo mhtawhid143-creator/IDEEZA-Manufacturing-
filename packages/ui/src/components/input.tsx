@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { Icon } from './icon.js';
 import { cn } from '../lib/cn.js';
 import { fieldControlClasses, useFieldContext } from './form-field.js';
 
@@ -96,10 +97,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
       placeholder={placeholder}
       className={cn('rounded-lg', className)}
       leadingIcon={
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-          <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-          <path d="m11 11 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
+        <Icon name="search" size={16} />
       }
       {...rest}
     />

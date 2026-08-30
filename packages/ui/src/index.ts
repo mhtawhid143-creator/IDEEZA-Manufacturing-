@@ -9,6 +9,7 @@ export {
   type ButtonVariant,
 } from './lib/button-appearance.js';
 
+export * from './components/icon.js';
 export * from './components/typography.js';
 export * from './components/button.js';
 export * from './components/icon-button.js';
