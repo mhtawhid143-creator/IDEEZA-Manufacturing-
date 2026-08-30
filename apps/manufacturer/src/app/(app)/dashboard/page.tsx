@@ -761,23 +761,44 @@ const DashboardPage = async () => {
           title="How work reaches you"
           description="The parts of this that are yours to move, and the parts that are not."
         />
-        <ol className="mt-3 flex flex-col gap-2">
+        <ol className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
           {[
-            'A buyer sends a request to the shops it chose. It arrives in Request Quote.',
-            'You read the files, the specification and the bill of materials, and either quote it or decline with a reason.',
-            'If a part is short, you propose a substitute. The buyer decides — you never decide for them.',
-            'The buyer accepts one quote. IDEEZA takes the money and holds it; that is when production may start.',
-            'You move the ten production stages and attach the evidence. The buyer reads them.',
-            'The money is released against a documented event: delivery confirmed, the review window closing, or a resolved issue.',
-          ].map((line, index) => (
-            <li key={line} className="max-w-measure flex gap-2 text-sm text-text-secondary">
+            {
+              step: 'A request arrives',
+              detail: 'A buyer sends it to the shops it chose. It lands in Request Quote.',
+            },
+            {
+              step: 'You quote it, or decline',
+              detail: 'Read the files, the specification and the bill of materials first.',
+            },
+            {
+              step: 'A shortage goes to the buyer',
+              detail: 'You propose a substitute. They decide — you never decide for them.',
+            },
+            {
+              step: 'The money is held',
+              detail: 'One quote is accepted, IDEEZA holds the money, and production may start.',
+            },
+            {
+              step: 'You move the ten stages',
+              detail: 'Each one takes its evidence, and the buyer reads them as you go.',
+            },
+            {
+              step: 'The money is released',
+              detail: 'Against delivery confirmed, the review window closing, or a resolved issue.',
+            },
+          ].map((entry, index) => (
+            <li key={entry.step} className="flex gap-3">
               <span
                 aria-hidden
-                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand"
+                className="mt-px inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-surface text-[11px] font-semibold text-text-brand ring-1 ring-border-brand/30"
               >
                 {index + 1}
               </span>
-              {line}
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-text-primary">{entry.step}</span>
+                <span className="mt-0.5 block text-xs text-text-tertiary">{entry.detail}</span>
+              </span>
             </li>
           ))}
         </ol>
