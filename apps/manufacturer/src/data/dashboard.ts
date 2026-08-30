@@ -252,7 +252,7 @@ const PACKAGE_LABEL: Readonly<Record<string, string>> = {
 export const getDashboardSections = async (
   manufacturerId: ManufacturerId,
 ): Promise<DashboardSections> => {
-  const [orders, requests, parts, payouts, events] = await Promise.all([
+  const [orders, requests, parts, payouts, payoutTotals, events] = await Promise.all([
     database().manufacturingOrder.findMany({
       where: { manufacturerId },
       include: {
@@ -305,6 +305,11 @@ export const getDashboardSections = async (
       orderBy: { createdAt: 'desc' },
       take: 6,
     }),
+    database().payout.groupBy({
+      by: ['status'],
+      where: { manufacturerId },
+      _sum: { netAmountMinor: true },
+    }),
     database().domainEvent.findMany({
       where: {
         OR: [{ actorManufacturerId: manufacturerId }, { order: { manufacturerId } }],
@@ -351,6 +356,11 @@ export const getDashboardSections = async (
     readonly stockQuantity: number;
     readonly reservedQuantity: number;
   }): number => Math.max(0, item.stockQuantity - item.reservedQuantity);
+
+  const totalFor = (status: string): number =>
+    Number(
+      payoutTotals.find((row) => row.status === status)?._sum.netAmountMinor ?? 0n,
+    );
 
   const day = 24 * 60 * 60 * 1_000;
   const thirtyDaysAgo = new Date(Date.now() - 30 * day);
@@ -453,12 +463,8 @@ export const getDashboardSections = async (
       netAmountMinor: Number(payout.netAmountMinor),
       status: payout.status,
     })),
-    pendingPayoutMinor: payouts
-      .filter((payout) => payout.status === 'pending_release')
-      .reduce((sum, payout) => sum + Number(payout.netAmountMinor), 0),
-    releasedPayoutMinor: payouts
-      .filter((payout) => payout.status === 'released')
-      .reduce((sum, payout) => sum + Number(payout.netAmountMinor), 0),
+    pendingPayoutMinor: totalFor('pending_release'),
+    releasedPayoutMinor: totalFor('released'),
     currency: payouts[0]?.currency ?? 'USD',
     activity: events.map((event) => {
       const named = describe(event.kind, event.subjectId);

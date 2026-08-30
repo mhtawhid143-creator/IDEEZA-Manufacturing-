@@ -1252,28 +1252,32 @@ const main = async () => {
       { path: '/orders', item: 'Production stages', lands: /\/orders\/[^/]+$/ },
       { path: '/inventory', item: 'View details and history', lands: /\/inventory\/[^/]+$/ },
     ]) {
-      await page.goto(`${base}${list.path}`, { waitUntil: 'networkidle' });
-      const trigger = page.locator('tbody tr button', { hasText: '⋮' }).first();
-      await trigger.click();
-      const entry = page.getByRole('menuitem', { name: list.item }).first();
-      const isLink = await entry.evaluate((node) => node.tagName === 'A').catch(() => false);
+      let target = null;
+      let isLink = false;
+      // The wait is armed before the press, because a soft navigation can finish
+      // inside the same tick and a wait started afterwards would miss it. Three
+      // presses, because the answer being looked for here is "does this menu go
+      // anywhere at all" — a press dropped while the list is still settling is
+      // not that answer.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await page.goto(`${base}${list.path}`, { waitUntil: 'networkidle' });
+        await page.locator('tbody tr button', { hasText: '⋮' }).first().click();
+        const entry = page.getByRole('menuitem', { name: list.item }).first();
+        if (attempt === 0) {
+          isLink = await entry.evaluate((node) => node.tagName === 'A').catch(() => false);
+          target = await entry.getAttribute('href').catch(() => null);
+        }
+        await Promise.all([
+          page.waitForURL(list.lands, { timeout: 15_000 }).catch(() => undefined),
+          entry.click(),
+        ]);
+        if (list.lands.test(new URL(page.url()).pathname)) break;
+      }
       check(
         `the ${list.path} row menu offers "${list.item}" as a link`,
         isLink,
         list.path,
       );
-      const target = await entry.getAttribute("href").catch(() => null);
-      await entry.click();
-      await page.waitForURL(list.lands, { timeout: 10_000 }).catch(() => undefined);
-      // A click that lands while the list is still settling can be dropped, and
-      // a menu that never goes is what this is here to catch — so try twice
-      // before believing it.
-      if (!list.lands.test(new URL(page.url()).pathname)) {
-        await page.goto(`${base}${list.path}`, { waitUntil: "networkidle" });
-        await page.locator("tbody tr button", { hasText: "⋮" }).first().click();
-        await page.getByRole("menuitem", { name: list.item }).first().click();
-        await page.waitForURL(list.lands, { timeout: 15_000 }).catch(() => undefined);
-      }
       check(
         `pressing it arrives somewhere`,
         list.lands.test(new URL(page.url()).pathname),

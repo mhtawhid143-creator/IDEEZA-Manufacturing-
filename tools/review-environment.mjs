@@ -183,6 +183,13 @@ const main = async () => {
     { cwd: root, vars: { DATABASE_URL: databaseUrl } },
   );
 
+  step(
+    "a working week of demo data",
+    "--import",
+    ["tsx", join(root, "tools", "demo-volume.ts")],
+    { cwd: root, vars: { DATABASE_URL: databaseUrl } },
+  );
+
   const accountsProbe = spawnSync(
     process.execPath,
     ['--import', 'tsx', join(root, 'tools', 'review-accounts.ts')],

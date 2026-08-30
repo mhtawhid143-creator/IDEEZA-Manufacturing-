@@ -77,6 +77,12 @@ step('manufacturer-side fixtures', [
   join(root, 'tools', 'verify-fixtures-manufacturer.ts'),
 ]);
 
+step('a working week of demo data', [
+  '--import',
+  'tsx',
+  join(root, 'tools', 'demo-volume.ts'),
+]);
+
 process.stdout.write(
   '\nThe database is ready for a review deployment.\n' +
     'The panels sign a reviewer in without a password while REVIEW_DIRECT_SIGN_IN=1.\n',
