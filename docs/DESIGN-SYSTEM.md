@@ -228,3 +228,57 @@ screen, which exist only after a buyer has accepted a quote or opened a case,
 and the review database does not hold those states. They are built from the same
 components as the 52 that were scanned, and both browser harnesses drive them
 end to end.
+
+## 11. Where the tokens come from now
+
+Colour and type are no longer written in this repository. They are read from
+`@ideeza/tokens` — the design system the design team owns, at
+`github.com/mehediuid/IDEEZA-Design-System`, generated from its Figma file — and
+pinned in the lockfile to the commit it was installed at, so a build cannot
+quietly change what the panels look like.
+
+`styles/tokens.css` is now a mapping and nothing else. Each name a component in
+these panels asks for is defined as the system token that answers it:
+
+| this repository | the design system |
+| --- | --- |
+| `--ids-color-brand` | `--color-bg-brand` |
+| `--ids-color-heading` | `--color-text-primary` |
+| `--ids-color-body` | `--color-text-secondary` |
+| `--ids-color-muted` | `--color-text-tertiary` |
+| `--ids-color-surface` / `canvas` / `raised` | `--color-bg-surface` / `-page` / `-surface-raised` |
+| `--ids-color-border` / `-strong` | `--color-border-subtle` / `-default` |
+| `--ids-radius-*`, `--ids-shadow-*` | `--radius-*`, `--elevation-*` |
+| `--ids-font-body` | `--font-family-body` (Manrope) |
+
+The layer exists because the two vocabularies differ, and renaming forty-nine
+components would move a great deal of code without moving any meaning. It also
+marks exactly what the system does not yet carry: the pink accent the panel
+files are drawn with, and the layout measurements taken from those frames. Both
+say so where they are defined, and go when the system takes them.
+
+The type ramp is the system's too. `tailwind-preset.cjs` names the system's
+variables rather than pixels, so the sizes follow it — including the smaller
+values it swaps in below 768px, which the old hard-coded ramp could not do.
+
+Measured after the change, on the surfaces each is drawn on: heading 18.8:1,
+body 10.4:1, muted 7.6:1, danger 6.5:1, success 7.1:1, brand 7.2:1, white on
+brand 7.2:1 — every one above AA. The system's disabled text is 1.5:1, which is
+its own decision and is what WCAG exempts inactive controls for. The three
+chart hues were re-checked against the colour-blindness separation floor after
+the change and pass on every axis.
+
+### What is not adopted yet
+
+The system publishes ten components — Badge, Button, Checkbox, Field,
+IconButton, Input, Radio, Select, Textarea, Toggle. These panels are built from
+forty-nine, and the other thirty-nine — Card, DataTable, Tabs, Alert, Toast,
+Timeline, Stepper, DropdownMenu, Breadcrumbs, PageHeader, StatusChip,
+EmptyState, Modal, Pagination and the rest — have no counterpart in it yet.
+
+Adopting the ten it does have needs three things first: the system package is
+named `@ideeza/ui`, which is the name this repository's own design-system
+package already uses; the system is not published to npm, and its components
+need a build step that installing from git does not run; and its components are
+written against its own Tailwind preset, which would have to be merged with
+this one. The tokens needed none of that, which is why they went first.

@@ -1,119 +1,118 @@
 /**
- * IDEEZA design tokens.
+ * IDEEZA design tokens, as this repository names them.
  *
- * Values are taken from the two Figma sources and reconciled:
- *  - the User Panel V2 file supplies the surface, text, border and radius
- *    palette the buyer screens are actually drawn with (Inter, warm violet
- *    neutrals, --primaryColor #7C2DB9, --SecondaryColor #FE2AD4);
- *  - the IDEEZA Design System file supplies the interaction states the panel
- *    file does not define: button variants, hover and pressed colours, focus
- *    halos and the elevation ladder.
+ * Every value now comes from the design system — `@ideeza/tokens`, generated
+ * from the Figma file the design team owns — and nothing is written here as a
+ * hex. What is here is the mapping: the name a component in these two panels
+ * asks for, against the design system token that answers it.
  *
- * Anything a component needs is a variable here, so a re-theme is a token edit
- * rather than a component rewrite.
+ * The layer exists because the two vocabularies differ. A component here asks
+ * for `heading`, `body`, `muted`, `line`; the system offers `text-primary`,
+ * `text-secondary`, `text-tertiary`, `border-default`. Renaming forty-nine
+ * components would be a large change that carries no meaning; one file that
+ * says which is which carries all of it, and re-theming stays a token edit.
+ *
+ * Where the system offers no equivalent — the pink accent the panels are drawn
+ * with, the layout measurements taken from the panel frames — the value stays
+ * here and says so.
  */
+
+@import '@ideeza/tokens/css';
 
 :root {
   /* Brand ---------------------------------------------------------------- */
-  --ids-color-brand: #7c2db9;
-  --ids-color-brand-hover: #6a1fa4;
-  --ids-color-brand-pressed: #55168a;
-  --ids-color-brand-weak: #f3eafa;
-  --ids-color-brand-tint: #f1e4fa;
-  --ids-color-brand-surface: #f8f5ff;
-  --ids-color-brand-surface-hover: #ede5ff;
-  --ids-color-brand-surface-pressed: #d9cafe;
+  --ids-color-brand: var(--color-bg-brand);
+  --ids-color-brand-hover: var(--color-bg-brand-hover);
+  --ids-color-brand-pressed: var(--color-bg-brand-pressed);
+  --ids-color-brand-weak: var(--color-violet-50);
+  --ids-color-brand-tint: var(--color-violet-100);
+  --ids-color-brand-surface: var(--color-bg-brand-subtle);
+  --ids-color-brand-surface-hover: var(--color-violet-100);
+  --ids-color-brand-surface-pressed: var(--color-violet-200);
+
+  /* The panels' pink, which the system does not carry. It is the second brand
+     colour of the User Panel file; when the system takes it, this goes. */
   --ids-color-accent: #fe2ad4;
-  /* The same pink, deep enough to carry white text at AA (4.5:1). Use it
-     wherever text sits directly on the accent; the accent itself keeps the
-     Figma value so the brand hue is untouched. */
+  /* The same pink, deep enough to carry white text at AA (4.5:1). */
   --ids-color-accent-strong: #d323b0;
 
   /* Text ----------------------------------------------------------------- */
-  --ids-color-heading: #0e0515;
-  --ids-color-body: #4a4450;
-  --ids-color-muted: #716f72;
-  --ids-color-on-brand: #ffffff;
-  --ids-color-disabled-text: #868d95;
+  --ids-color-heading: var(--color-text-primary);
+  --ids-color-body: var(--color-text-secondary);
+  --ids-color-muted: var(--color-text-tertiary);
+  --ids-color-on-brand: var(--color-text-on-brand);
+  --ids-color-disabled-text: var(--color-text-disabled);
 
   /* Surfaces ------------------------------------------------------------- */
-  --ids-color-surface: #ffffff;
-  --ids-color-canvas: #f8f5f9;
-  --ids-color-raised: #f1f5f9;
-  --ids-color-disabled-bg: #f1f5f9;
+  --ids-color-surface: var(--color-bg-surface);
+  --ids-color-canvas: var(--color-bg-page);
+  --ids-color-raised: var(--color-bg-surface-raised);
+  --ids-color-disabled-bg: var(--color-bg-subtle);
 
   /* Borders -------------------------------------------------------------- */
-  --ids-color-border: #f3eafa;
-  --ids-color-border-strong: #e6e6e7;
-  --ids-color-border-input: #e2e8f0;
-  --ids-color-border-input-hover: #94a3b8;
+  --ids-color-border: var(--color-border-subtle);
+  --ids-color-border-strong: var(--color-border-default);
+  --ids-color-border-input: var(--color-border-default);
+  --ids-color-border-input-hover: var(--color-border-strong);
 
   /* Status --------------------------------------------------------------- */
-  --ids-color-danger: #d73a50;
-  --ids-color-danger-strong: #ca2323;
-  --ids-color-danger-weak: #fee2e2;
-  --ids-color-warning: #eab308;
-  --ids-color-warning-weak: #fef3c7;
-  --ids-color-success: #11813a;
-  --ids-color-success-weak: #dcfce7;
-  --ids-color-info: #245fe2;
-  --ids-color-info-weak: #dbeafe;
-  --ids-color-neutral: #617187;
-  --ids-color-neutral-weak: #f1f5f9;
+  --ids-color-danger: var(--color-text-error);
+  --ids-color-danger-strong: var(--color-red-700);
+  --ids-color-danger-weak: var(--color-red-100);
+  --ids-color-warning: var(--color-bg-warning);
+  --ids-color-warning-weak: var(--color-yellow-100);
+  --ids-color-success: var(--color-text-success);
+  --ids-color-success-weak: var(--color-green-100);
+  --ids-color-info: var(--color-text-link);
+  --ids-color-info-weak: var(--color-blue-100);
+  --ids-color-neutral: var(--color-gray-600);
+  --ids-color-neutral-weak: var(--color-gray-100);
 
   /* Focus ---------------------------------------------------------------- */
-  --ids-color-focus: #7c2db9;
-  --ids-color-focus-halo: #7c2db973;
-  --ids-color-focus-halo-on-fill: #7c2db98c;
-  --ids-color-focus-halo-danger: #dc262680;
+  --ids-color-focus: var(--color-border-focus);
+  --ids-color-focus-halo: var(--color-focus-halo);
+  --ids-color-focus-halo-on-fill: var(--color-focus-halo-on-fill);
+  --ids-color-focus-halo-danger: var(--color-focus-halo-danger);
 
-  /* Radius (Figma Radius/radi-*) ---------------------------------------- */
-  --ids-radius-xs: 2px;
-  --ids-radius-sm: 4px;
-  --ids-radius-md: 8px;
-  --ids-radius-lg: 12px;
-  --ids-radius-xl: 16px;
-  --ids-radius-2xl: 28px;
-  --ids-radius-full: 1000px;
+  /* Radius --------------------------------------------------------------- */
+  --ids-radius-xs: var(--radius-xs);
+  --ids-radius-sm: var(--radius-sm);
+  --ids-radius-md: var(--radius-lg);
+  --ids-radius-lg: var(--radius-xl);
+  --ids-radius-xl: var(--radius-2xl);
+  --ids-radius-2xl: var(--radius-3xl);
+  --ids-radius-full: var(--radius-full);
 
-  /* Elevation (Figma F04 shadow ladder) --------------------------------- */
-  --ids-shadow-flat: none;
-  --ids-shadow-card: 0 1px 2px rgba(14, 5, 21, 0.06), 0 1px 3px rgba(14, 5, 21, 0.04);
-  --ids-shadow-dropdown: 0 8px 24px rgba(14, 5, 21, 0.1), 0 2px 6px rgba(14, 5, 21, 0.06);
-  --ids-shadow-modal: 0 24px 48px rgba(14, 5, 21, 0.18), 0 8px 16px rgba(14, 5, 21, 0.08);
-  --ids-shadow-overlay: 0 32px 64px rgba(14, 5, 21, 0.24);
+  /* Elevation ------------------------------------------------------------ */
+  --ids-shadow-flat: var(--elevation-0);
+  --ids-shadow-card: var(--elevation-1);
+  --ids-shadow-dropdown: var(--elevation-3);
+  --ids-shadow-modal: var(--elevation-5);
+  --ids-shadow-overlay: var(--elevation-6);
   --ids-shadow-brand: 0 8px 24px rgba(124, 45, 185, 0.24);
 
-  /* Layout (measured from the Figma frames) ----------------------------- */
+  /* Layout — measured from the panel frames, which the system does not describe. */
   --ids-navbar-height: 68px;
   --ids-sidebar-width: 232px;
   --ids-content-gutter: 32px;
   --ids-content-max: 1440px;
 
-  /* Type ---------------------------------------------------------------- */
-  --ids-font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --ids-font-heading: var(--ids-font-body);
-  --ids-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  /* Type ----------------------------------------------------------------- */
+  --ids-font-body: var(--font-family-body);
+  --ids-font-heading: var(--font-family-display);
+  --ids-font-mono: var(--font-family-mono);
 }
 
 /**
- * The design files are light mode only, so dark mode inverts the neutral ramp
- * and keeps the brand hue. It is opt-in via [data-theme="dark"] until a dark
- * design exists to check against.
+ * Dark mode.
+ *
+ * The design system carries a dark value for every semantic token and switches
+ * them on `[data-theme="dark"]`, so the mapping above is the whole of it: these
+ * names follow wherever the system takes them. What stays here is the pink,
+ * which the system does not hold, and the shadow the pink casts.
  */
 :root[data-theme='dark'] {
-  --ids-color-heading: #f8f5f9;
-  --ids-color-body: #cdc7d3;
-  --ids-color-muted: #8b8593;
-  --ids-color-surface: #17111d;
-  --ids-color-canvas: #0e0515;
-  --ids-color-raised: #211a29;
-  --ids-color-border: #2b2233;
-  --ids-color-border-strong: #3a3143;
-  --ids-color-border-input: #3a3143;
-  --ids-color-brand-weak: #241733;
-  --ids-color-brand-tint: #2c1a40;
-  --ids-color-brand-surface: #1d1327;
-  --ids-color-disabled-bg: #211a29;
-  --ids-color-disabled-text: #6b6473;
+  --ids-color-accent: #fe2ad4;
+  --ids-color-accent-strong: #ff5ce0;
+  --ids-shadow-brand: 0 8px 24px rgba(145, 38, 217, 0.4);
 }

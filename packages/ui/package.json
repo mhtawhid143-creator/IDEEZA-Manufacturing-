@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@ideeza/domain": "workspace:*"
+    "@ideeza/domain": "workspace:*",
+    "@ideeza/tokens": "github:mehediuid/IDEEZA-Design-System#path:/packages/tokens"
   },
   "peerDependencies": {
     "react": "^19.0.0",

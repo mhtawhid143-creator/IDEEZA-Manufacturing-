@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import { ToastProvider } from '@ideeza/ui';
 import './globals.css';
 
-/** The panel design is drawn in Inter. */
-const inter = Inter({
+/** The typeface the design system names: @ideeza/tokens, font-family/body. */
+const manrope = Manrope({
   subsets: ['latin'],
   display: 'swap',
   variable: '--ids-font-loaded',
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 const RootLayout = ({ children }: { readonly children: React.ReactNode }) => (
-  <html lang="en" className={inter.className}>
+  <html lang="en" className={manrope.className}>
     <body>
       <ToastProvider>{children}</ToastProvider>
     </body>

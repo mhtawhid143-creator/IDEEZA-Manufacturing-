@@ -64,16 +64,28 @@ module.exports = {
         heading: 'var(--ids-font-heading)',
         mono: 'var(--ids-font-mono)',
       },
+      // The type ramp is the design system's. Each step names the system
+      // variable that holds it rather than a pixel value, so the sizes follow
+      // the system — including the smaller values it swaps in below 768px,
+      // which a hard-coded ramp cannot do.
+      //
+      // The names on the left are this repository's, and the sizes line up one
+      // for one: xs is the system's 12, sm its 14, base its 16, lg its 18.
       fontSize: {
-        // Figma: Body XS 12/16, SM 14/20, Base 16/24, Display 18/28
-        xs: ['12px', { lineHeight: '16px' }],
-        sm: ['14px', { lineHeight: '20px' }],
-        base: ['16px', { lineHeight: '24px' }],
-        lg: ['18px', { lineHeight: '28px' }],
-        xl: ['20px', { lineHeight: '28px' }],
-        '2xl': ['24px', { lineHeight: '32px' }],
-        '3xl': ['30px', { lineHeight: '38px' }],
-        '4xl': ['36px', { lineHeight: '44px' }],
+        xs: ['var(--font-size-sm)', { lineHeight: 'var(--line-height-xs)' }],
+        sm: ['var(--font-size-md)', { lineHeight: 'var(--line-height-md)' }],
+        base: ['var(--font-size-lg)', { lineHeight: 'var(--line-height-lg)' }],
+        lg: ['var(--font-size-xl)', { lineHeight: 'var(--line-height-2xl)' }],
+        xl: ['var(--font-size-2xl)', { lineHeight: 'var(--line-height-3xl)' }],
+        '2xl': ['var(--font-size-3xl)', { lineHeight: 'var(--line-height-4xl)' }],
+        '3xl': ['var(--font-size-4xl)', { lineHeight: 'var(--line-height-5xl)' }],
+        '4xl': ['var(--font-size-5xl)', { lineHeight: 'var(--line-height-6xl)' }],
+      },
+      fontWeight: {
+        normal: 'var(--font-weight-regular)',
+        medium: 'var(--font-weight-medium)',
+        semibold: 'var(--font-weight-semibold)',
+        bold: 'var(--font-weight-bold)',
       },
       borderRadius: {
         xs: 'var(--ids-radius-xs)',
