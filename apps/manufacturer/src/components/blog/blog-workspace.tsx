@@ -203,7 +203,7 @@ export const BlogWorkspace = ({
             <Card key={article.id} padded={false} className="flex flex-col">
               <span
                 aria-hidden
-                className="h-28 w-full rounded-t-xl bg-gradient-to-br from-brand-weak via-info-weak to-canvas"
+                className="h-28 w-full rounded-t-xl bg-gradient-to-br from-bg-brand-subtle via-blue-100 to-bg-page"
               />
               <div className="flex flex-1 flex-col gap-2 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -212,7 +212,7 @@ export const BlogWorkspace = ({
                     {STATUS_LABEL[article.status]}
                   </Tag>
                 </div>
-                <p className="text-sm font-semibold text-heading">{article.title}</p>
+                <p className="text-sm font-semibold text-text-primary">{article.title}</p>
                 <Text tone="muted" size="xs">
                   {shopName} · {article.readMinutes} min read · {article.on}
                 </Text>

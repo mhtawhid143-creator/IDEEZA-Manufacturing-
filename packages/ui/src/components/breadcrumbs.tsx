@@ -26,7 +26,7 @@ export const Breadcrumbs = ({ items, className, linkComponent }: BreadcrumbsProp
           crumb.href !== undefined && !isLast && linkComponent !== undefined
             ? linkComponent({
                 href: crumb.href,
-                className: 'text-body hover:text-brand hover:underline',
+                className: 'text-text-secondary hover:text-text-brand hover:underline',
                 children: crumb.label,
               })
             : null;
@@ -35,14 +35,14 @@ export const Breadcrumbs = ({ items, className, linkComponent }: BreadcrumbsProp
           <li key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
             {link ??
               (isLast ? (
-                <span aria-current="page" className="font-medium text-muted underline decoration-line-strong">
+                <span aria-current="page" className="font-medium text-text-tertiary underline decoration-line-strong">
                   {crumb.label}
                 </span>
               ) : (
-                <span className="text-body">{crumb.label}</span>
+                <span className="text-text-secondary">{crumb.label}</span>
               ))}
             {!isLast && (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="text-muted">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="text-text-tertiary">
                 <path d="m4.5 3 3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             )}

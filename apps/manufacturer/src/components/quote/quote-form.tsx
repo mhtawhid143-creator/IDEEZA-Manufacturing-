@@ -197,8 +197,8 @@ export const QuoteForm = ({
         }
       >
         <div className="flex flex-col gap-4">
-          <Card className="bg-canvas">
-            <p className="text-sm font-semibold text-heading">Request overview</p>
+          <Card className="bg-bg-page">
+            <p className="text-sm font-semibold text-text-primary">Request overview</p>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
                 {
@@ -215,11 +215,11 @@ export const QuoteForm = ({
                   value: `${overview.shortLineCount} · ${overview.suggestionCount} answered`,
                 },
               ].map((tile) => (
-                <div key={tile.label} className="rounded-lg border border-line bg-surface p-3">
+                <div key={tile.label} className="rounded-lg border border-border-subtle bg-bg-surface p-3">
                   <Text tone="muted" size="xs" className="block">
                     {tile.label}
                   </Text>
-                  <p className="mt-0.5 text-sm font-semibold text-heading">{tile.value}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-text-primary">{tile.value}</p>
                 </div>
               ))}
             </div>
@@ -334,8 +334,8 @@ export const QuoteForm = ({
           </div>
 
           {overview.volumeTiers.length > 0 && (
-            <Card className="bg-canvas">
-              <p className="text-sm font-semibold text-heading">
+            <Card className="bg-bg-page">
+              <p className="text-sm font-semibold text-text-primary">
                 The other volumes this request asked about
               </p>
               <Text tone="muted" size="xs" className="mt-0.5 block">
@@ -345,7 +345,7 @@ export const QuoteForm = ({
               <div className="mt-3 flex flex-col gap-3">
                 {overview.volumeTiers.map((tier) => (
                   <div key={tier} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="flex items-center text-sm font-medium text-heading">
+                    <div className="flex items-center text-sm font-medium text-text-primary">
                       {tier} units
                     </div>
                     <FormField label={`Unit price at ${tier} units`} labelHidden>
@@ -399,18 +399,18 @@ export const QuoteForm = ({
                 },
               ].map((row) => (
                 <div key={row.label} className="flex items-center justify-between gap-4">
-                  <dt className="text-sm text-muted">{row.label}</dt>
-                  <dd className="text-sm font-medium text-heading">{row.value}</dd>
+                  <dt className="text-sm text-text-tertiary">{row.label}</dt>
+                  <dd className="text-sm font-medium text-text-primary">{row.value}</dd>
                 </div>
               ))}
-              <div className="flex items-center justify-between gap-4 border-t border-line pt-2">
-                <dt className="text-sm font-semibold text-heading">
+              <div className="flex items-center justify-between gap-4 border-t border-border-subtle pt-2">
+                <dt className="text-sm font-semibold text-text-primary">
                   Grand total
-                  <span className="ml-1 font-normal text-muted">
+                  <span className="ml-1 font-normal text-text-tertiary">
                     (with shipping and tooling)
                   </span>
                 </dt>
-                <dd className="text-base font-bold text-heading">
+                <dd className="text-base font-bold text-text-primary">
                   {overview.currency} {money(totals.landed)}
                 </dd>
               </div>

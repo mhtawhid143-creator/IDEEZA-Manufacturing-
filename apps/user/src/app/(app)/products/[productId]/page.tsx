@@ -42,7 +42,7 @@ const Stars = ({ rating }: { readonly rating: number }) => (
           fill={step <= Math.round(rating) ? 'currentColor' : 'none'}
           stroke="currentColor"
           strokeWidth="1.2"
-          className={step <= Math.round(rating) ? 'text-warning' : 'text-line-strong'}
+          className={step <= Math.round(rating) ? 'text-text-warning' : 'text-border-strong'}
         />
       </svg>
     ))}
@@ -136,10 +136,10 @@ const ProductPage = async ({
                 product.files.map((file) => (
                   <span
                     key={file.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-line bg-raised px-3 py-1 text-xs text-body"
+                    className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-bg-surface-raised px-3 py-1 text-xs text-text-secondary"
                   >
-                    <span className="font-semibold text-heading">{file.name}</span>
-                    <span className="text-muted">
+                    <span className="font-semibold text-text-primary">{file.name}</span>
+                    <span className="text-text-tertiary">
                       rev {file.revision} · {sizeOf(file.byteSize)}
                     </span>
                   </span>
@@ -174,7 +174,7 @@ const ProductPage = async ({
           </Card>
 
           <Card padded={false}>
-            <div className="border-b border-line px-4 py-3 md:px-6">
+            <div className="border-b border-border-subtle px-4 py-3 md:px-6">
               <Heading level={3}>Bill of materials</Heading>
             </div>
             {product.bomLines.length === 0 ? (
@@ -215,7 +215,7 @@ const ProductPage = async ({
             <div className="mt-3 flex items-center gap-3">
               <Avatar name={product.creatorName} />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-heading">
+                <p className="truncate text-sm font-semibold text-text-primary">
                   {product.creatorName}
                 </p>
                 <Text tone="muted" size="xs" className="truncate">
@@ -235,7 +235,7 @@ const ProductPage = async ({
               description="From buyers whose orders were produced from this product."
               actions={
                 product.averageRating === undefined ? undefined : (
-                  <span className="flex items-center gap-2 text-sm font-semibold text-heading">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                     <Stars rating={product.averageRating} />
                     {product.averageRating.toFixed(1)}
                   </span>
@@ -253,9 +253,9 @@ const ProductPage = async ({
             ) : (
               <ul className="mt-4 flex flex-col gap-4">
                 {product.reviews.map((review) => (
-                  <li key={review.id} className="border-b border-line pb-4 last:border-0 last:pb-0">
+                  <li key={review.id} className="border-b border-border-subtle pb-4 last:border-0 last:pb-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-heading">{review.authorName}</p>
+                      <p className="text-sm font-semibold text-text-primary">{review.authorName}</p>
                       <Stars rating={review.rating} />
                     </div>
                     <Text tone="muted" size="xs" className="mt-0.5">
@@ -281,8 +281,8 @@ const ProductPage = async ({
                 'Select the manufacturers the request goes to, and send it.',
                 'Compare the quotes that come back, then pay to confirm the order.',
               ].map((step, index) => (
-                <li key={step} className="ids-measure flex gap-2 text-sm text-body">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand">
+                <li key={step} className="ids-measure flex gap-2 text-sm text-text-secondary">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand">
                     {index + 1}
                   </span>
                   {step}

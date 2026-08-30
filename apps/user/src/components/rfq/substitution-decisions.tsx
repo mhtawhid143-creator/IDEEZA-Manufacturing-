@@ -58,7 +58,7 @@ export const SubstitutionDecisions = ({
           <Card className="flex flex-col gap-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-heading">
+                <p className="text-sm font-semibold text-text-primary">
                   {row.requestedPartReference} → {row.suggestedPartName}
                 </p>
                 <Text tone="muted" size="xs" className="mt-0.5">
@@ -71,12 +71,12 @@ export const SubstitutionDecisions = ({
 
             <Text size="sm">{row.technicalJustification}</Text>
 
-            <div className="flex flex-wrap items-center gap-4 border-t border-line pt-3">
+            <div className="flex flex-wrap items-center gap-4 border-t border-border-subtle pt-3">
               <div>
                 <Text tone="muted" size="xs">
                   Price impact
                 </Text>
-                <p className="text-sm font-semibold text-body">
+                <p className="text-sm font-semibold text-text-secondary">
                   {row.priceImpactMajor === '0.00'
                     ? 'None'
                     : `${row.currency} ${row.priceImpactMajor}`}
@@ -86,7 +86,7 @@ export const SubstitutionDecisions = ({
                 <Text tone="muted" size="xs">
                   Lead time impact
                 </Text>
-                <p className="text-sm font-semibold text-body">
+                <p className="text-sm font-semibold text-text-secondary">
                   {row.leadTimeImpactDays === 0 ? 'None' : `${row.leadTimeImpactDays} days`}
                 </p>
               </div>

@@ -52,16 +52,16 @@ export const OptionChips = ({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 gap-2 border-b border-line py-3 last:border-b-0 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:items-start sm:gap-4',
+        'grid grid-cols-1 gap-2 border-b border-border-subtle py-3 last:border-b-0 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:items-start sm:gap-4',
         className,
       )}
     >
       <div className="pt-1.5">
-        <p id={groupId} className="text-sm text-body">
+        <p id={groupId} className="text-sm text-text-secondary">
           {label}
         </p>
         {help !== undefined && (
-          <p className="mt-0.5 text-xs text-muted">{help}</p>
+          <p className="mt-0.5 text-xs text-text-tertiary">{help}</p>
         )}
       </div>
 
@@ -74,8 +74,8 @@ export const OptionChips = ({
               className={cn(
                 'inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
                 selected
-                  ? 'border-brand bg-brand-surface text-brand'
-                  : 'border-line bg-surface text-body hover:bg-raised',
+                  ? 'border-border-brand bg-bg-brand-subtle text-text-brand'
+                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-surface-raised',
                 (option.disabled === true || readOnly) && 'cursor-not-allowed opacity-60',
               )}
               title={option.hint}
@@ -83,7 +83,7 @@ export const OptionChips = ({
               {option.swatch !== undefined && (
                 <span
                   aria-hidden
-                  className="h-4 w-4 rounded-full border border-line"
+                  className="h-4 w-4 rounded-full border border-border-subtle"
                   style={{ backgroundColor: option.swatch }}
                 />
               )}
@@ -100,8 +100,8 @@ export const OptionChips = ({
                 className={cn(
                   'h-4 w-4 shrink-0 appearance-none rounded-full border transition-colors',
                   selected
-                    ? 'border-brand bg-brand ring-2 ring-inset ring-surface'
-                    : 'border-line-input bg-surface',
+                    ? 'border-border-brand bg-bg-brand ring-2 ring-inset ring-bg-surface'
+                    : 'border-border bg-bg-surface',
                   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
                   'disabled:cursor-not-allowed',
                 )}
@@ -131,13 +131,13 @@ export const SpecSection = ({
   className,
 }: SpecSectionProps) => (
   <section
-    className={cn('overflow-hidden rounded-xl border border-line bg-surface', className)}
+    className={cn('overflow-hidden rounded-xl border border-border-subtle bg-bg-surface', className)}
   >
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-raised px-4 py-3 md:px-6">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle bg-bg-surface-raised px-4 py-3 md:px-6">
       <div className="min-w-0">
-        <h2 className="text-sm font-semibold text-heading">{title}</h2>
+        <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
         {description !== undefined && (
-          <p className="ids-measure mt-0.5 text-xs text-muted">{description}</p>
+          <p className="ids-measure mt-0.5 text-xs text-text-tertiary">{description}</p>
         )}
       </div>
       {actions}

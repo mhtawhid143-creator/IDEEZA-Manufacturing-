@@ -88,9 +88,9 @@ export const AddressForm = ({ orderId, current, saved }: AddressFormProps) => {
                       countryCode: address.countryCode,
                     })
                   }
-                  className="w-full rounded-lg border border-line px-3 py-2 text-left text-sm text-body hover:border-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="w-full rounded-lg border border-border-subtle px-3 py-2 text-left text-sm text-text-secondary hover:border-border-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
-                  <span className="block font-semibold text-heading">
+                  <span className="block font-semibold text-text-primary">
                     {address.label ?? 'Saved address'}
                   </span>
                   {address.line1}, {address.city}, {address.countryCode}

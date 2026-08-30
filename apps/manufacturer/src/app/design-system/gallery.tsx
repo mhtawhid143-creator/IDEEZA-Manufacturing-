@@ -103,22 +103,22 @@ export const DesignSystemGallery = () => {
       <Section title="Colour and type" description="Brand, text, surface, border and status tokens.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ['Brand', 'bg-brand'],
-            ['Brand hover', 'bg-brand-hover'],
-            ['Brand weak', 'bg-brand-weak'],
-            ['Accent', 'bg-accent'],
-            ['Canvas', 'bg-canvas'],
-            ['Surface', 'bg-surface border border-line'],
-            ['Success', 'bg-success'],
-            ['Warning', 'bg-warning'],
-            ['Danger', 'bg-danger'],
-            ['Info', 'bg-info'],
-            ['Neutral', 'bg-neutral'],
-            ['Raised', 'bg-raised'],
+            ['Brand', 'bg-bg-brand'],
+            ['Brand hover', 'bg-bg-brand-hover'],
+            ['Brand weak', 'bg-bg-brand-subtle'],
+            ['Accent', 'bg-bg-warning'],
+            ['Canvas', 'bg-bg-page'],
+            ['Surface', 'bg-bg-surface border border-border-subtle'],
+            ['Success', 'bg-bg-success'],
+            ['Warning', 'bg-bg-warning'],
+            ['Danger', 'bg-bg-error'],
+            ['Info', 'bg-bg-info'],
+            ['Neutral', 'bg-gray-600'],
+            ['Raised', 'bg-bg-surface-raised'],
           ].map(([label, className]) => (
             <div key={label} className="flex items-center gap-3">
               <span className={`h-10 w-10 rounded-md ${className ?? ''}`} aria-hidden />
-              <span className="text-sm text-body">{label}</span>
+              <span className="text-sm text-text-secondary">{label}</span>
             </div>
           ))}
         </div>
@@ -303,7 +303,7 @@ export const DesignSystemGallery = () => {
                         type="button"
                         onClick={onClick}
                         aria-label="Row actions"
-                        className="rounded-md px-2 py-1 text-body hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                        className="rounded-md px-2 py-1 text-text-secondary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                         {...aria}
                       >
                         ⋯
@@ -348,7 +348,7 @@ export const DesignSystemGallery = () => {
               Show toast
             </Button>
             <Tooltip content="Funds are held by the platform until you confirm delivery.">
-              <span className="text-sm font-medium text-brand underline decoration-dotted">
+              <span className="text-sm font-medium text-text-brand underline decoration-dotted">
                 What does secured mean?
               </span>
             </Tooltip>

@@ -97,7 +97,7 @@ export const Modal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onKeyDown={onKeyDown}>
       <div
-        className="absolute inset-0 animate-fade-in bg-overlay/40"
+        className="absolute inset-0 animate-fade-in bg-bg-overlay/40"
         onClick={onClose}
         aria-hidden
       />
@@ -109,7 +109,7 @@ export const Modal = ({
         aria-describedby={description === undefined ? undefined : descriptionId}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col animate-slide-up rounded-xl bg-surface p-6 shadow-modal focus-visible:outline-none',
+          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col animate-slide-up rounded-xl bg-bg-surface p-6 shadow-5 focus-visible:outline-none',
           MODAL_SIZE[size],
           className,
         )}
@@ -171,7 +171,7 @@ export const Drawer = ({
 
   return (
     <div className="fixed inset-0 z-50" onKeyDown={onKeyDown}>
-      <div className="absolute inset-0 animate-fade-in bg-overlay/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade-in bg-bg-overlay/40" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
@@ -179,14 +179,14 @@ export const Drawer = ({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'absolute inset-y-0 flex w-full flex-col bg-surface shadow-overlay focus-visible:outline-none',
+          'absolute inset-y-0 flex w-full flex-col bg-bg-surface shadow-6 focus-visible:outline-none',
           'animate-slide-in-right',
           side === 'right' ? 'right-0' : 'left-0',
           DRAWER_WIDTH[width],
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-line p-5">
+        <div className="flex items-start justify-between gap-4 border-b border-border-subtle p-5">
           <div className="min-w-0">
             <Heading level={3} id={titleId}>
               {title}
@@ -201,7 +201,7 @@ export const Drawer = ({
         </div>
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
         {footer !== undefined && (
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line p-5">
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle p-5">
             {footer}
           </div>
         )}

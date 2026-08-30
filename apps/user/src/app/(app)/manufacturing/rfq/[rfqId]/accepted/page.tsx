@@ -70,7 +70,7 @@ const AcceptedQuotePage = async ({
             }}
           />
           <Card tone="brand" className="flex flex-col gap-2">
-            <p className="text-sm font-semibold text-heading">
+            <p className="text-sm font-semibold text-text-primary">
               Accepted on {day(accepted.acceptedAt)} for {accepted.currency}{' '}
               {major(landedTotalMinor(accepted))} landed
             </p>

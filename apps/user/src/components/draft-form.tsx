@@ -158,7 +158,7 @@ export const DraftForm = ({ product, values, draftId }: DraftFormProps) => {
 
           {product.bomLines.length > 0 && (
             <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-semibold text-heading">
+              <legend className="text-sm font-semibold text-text-primary">
                 Bill of materials to quote
               </legend>
               {product.bomLines.map((line) => (

@@ -13,16 +13,16 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export const BUTTON_VARIANT: Record<ButtonVariant, string> = {
   primary:
-    'bg-brand text-on-brand hover:bg-brand-hover active:bg-brand-pressed shadow-card',
+    'bg-bg-brand text-text-on-brand hover:bg-bg-brand-hover active:bg-bg-brand-pressed shadow-1',
   secondary:
-    'bg-surface text-heading border border-line-input hover:bg-raised hover:border-line-input-hover active:bg-line-input',
+    'bg-bg-surface text-text-primary border border-border hover:bg-bg-surface-raised hover:border-border-strong active:bg-bg-subtle',
   tonal:
-    'bg-brand-surface text-brand-hover hover:bg-brand-surface-hover active:bg-brand-surface-pressed',
-  ghost: 'bg-transparent text-heading hover:bg-raised active:bg-line-input',
+    'bg-bg-brand-subtle text-text-brand hover:bg-violet-100 active:bg-violet-200',
+  ghost: 'bg-transparent text-text-primary hover:bg-bg-surface-raised active:bg-bg-subtle',
   outline:
-    'bg-transparent text-brand border border-brand hover:bg-brand-surface-hover active:bg-brand-surface-pressed',
+    'bg-transparent text-text-brand border border-border-brand hover:bg-violet-100 active:bg-violet-200',
   danger:
-    'bg-danger-strong text-on-brand hover:brightness-95 active:brightness-90 shadow-card',
+    'bg-red-700 text-text-on-brand hover:brightness-95 active:brightness-90 shadow-1',
 };
 
 /**
@@ -42,7 +42,7 @@ export const BUTTON_SIZE: Record<ButtonSize, string> = {
 const BASE =
   'inline-flex select-none items-center justify-center whitespace-nowrap font-semibold transition-colors ' +
   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus ' +
-  'disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-text disabled:border-transparent disabled:shadow-none';
+  'disabled:cursor-not-allowed disabled:bg-bg-subtle disabled:text-text-disabled disabled:border-transparent disabled:shadow-none';
 
 export interface ButtonAppearance {
   readonly variant?: ButtonVariant | undefined;
@@ -71,7 +71,7 @@ export interface ButtonAppearance {
  */
 /** A control that is shown but cannot be used: readable, and obviously inert. */
 const UNAVAILABLE =
-  'cursor-not-allowed bg-disabled-bg text-body shadow-none hover:bg-disabled-bg';
+  'cursor-not-allowed bg-bg-subtle text-text-secondary shadow-none hover:bg-bg-subtle';
 
 export const buttonAppearance = ({
   variant = 'primary',

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  * shop. All three are refused here rather than shown an empty panel.
  */
 const ForbiddenPage = () => (
-  <main className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+  <main className="flex min-h-dvh items-center justify-center bg-bg-page px-4">
     <Card className="max-w-lg text-center">
       <Heading level={1} className="text-xl">
         This account cannot use the manufacturer panel

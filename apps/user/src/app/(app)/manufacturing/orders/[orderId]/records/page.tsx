@@ -115,10 +115,10 @@ const RecordsPage = async ({
             {production.evidence.map((record) => (
               <li
                 key={record.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-subtle p-3"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-heading">{record.title}</p>
+                  <p className="text-sm font-semibold text-text-primary">{record.title}</p>
                   <Text tone="muted" size="xs" className="mt-0.5">
                     {KIND_LABEL[record.kind] ?? record.kind.replace(/_/g, ' ')} ·{' '}
                     {record.contextKind}
@@ -148,7 +148,7 @@ const RecordsPage = async ({
               key={stage.id}
               className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3"
             >
-              <span className="min-w-0 text-body">{stage.label}</span>
+              <span className="min-w-0 text-text-secondary">{stage.label}</span>
               <span className="flex shrink-0 items-center gap-2">
                 <Text tone="muted" size="xs">
                   {stage.evidenceCount} record{stage.evidenceCount === 1 ? '' : 's'}

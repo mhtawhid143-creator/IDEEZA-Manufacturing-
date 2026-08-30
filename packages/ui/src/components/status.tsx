@@ -93,21 +93,21 @@ export const statusPresentation = (
   STATUS_PRESENTATION[status] ?? { label: status.replace(/_/g, ' '), tone: 'neutral' };
 
 const DOT: Record<Tone, string> = {
-  neutral: 'bg-neutral',
-  brand: 'bg-brand',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-  info: 'bg-info',
+  neutral: 'bg-gray-600',
+  brand: 'bg-bg-brand',
+  success: 'bg-bg-success',
+  warning: 'bg-bg-warning',
+  danger: 'bg-bg-error',
+  info: 'bg-bg-info',
 };
 
 const CHIP: Record<Tone, string> = {
-  neutral: 'bg-neutral-weak text-neutral',
-  brand: 'bg-brand-weak text-brand',
-  success: 'bg-success-weak text-success',
-  warning: 'bg-warning-weak text-warning-ink',
-  danger: 'bg-danger-weak text-danger-strong',
-  info: 'bg-info-weak text-info',
+  neutral: 'bg-gray-100 text-gray-600',
+  brand: 'bg-bg-brand-subtle text-text-brand',
+  success: 'bg-green-100 text-text-success',
+  warning: 'bg-yellow-100 text-text-warning',
+  danger: 'bg-red-100 text-red-700',
+  info: 'bg-blue-100 text-text-link',
 };
 
 export interface StatusChipProps extends HTMLAttributes<HTMLSpanElement> {
@@ -146,7 +146,7 @@ export interface StatusDotProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 export const StatusDot = ({ tone = 'neutral', label, className, ...rest }: StatusDotProps) => (
-  <span className={cn('inline-flex items-center gap-2 text-sm text-body', className)} {...rest}>
+  <span className={cn('inline-flex items-center gap-2 text-sm text-text-secondary', className)} {...rest}>
     <span className={cn('h-2 w-2 rounded-full', DOT[tone])} aria-hidden />
     {label}
   </span>

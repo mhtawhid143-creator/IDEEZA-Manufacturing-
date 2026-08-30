@@ -30,12 +30,12 @@ const ProfilePage = async () => {
             <div className="flex items-center gap-4">
               <span
                 aria-hidden
-                className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand text-lg font-bold text-white"
+                className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-bg-brand text-lg font-bold text-white"
               >
                 {shop.displayName.slice(0, 2).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <h1 className="truncate text-xl font-bold text-heading">
+                <h1 className="truncate text-xl font-bold text-text-primary">
                   {shop.displayName}
                 </h1>
                 <Text tone="muted" size="sm">
@@ -47,28 +47,28 @@ const ProfilePage = async () => {
 
             <div className="flex flex-wrap items-center gap-6">
               <div>
-                <p className="text-lg font-bold text-heading">
+                <p className="text-lg font-bold text-text-primary">
                   {shop.rating === null ? '—' : shop.rating.toFixed(1)}
-                  <span className="ml-1 text-brand">★</span>
+                  <span className="ml-1 text-text-brand">★</span>
                 </p>
                 <Text tone="muted" size="xs">
                   {shop.reviewCount} review{shop.reviewCount === 1 ? '' : 's'}
                 </Text>
               </div>
               <div>
-                <p className="text-lg font-bold text-heading">{shop.orderCount}</p>
+                <p className="text-lg font-bold text-text-primary">{shop.orderCount}</p>
                 <Text tone="muted" size="xs">
                   orders built
                 </Text>
               </div>
               <div>
-                <p className="text-lg font-bold text-heading">{shop.quoteCount}</p>
+                <p className="text-lg font-bold text-text-primary">{shop.quoteCount}</p>
                 <Text tone="muted" size="xs">
                   quotes sent
                 </Text>
               </div>
               <div>
-                <p className="text-lg font-bold text-heading">{shop.partCount}</p>
+                <p className="text-lg font-bold text-text-primary">{shop.partCount}</p>
                 <Text tone="muted" size="xs">
                   parts held
                 </Text>
@@ -96,8 +96,8 @@ const ProfilePage = async () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-line bg-canvas p-4">
-            <p className="text-sm font-semibold text-heading">
+          <div className="rounded-xl border border-border-subtle bg-bg-page p-4">
+            <p className="text-sm font-semibold text-text-primary">
               What this profile decides
             </p>
             <Text size="sm" className="mt-2 block">

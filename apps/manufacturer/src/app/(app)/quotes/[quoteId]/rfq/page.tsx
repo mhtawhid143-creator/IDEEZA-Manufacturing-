@@ -59,7 +59,7 @@ const QuoteRequestPage = async ({
           items={briefRows(request.requirementRows)}
         />
         {request.notes !== null && request.notes !== '' && (
-          <div className="mt-4 border-t border-line pt-4">
+          <div className="mt-4 border-t border-border-subtle pt-4">
             <Text tone="muted" size="xs" className="block">
               From the buyer
             </Text>
@@ -104,7 +104,7 @@ const QuoteRequestPage = async ({
             { label: 'Wanted by', value: day(request.neededBy) },
           ]}
         />
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-border-subtle pt-4">
           <Link
             href={`/rfqs/${request.rfqId}/specification`}
             className={buttonAppearance({ variant: 'secondary', size: 'sm' })}

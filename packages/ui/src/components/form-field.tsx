@@ -56,25 +56,25 @@ export const FormField = ({
         <label
           htmlFor={inputId}
           className={cn(
-            'text-sm font-medium text-heading',
+            'text-sm font-medium text-text-primary',
             labelHidden && 'ids-sr-only',
           )}
         >
           {label}
           {required && (
-            <span className="ml-0.5 text-danger" aria-hidden>
+            <span className="ml-0.5 text-text-error" aria-hidden>
               *
             </span>
           )}
         </label>
         {children}
         {hint !== undefined && error === undefined && (
-          <p id={hintId} className="ids-measure text-xs text-muted">
+          <p id={hintId} className="ids-measure text-xs text-text-tertiary">
             {hint}
           </p>
         )}
         {error !== undefined && (
-          <p id={errorId} className="text-xs font-medium text-danger" role="alert">
+          <p id={errorId} className="text-xs font-medium text-text-error" role="alert">
             {error}
           </p>
         )}
@@ -85,8 +85,8 @@ export const FormField = ({
 
 export const fieldControlClasses = (invalid: boolean): string =>
   cn(
-    'w-full rounded-md border bg-surface px-3 text-sm text-heading placeholder:text-muted',
+    'w-full rounded-md border bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-tertiary',
     'transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-    'disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-text',
-    invalid ? 'border-danger focus-visible:ring-focus-danger' : 'border-line-input hover:border-line-input-hover',
+    'disabled:cursor-not-allowed disabled:bg-bg-subtle disabled:text-text-disabled',
+    invalid ? 'border-border-error focus-visible:ring-focus-danger' : 'border-border hover:border-border-strong',
   );

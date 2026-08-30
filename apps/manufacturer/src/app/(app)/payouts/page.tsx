@@ -29,8 +29,8 @@ const Counter = ({
   readonly note: string;
 }) => (
   <Card>
-    <p className="text-2xl font-bold text-heading">{value}</p>
-    <Text size="sm" className="mt-0.5 block font-medium text-body">
+    <p className="text-2xl font-bold text-text-primary">{value}</p>
+    <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
       {label}
     </Text>
     <Text tone="muted" size="xs" className="mt-0.5 block">
@@ -130,7 +130,7 @@ const PayoutsPage = async ({
       </Card>
 
       <Card tone="brand">
-        <p className="text-sm font-semibold text-heading">
+        <p className="text-sm font-semibold text-text-primary">
           Why a payout is held, and what lets it go
         </p>
         <Text size="sm" className="mt-2 block">

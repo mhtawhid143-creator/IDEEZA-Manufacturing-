@@ -45,10 +45,10 @@ export const OrderShell = ({ order, activeTab, schedule, children }: OrderShellP
       <div className="flex min-w-0 items-center gap-4">
         <span
           aria-hidden
-          className="h-14 w-14 shrink-0 rounded-lg bg-gradient-to-br from-brand-weak to-info-weak"
+          className="h-14 w-14 shrink-0 rounded-lg bg-gradient-to-br from-bg-brand-subtle to-blue-100"
         />
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-heading">
+          <p className="truncate text-base font-semibold text-text-primary">
             {order.productName}
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">

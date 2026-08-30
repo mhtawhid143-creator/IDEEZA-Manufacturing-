@@ -1,8 +1,21 @@
 /**
- * Tailwind preset that exposes the design tokens as utilities.
+ * Tailwind preset — the design system's names, not this repository's.
  *
- * Every colour, radius, shadow and layout size resolves to a CSS variable from
- * styles/tokens.css, so a theme change never requires touching a component.
+ * Every colour, radius, shadow and type size below is a variable from
+ * `@ideeza/tokens`, under the name the system gives it. `bg-bg-surface`,
+ * `text-text-primary`, `border-border-subtle` read oddly the first time and are
+ * deliberate: they are what the system's own components are written in, so a
+ * component from either side can be read — and eventually moved — without
+ * translating a vocabulary on the way.
+ *
+ * This mirrors `@ideeza/tokens/tailwind-preset` rather than importing it. That
+ * module is TypeScript compiled at publish time, and the system is installed
+ * from git, which ships its `css` directory and no build. When the system is
+ * published to npm this file becomes `presets: [ideezaPreset]` and goes.
+ *
+ * What is not the system's is marked where it appears: the layout measurements
+ * taken from the panel frames, the animation the panels use, and the screen
+ * breakpoints the panel grid is drawn on.
  */
 
 /** @type {import('tailwindcss').Config} */
@@ -10,69 +23,125 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          DEFAULT: 'var(--ids-color-brand)',
-          hover: 'var(--ids-color-brand-hover)',
-          pressed: 'var(--ids-color-brand-pressed)',
-          weak: 'var(--ids-color-brand-weak)',
-          tint: 'var(--ids-color-brand-tint)',
-          surface: 'var(--ids-color-brand-surface)',
-          'surface-hover': 'var(--ids-color-brand-surface-hover)',
-          'surface-pressed': 'var(--ids-color-brand-surface-pressed)',
+        // Primitives — for the few places a step is named directly.
+        violet: {
+          50: 'var(--color-violet-50)',
+          100: 'var(--color-violet-100)',
+          200: 'var(--color-violet-200)',
+          300: 'var(--color-violet-300)',
+          400: 'var(--color-violet-400)',
+          500: 'var(--color-violet-500)',
+          600: 'var(--color-violet-600)',
+          700: 'var(--color-violet-700)',
+          800: 'var(--color-violet-800)',
+          900: 'var(--color-violet-900)',
+          950: 'var(--color-violet-950)',
         },
-        accent: 'var(--ids-color-accent)',
-        'accent-strong': 'var(--ids-color-accent-strong)',
-        'warning-ink': 'var(--ids-color-warning-ink)',
-        overlay: 'var(--ids-color-overlay)',
-        heading: 'var(--ids-color-heading)',
-        body: 'var(--ids-color-body)',
-        muted: 'var(--ids-color-muted)',
-        'on-brand': 'var(--ids-color-on-brand)',
-        surface: 'var(--ids-color-surface)',
-        canvas: 'var(--ids-color-canvas)',
-        raised: 'var(--ids-color-raised)',
-        line: {
-          DEFAULT: 'var(--ids-color-border)',
-          strong: 'var(--ids-color-border-strong)',
-          input: 'var(--ids-color-border-input)',
-          'input-hover': 'var(--ids-color-border-input-hover)',
+        gray: {
+          50: 'var(--color-gray-50)',
+          100: 'var(--color-gray-100)',
+          200: 'var(--color-gray-200)',
+          300: 'var(--color-gray-300)',
+          400: 'var(--color-gray-400)',
+          500: 'var(--color-gray-500)',
+          600: 'var(--color-gray-600)',
+          700: 'var(--color-gray-700)',
+          800: 'var(--color-gray-800)',
+          900: 'var(--color-gray-900)',
+          950: 'var(--color-gray-950)',
         },
-        danger: {
-          DEFAULT: 'var(--ids-color-danger)',
-          strong: 'var(--ids-color-danger-strong)',
-          weak: 'var(--ids-color-danger-weak)',
+        blue: {
+          50: 'var(--color-blue-50)',
+          100: 'var(--color-blue-100)',
+          500: 'var(--color-blue-500)',
+          700: 'var(--color-blue-700)',
         },
-        warning: {
-          DEFAULT: 'var(--ids-color-warning)',
-          weak: 'var(--ids-color-warning-weak)',
+        green: {
+          50: 'var(--color-green-50)',
+          100: 'var(--color-green-100)',
+          500: 'var(--color-green-500)',
+          800: 'var(--color-green-800)',
         },
-        success: {
-          DEFAULT: 'var(--ids-color-success)',
-          weak: 'var(--ids-color-success-weak)',
+        red: {
+          50: 'var(--color-red-50)',
+          100: 'var(--color-red-100)',
+          500: 'var(--color-red-500)',
+          700: 'var(--color-red-700)',
         },
-        info: {
-          DEFAULT: 'var(--ids-color-info)',
-          weak: 'var(--ids-color-info-weak)',
+        yellow: {
+          50: 'var(--color-yellow-50)',
+          100: 'var(--color-yellow-100)',
+          500: 'var(--color-yellow-500)',
+          800: 'var(--color-yellow-800)',
         },
-        neutral: {
-          DEFAULT: 'var(--ids-color-neutral)',
-          weak: 'var(--ids-color-neutral-weak)',
+        orange: {
+          100: 'var(--color-orange-100)',
+          500: 'var(--color-orange-500)',
+          700: 'var(--color-orange-700)',
         },
-        'disabled-bg': 'var(--ids-color-disabled-bg)',
-        'disabled-text': 'var(--ids-color-disabled-text)',
+
+        // Semantic — backgrounds
+        bg: {
+          page: 'var(--color-bg-page)',
+          surface: 'var(--color-bg-surface)',
+          'surface-raised': 'var(--color-bg-surface-raised)',
+          subtle: 'var(--color-bg-subtle)',
+          inverse: 'var(--color-bg-inverse)',
+          overlay: 'var(--color-bg-overlay)',
+          brand: 'var(--color-bg-brand)',
+          'brand-hover': 'var(--color-bg-brand-hover)',
+          'brand-pressed': 'var(--color-bg-brand-pressed)',
+          'brand-subtle': 'var(--color-bg-brand-subtle)',
+          success: 'var(--color-bg-success)',
+          'success-subtle': 'var(--color-bg-success-subtle)',
+          warning: 'var(--color-bg-warning)',
+          'warning-subtle': 'var(--color-bg-warning-subtle)',
+          error: 'var(--color-bg-error)',
+          'error-subtle': 'var(--color-bg-error-subtle)',
+          info: 'var(--color-bg-info)',
+          'info-subtle': 'var(--color-bg-info-subtle)',
+        },
+
+        // Semantic — text
+        text: {
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          tertiary: 'var(--color-text-tertiary)',
+          disabled: 'var(--color-text-disabled)',
+          inverse: 'var(--color-text-inverse)',
+          'on-brand': 'var(--color-text-on-brand)',
+          brand: 'var(--color-text-brand)',
+          link: 'var(--color-text-link)',
+          success: 'var(--color-text-success)',
+          warning: 'var(--color-text-warning)',
+          error: 'var(--color-text-error)',
+        },
+
+        // Semantic — borders
+        border: {
+          DEFAULT: 'var(--color-border-default)',
+          strong: 'var(--color-border-strong)',
+          subtle: 'var(--color-border-subtle)',
+          focus: 'var(--color-border-focus)',
+          error: 'var(--color-border-error)',
+          brand: 'var(--color-border-brand)',
+          success: 'var(--color-border-success)',
+          warning: 'var(--color-border-warning)',
+          blue: 'var(--color-border-blue)',
+        },
       },
+
       fontFamily: {
-        sans: 'var(--ids-font-body)',
-        heading: 'var(--ids-font-heading)',
-        mono: 'var(--ids-font-mono)',
+        sans: 'var(--font-family-body)',
+        display: 'var(--font-family-display)',
+        mono: 'var(--font-family-mono)',
       },
-      // The type ramp is the design system's. Each step names the system
-      // variable that holds it rather than a pixel value, so the sizes follow
-      // the system — including the smaller values it swaps in below 768px,
-      // which a hard-coded ramp cannot do.
-      //
-      // The names on the left are this repository's, and the sizes line up one
-      // for one: xs is the system's 12, sm its 14, base its 16, lg its 18.
+
+      // The system's ramp. Each step names its variable rather than a pixel
+      // value, so the sizes follow it — including the smaller values it swaps
+      // in below 768px, which a hard-coded ramp cannot do. The names on the
+      // left are Tailwind's own scale and the sizes line up one for one: xs is
+      // the system's 12, sm its 14, base its 16, lg its 18.
       fontSize: {
         xs: ['var(--font-size-sm)', { lineHeight: 'var(--line-height-xs)' }],
         sm: ['var(--font-size-md)', { lineHeight: 'var(--line-height-md)' }],
@@ -83,54 +152,71 @@ module.exports = {
         '3xl': ['var(--font-size-4xl)', { lineHeight: 'var(--line-height-5xl)' }],
         '4xl': ['var(--font-size-5xl)', { lineHeight: 'var(--line-height-6xl)' }],
       },
+
       fontWeight: {
         normal: 'var(--font-weight-regular)',
         medium: 'var(--font-weight-medium)',
         semibold: 'var(--font-weight-semibold)',
         bold: 'var(--font-weight-bold)',
       },
+
       borderRadius: {
-        xs: 'var(--ids-radius-xs)',
-        sm: 'var(--ids-radius-sm)',
-        md: 'var(--ids-radius-md)',
-        lg: 'var(--ids-radius-lg)',
-        xl: 'var(--ids-radius-xl)',
-        '2xl': 'var(--ids-radius-2xl)',
-        full: 'var(--ids-radius-full)',
+        none: 'var(--radius-none)',
+        xs: 'var(--radius-xs)',
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-3xl)',
+        full: 'var(--radius-full)',
       },
+
       boxShadow: {
-        card: 'var(--ids-shadow-card)',
-        dropdown: 'var(--ids-shadow-dropdown)',
-        modal: 'var(--ids-shadow-modal)',
-        overlay: 'var(--ids-shadow-overlay)',
-        brand: 'var(--ids-shadow-brand)',
-        none: 'none',
+        none: 'var(--elevation-0)',
+        1: 'var(--elevation-1)',
+        2: 'var(--elevation-2)',
+        3: 'var(--elevation-3)',
+        4: 'var(--elevation-4)',
+        5: 'var(--elevation-5)',
+        6: 'var(--elevation-6)',
+        inner: 'var(--elevation-inner)',
+        'depth-accent': 'var(--shadow-depth-accent)',
       },
+
+      // The system numbers its spacing ladder its own way — its step 4 is 8px
+      // where Tailwind step 4 is 16px — so adopting it would silently halve
+      // every padding and gap already written against Tailwind's scale. The
+      // ladder stays Tailwind's; what is added is the shell, measured from the
+      // panel frames, which the system does not describe.
       spacing: {
-        // Figma spacing scale adds 10px and 28px to the default ladder.
-        2.5: '10px',
-        7: '28px',
-        navbar: 'var(--ids-navbar-height)',
-        sidebar: 'var(--ids-sidebar-width)',
-        gutter: 'var(--ids-content-gutter)',
+        2.5: "10px",
+        7: "28px",
+        navbar: "var(--ids-navbar-height)",
+        sidebar: "var(--ids-sidebar-width)",
+        gutter: "var(--ids-content-gutter)",
       },
+
       maxWidth: {
         content: 'var(--ids-content-max)',
       },
+
       screens: {
-        // Figma grid: mobile 390, tablet 768, desktop 1440; the panel file
-        // switches its own layout at 960.
+        // The panel grid: mobile 390, tablet 768, desktop 1440, with the panel
+        // file's own switch at 960.
         sm: '480px',
         md: '768px',
         lg: '960px',
         xl: '1280px',
         '2xl': '1440px',
       },
+
       ringColor: {
-        focus: 'var(--ids-color-focus-halo)',
-        'focus-on-fill': 'var(--ids-color-focus-halo-on-fill)',
-        'focus-danger': 'var(--ids-color-focus-halo-danger)',
+        focus: 'var(--color-focus-halo)',
+        'focus-on-fill': 'var(--color-focus-halo-on-fill)',
+        'focus-danger': 'var(--color-focus-halo-danger)',
       },
+
       keyframes: {
         'ids-fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
         'ids-slide-up': {
@@ -143,10 +229,12 @@ module.exports = {
         },
         'ids-spin': { to: { transform: 'rotate(360deg)' } },
       },
+
       animation: {
-        'fade-in': 'ids-fade-in 150ms ease-out',
-        'slide-up': 'ids-slide-up 180ms ease-out',
-        'slide-in-right': 'ids-slide-in-right 220ms ease-out',
+        'fade-in': 'ids-fade-in var(--motion-duration-fast) var(--motion-easing-standard)',
+        'slide-up': 'ids-slide-up var(--motion-duration-normal) var(--motion-easing-decelerate)',
+        'slide-in-right':
+          'ids-slide-in-right var(--motion-duration-slow) var(--motion-easing-decelerate)',
         spin: 'ids-spin 900ms linear infinite',
       },
     },

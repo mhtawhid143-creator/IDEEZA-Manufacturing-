@@ -15,10 +15,10 @@ const rowClasses = (active: boolean, disabled: boolean): string =>
   cn(
     'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
     disabled
-      ? 'cursor-not-allowed text-muted'
+      ? 'cursor-not-allowed text-text-tertiary'
       : active
-        ? 'bg-brand-weak font-semibold text-brand'
-        : 'text-body hover:bg-raised',
+        ? 'bg-bg-brand-subtle font-semibold text-text-brand'
+        : 'text-text-secondary hover:bg-bg-surface-raised',
   );
 
 const NavRow = ({ entry }: { readonly entry: NavEntry }) => {
@@ -32,7 +32,7 @@ const NavRow = ({ entry }: { readonly entry: NavEntry }) => {
           <span aria-disabled="true" className={rowClasses(false, true)}>
             <NavIconGlyph name={entry.icon} />
             <span className="truncate">{entry.label}</span>
-            <span className="ml-auto text-[11px] uppercase tracking-wide text-muted">
+            <span className="ml-auto text-[11px] uppercase tracking-wide text-text-tertiary">
               n/a
             </span>
           </span>
@@ -73,7 +73,7 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
   <nav
     aria-label="Main"
     className={cn(
-      'flex h-full w-sidebar shrink-0 flex-col gap-4 border-r border-line bg-surface px-3 py-4',
+      'flex h-full w-sidebar shrink-0 flex-col gap-4 border-r border-border-subtle bg-bg-surface px-3 py-4',
       className,
     )}
     onClick={onNavigate}
@@ -86,24 +86,24 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
 
     <div className="mt-auto flex flex-col gap-4">
       {profileCompleteness !== undefined && profileCompleteness < 100 && (
-        <div className="rounded-xl border border-line bg-canvas p-4">
-          <p className="text-sm font-semibold text-heading">Finish your profile</p>
+        <div className="rounded-xl border border-border-subtle bg-bg-page p-4">
+          <p className="text-sm font-semibold text-text-primary">Finish your profile</p>
           <Text tone="muted" size="xs" className="mt-1">
             Buyers only see shops whose capabilities cover what they are asking for.
           </Text>
           <div
-            className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-line"
+            className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle"
             role="img"
             aria-label={`Profile ${profileCompleteness}% complete`}
           >
             <div
-              className="h-full rounded-full bg-brand"
+              className="h-full rounded-full bg-bg-brand"
               style={{ width: `${profileCompleteness}%` }}
             />
           </div>
           <Link
             href="/profile"
-            className="mt-3 inline-flex text-xs font-semibold text-brand underline hover:no-underline"
+            className="mt-3 inline-flex text-xs font-semibold text-text-brand underline hover:no-underline"
           >
             {profileCompleteness}% complete — continue
           </Link>
@@ -111,7 +111,7 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
       )}
 
       <div>
-        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted">
+        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
           For you
         </p>
         <ul className="mt-1 flex flex-col gap-1">

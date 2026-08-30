@@ -228,7 +228,7 @@ export const IssueForm = ({
 
       {withRecords && (
         <div>
-          <p className="text-sm font-medium text-heading">
+          <p className="text-sm font-medium text-text-primary">
             Attach records from this order
           </p>
           <Text tone="muted" size="xs" className="mt-0.5">

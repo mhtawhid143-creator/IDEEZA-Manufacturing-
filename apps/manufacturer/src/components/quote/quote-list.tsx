@@ -155,12 +155,12 @@ export const QuoteList = ({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-brand-weak to-info-weak"
+                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
                 />
                 <div className="min-w-0">
                   <Link
                     href={`/quotes/${row.quoteId}`}
-                    className="block truncate text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="block truncate text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   >
                     {row.productName}
                   </Link>
@@ -213,7 +213,7 @@ export const QuoteList = ({
             header: 'Date',
             cell: (row) => (
               <div>
-                <p className="whitespace-nowrap text-sm text-body">{row.sentOn}</p>
+                <p className="whitespace-nowrap text-sm text-text-secondary">{row.sentOn}</p>
                 <Text tone="muted" size="xs">
                   valid to {row.expiresOn}
                 </Text>
@@ -251,7 +251,7 @@ export const QuoteList = ({
                     type="button"
                     onClick={onClick}
                     aria-label={`Actions for ${row.productName}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
                     ⋮

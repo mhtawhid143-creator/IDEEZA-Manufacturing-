@@ -51,7 +51,7 @@ export const Navbar = ({
   notificationCount = 0,
   onOpenNavigation,
 }: NavbarProps) => (
-  <header className="sticky top-0 z-30 flex h-navbar items-center gap-3 border-b border-line bg-surface px-4 md:px-gutter">
+  <header className="sticky top-0 z-30 flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
     <IconButton
       label="Open navigation"
       icon={MenuIcon}
@@ -61,17 +61,17 @@ export const Navbar = ({
 
     <Link href="/dashboard" className="flex items-center gap-2" aria-label="IDEEZA home">
       <span
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand text-sm font-bold text-on-brand"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-bg-brand text-sm font-bold text-text-on-brand"
         aria-hidden
       >
         ID
       </span>
-      <span className="text-base font-bold tracking-wide text-heading">IDEEZA</span>
+      <span className="text-base font-bold tracking-wide text-text-primary">IDEEZA</span>
     </Link>
 
-    <span className="ml-2 hidden truncate text-sm text-muted md:inline">
+    <span className="ml-2 hidden truncate text-sm text-text-tertiary md:inline">
       Manufacturer ·{' '}
-      <span className="font-semibold text-heading">{companyName}</span>
+      <span className="font-semibold text-text-primary">{companyName}</span>
     </span>
 
     <div className="ml-auto flex items-center gap-1">
@@ -108,12 +108,12 @@ export const Navbar = ({
             ref={ref}
             type="button"
             onClick={onClick}
-            className="ml-1 flex items-center gap-2 rounded-full px-1 py-1 text-sm font-medium text-heading hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+            className="ml-1 flex items-center gap-2 rounded-full px-1 py-1 text-sm font-medium text-text-primary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
             {...aria}
           >
             <Avatar name={displayName} size="sm" />
             <span className="hidden max-w-32 truncate sm:inline">{displayName}</span>
-            <span aria-hidden className="text-muted">
+            <span aria-hidden className="text-text-tertiary">
               ▾
             </span>
           </button>

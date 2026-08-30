@@ -118,10 +118,10 @@ const OrderProductionPage = async ({
             {openCases.map((dispute) => (
               <li
                 key={dispute.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line p-3"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle p-3"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-heading">
+                  <p className="text-sm font-semibold text-text-primary">
                     Case {dispute.id.slice(-8).toUpperCase()} ·{' '}
                     {dispute.reason.replace(/_/g, ' ')}
                   </p>
@@ -186,14 +186,14 @@ const OrderProductionPage = async ({
               description="Raised by you, decided by the buyer. The frozen terms are never edited; the difference is carried as an adjustment."
             />
           </div>
-          <ul aria-label="Part shortages" className="border-t border-line">
+          <ul aria-label="Part shortages" className="border-t border-border-subtle">
             {order.alerts.map((alert) => (
               <li
                 key={alert.id}
-                className="border-b border-line px-4 py-4 last:border-b-0 md:px-6"
+                className="border-b border-border-subtle px-4 py-4 last:border-b-0 md:px-6"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-heading">
+                  <p className="text-sm font-semibold text-text-primary">
                     {alert.partReference} · {alert.partName} — {alert.shortfallQuantity}{' '}
                     short
                   </p>
@@ -222,7 +222,7 @@ const OrderProductionPage = async ({
                   {alert.note}
                 </Text>
                 {alert.decisionNote !== null && (
-                  <Text size="sm" className="mt-2 block font-medium text-heading">
+                  <Text size="sm" className="mt-2 block font-medium text-text-primary">
                     The buyer answered: {alert.decisionNote}
                   </Text>
                 )}
@@ -247,14 +247,14 @@ const OrderProductionPage = async ({
             />
           </div>
         ) : (
-          <ul aria-label="Records" className="border-t border-line">
+          <ul aria-label="Records" className="border-t border-border-subtle">
             {order.evidence.map((record) => (
               <li
                 key={record.id}
-                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-heading">{record.title}</p>
+                  <p className="text-sm font-semibold text-text-primary">{record.title}</p>
                   <Text tone="muted" size="xs">
                     {EVIDENCE_LABEL[record.kind] ?? record.kind}
                     {record.stageKey === null ? '' : ` · ${record.stageKey}`}

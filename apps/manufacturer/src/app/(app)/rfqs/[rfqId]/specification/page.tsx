@@ -16,20 +16,20 @@ export const dynamic = 'force-dynamic';
  * required" and this one means "your call".
  */
 const SpecGrid = ({ rows }: { readonly rows: readonly DocumentRow[] }) => (
-  <dl className="mt-4 grid grid-cols-1 overflow-hidden rounded-lg border border-line md:grid-cols-2">
+  <dl className="mt-4 grid grid-cols-1 overflow-hidden rounded-lg border border-border-subtle md:grid-cols-2">
     {rows.map((row, index) => (
       <div
         key={row.label}
-        className={`grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 border-b border-line px-3 py-2.5 md:[&:nth-last-child(-n+2)]:border-b-0 ${
+        className={`grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 border-b border-border-subtle px-3 py-2.5 md:[&:nth-last-child(-n+2)]:border-b-0 ${
           index % 2 === 0 ? 'md:border-r' : ''
         }`}
       >
-        <dt className="text-sm text-muted">{row.label}</dt>
+        <dt className="text-sm text-text-tertiary">{row.label}</dt>
         <dd
           className={
             row.value === OPEN_ANSWER
-              ? 'text-sm italic text-muted'
-              : 'text-sm font-medium text-heading'
+              ? 'text-sm italic text-text-tertiary'
+              : 'text-sm font-medium text-text-primary'
           }
         >
           {row.value}

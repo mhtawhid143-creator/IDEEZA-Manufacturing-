@@ -4,12 +4,12 @@ import { cn } from '../lib/cn.js';
 export type Tone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'info';
 
 const TONE: Record<Tone, string> = {
-  neutral: 'bg-neutral-weak text-neutral',
-  brand: 'bg-brand-weak text-brand',
-  success: 'bg-success-weak text-success',
-  warning: 'bg-warning-weak text-warning-ink',
-  danger: 'bg-danger-weak text-danger-strong',
-  info: 'bg-info-weak text-info',
+  neutral: 'bg-gray-100 text-gray-600',
+  brand: 'bg-bg-brand-subtle text-text-brand',
+  success: 'bg-green-100 text-text-success',
+  warning: 'bg-yellow-100 text-text-warning',
+  danger: 'bg-red-100 text-red-700',
+  info: 'bg-blue-100 text-text-link',
 };
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -42,8 +42,8 @@ export interface TagProps extends HTMLAttributes<HTMLSpanElement> {
 export const Tag = ({ tone = 'neutral', className, children, ...rest }: TagProps) => (
   <span
     className={cn(
-      'inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-1 text-xs text-body',
-      tone === 'brand' && 'border-brand/30 bg-brand-weak text-brand',
+      'inline-flex items-center gap-1 rounded-full border border-border-subtle bg-bg-surface px-2.5 py-1 text-xs text-text-secondary',
+      tone === 'brand' && 'border-border-brand/30 bg-bg-brand-subtle text-text-brand',
       className,
     )}
     {...rest}

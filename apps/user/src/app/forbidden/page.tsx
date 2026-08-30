@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  * here beyond the explanation and a way out.
  */
 const ForbiddenPage = () => (
-  <main className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+  <main className="flex min-h-dvh items-center justify-center bg-bg-page px-4">
     <Card className="max-w-lg text-center">
       <Heading level={1} className="text-xl">
         This account cannot use the buyer app

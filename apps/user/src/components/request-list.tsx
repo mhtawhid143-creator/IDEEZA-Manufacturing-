@@ -41,13 +41,13 @@ export const RequestList = ({ requests }: RequestListProps) => {
       {requests.map((request) => (
         <li
           key={request.rfqId}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface p-4"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-subtle bg-bg-surface p-4"
         >
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/manufacturing/rfq/${request.rfqId}`}
-                className="text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                className="text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
               >
                 {request.productName}
               </Link>

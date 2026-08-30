@@ -61,9 +61,9 @@ export const OrderShell = ({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
             <div className="min-w-0">
-              <h1 className="text-xl font-bold text-heading">{order.productName}</h1>
+              <h1 className="text-xl font-bold text-text-primary">{order.productName}</h1>
               <Text tone="muted" size="sm">
                 {order.quantity} units · {order.currency}{' '}
                 {major(order.totalPriceMinor)} · ordered {day(order.confirmedAt)}
@@ -110,7 +110,7 @@ export const OrderShell = ({
 
         <aside className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3">
-            <Text size="sm" className="font-semibold text-heading">
+            <Text size="sm" className="font-semibold text-text-primary">
               What you can do now
             </Text>
             <OrderActs
@@ -143,7 +143,7 @@ export const OrderShell = ({
 
           <Card className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-xl font-bold text-brand">
+              <p className="text-xl font-bold text-text-brand">
                 {order.currency} {major(order.totalPriceMinor)}
               </p>
               <Text tone="muted" size="xs">
@@ -154,11 +154,11 @@ export const OrderShell = ({
               Released against a documented event: the buyer confirming delivery, the
               review window closing, or a resolved issue.
             </Text>
-            <div className="flex items-start justify-between gap-3 border-t border-line pt-2">
+            <div className="flex items-start justify-between gap-3 border-t border-border-subtle pt-2">
               <Text tone="muted" size="xs">
                 Est. ship
               </Text>
-              <p className="text-right text-xs font-medium text-heading">
+              <p className="text-right text-xs font-medium text-text-primary">
                 {day(order.schedule?.estimatedShipAt ?? null)}
               </p>
             </div>
@@ -166,7 +166,7 @@ export const OrderShell = ({
               <Text tone="muted" size="xs">
                 Est. delivery
               </Text>
-              <p className="text-right text-xs font-medium text-heading">
+              <p className="text-right text-xs font-medium text-text-primary">
                 {day(order.schedule?.estimatedDeliveryAt ?? null)}
               </p>
             </div>
@@ -175,7 +175,7 @@ export const OrderShell = ({
                 <Text tone="muted" size="xs">
                   Review window ends
                 </Text>
-                <p className="text-right text-xs font-medium text-heading">
+                <p className="text-right text-xs font-medium text-text-primary">
                   {day(order.reviewWindowEndsAt)}
                 </p>
               </div>

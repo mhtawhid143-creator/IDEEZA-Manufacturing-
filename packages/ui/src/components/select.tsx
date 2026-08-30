@@ -37,7 +37,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         className={cn(
           fieldControlClasses(isInvalid),
           'h-10 appearance-none pr-9',
-          rest.value === '' && 'text-muted',
+          rest.value === '' && 'text-text-tertiary',
           className,
         )}
         {...rest}
@@ -54,7 +54,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         ))}
       </select>
       <svg
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
         width="12"
         height="12"
         viewBox="0 0 12 12"

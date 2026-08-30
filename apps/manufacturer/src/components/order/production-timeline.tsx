@@ -156,37 +156,37 @@ export const ProductionTimeline = ({
       <Card padded={false}>
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 md:px-6">
           <div>
-            <p className="text-base font-semibold text-heading">Production tracking</p>
+            <p className="text-base font-semibold text-text-primary">Production tracking</p>
             <Text tone="muted" size="xs">
               The ten stages the platform and the buyer read. What you tick inside one
               is your own work.
             </Text>
           </div>
           {live && (
-            <span className="inline-flex items-center gap-2 text-xs font-semibold text-danger">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-error">
               <span
                 aria-hidden
-                className="inline-block h-2 w-2 animate-pulse rounded-full bg-danger"
+                className="inline-block h-2 w-2 animate-pulse rounded-full bg-bg-error"
               />
               Live
             </span>
           )}
         </div>
 
-        <ol aria-label="Production stages" className="border-t border-line">
+        <ol aria-label="Production stages" className="border-t border-border-subtle">
           {stages.map((stage) => (
             <li
               key={stage.id}
-              className="flex gap-3 border-b border-line px-4 py-4 last:border-b-0 md:px-6"
+              className="flex gap-3 border-b border-border-subtle px-4 py-4 last:border-b-0 md:px-6"
             >
               <span aria-hidden className="mt-1 flex flex-col items-center">
                 <span
                   className={
                     stage.status === 'completed'
-                      ? 'inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white'
+                      ? 'inline-flex h-5 w-5 items-center justify-center rounded-full bg-bg-brand text-[11px] font-bold text-white'
                       : stage.status === 'in_progress'
-                        ? 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-brand text-[11px] font-bold text-brand'
-                        : 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-line text-[11px] text-muted'
+                        ? 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-border-brand text-[11px] font-bold text-text-brand'
+                        : 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-border-subtle text-[11px] text-text-tertiary'
                   }
                 >
                   {stage.status === 'completed' ? '✓' : ''}
@@ -196,7 +196,7 @@ export const ProductionTimeline = ({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-heading">{stage.label}</p>
+                    <p className="text-sm font-semibold text-text-primary">{stage.label}</p>
                     <Text tone="muted" size="xs">
                       {stage.status === 'completed'
                         ? `Completed ${stage.completedOn ?? ''}`
@@ -254,7 +254,7 @@ export const ProductionTimeline = ({
                             onClick={onClick}
                             disabled={!hydrated || pending}
                             aria-label={`Move ${stage.label}`}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus disabled:cursor-not-allowed"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus disabled:cursor-not-allowed"
                             {...aria}
                           >
                             ⋮
@@ -265,7 +265,7 @@ export const ProductionTimeline = ({
                       <Tooltip content={stage.blockedReason ?? 'Not yours to move'}>
                         <span
                           aria-label={`${stage.label} cannot be moved`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-disabled-text"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-disabled"
                         >
                           ⋮
                         </span>
@@ -277,7 +277,7 @@ export const ProductionTimeline = ({
                 {stage.tasks.length > 0 && (
                   <ul
                     aria-label={`Tasks in ${stage.label}`}
-                    className="mt-3 flex flex-col gap-2 rounded-lg border border-line bg-canvas p-3"
+                    className="mt-3 flex flex-col gap-2 rounded-lg border border-border-subtle bg-bg-page p-3"
                   >
                     {stage.tasks.map((task) => (
                       <li
@@ -285,7 +285,7 @@ export const ProductionTimeline = ({
                         className="flex flex-wrap items-center justify-between gap-2"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm text-body">{task.label}</p>
+                          <p className="text-sm text-text-secondary">{task.label}</p>
                           {task.completedOn !== null && (
                             <Text tone="muted" size="xs">
                               done {task.completedOn}

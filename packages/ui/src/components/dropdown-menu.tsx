@@ -178,12 +178,12 @@ export const DropdownMenu = ({
           tabIndex={-1}
           onKeyDown={onKeyDown}
           className={cn(
-            'absolute top-full z-40 mt-1 min-w-48 animate-slide-up rounded-lg border border-line bg-surface p-1 shadow-dropdown focus-visible:outline-none',
+            'absolute top-full z-40 mt-1 min-w-48 animate-slide-up rounded-lg border border-border-subtle bg-bg-surface p-1 shadow-3 focus-visible:outline-none',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >
           {heading !== undefined && (
-            <p className="truncate border-b border-line px-3 py-2 text-xs text-muted">
+            <p className="truncate border-b border-border-subtle px-3 py-2 text-xs text-text-tertiary">
               {heading}
             </p>
           )}
@@ -192,8 +192,8 @@ export const DropdownMenu = ({
             const isActive = enabledIndex === activeIndex;
             const appearance = cn(
               'flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors',
-              item.tone === 'danger' ? 'text-danger' : 'text-heading',
-              isActive && 'bg-raised',
+              item.tone === 'danger' ? 'text-text-error' : 'text-text-primary',
+              isActive && 'bg-bg-surface-raised',
               item.disabled === true && 'cursor-not-allowed opacity-50',
             );
             const hover = (): void => {

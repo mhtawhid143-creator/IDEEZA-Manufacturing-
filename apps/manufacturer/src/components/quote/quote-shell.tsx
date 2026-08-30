@@ -64,8 +64,8 @@ export const QuoteShell = ({
 
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-          <h1 className="text-xl font-bold text-heading">{quote.productName}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
+          <h1 className="text-xl font-bold text-text-primary">{quote.productName}</h1>
           <StatusChip
             status={quote.expired && quote.status === 'submitted' ? 'expired' : quote.status}
             label={
@@ -101,7 +101,7 @@ export const QuoteShell = ({
         <Card className="flex flex-col gap-3">
           {quote.orderId !== null ? (
             <>
-              <Text size="sm" className="font-semibold text-heading">
+              <Text size="sm" className="font-semibold text-text-primary">
                 This quote was accepted
               </Text>
               <Text tone="muted" size="xs">
@@ -166,7 +166,7 @@ export const QuoteShell = ({
             </>
           ) : (
             <>
-              <Text size="sm" className="font-semibold text-heading">
+              <Text size="sm" className="font-semibold text-text-primary">
                 {quote.expired
                   ? 'This quote has expired'
                   : `This quote is ${QUOTE_LABEL[quote.status]?.toLowerCase() ?? quote.status}`}
@@ -185,18 +185,18 @@ export const QuoteShell = ({
 
         <Card className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-xl font-bold text-brand">
+            <p className="text-xl font-bold text-text-brand">
               {quote.currency} {major(quote.landedTotalMinor)}
             </p>
             <Text tone="muted" size="xs">
               Your quote
             </Text>
           </div>
-          <div className="flex items-start justify-between gap-3 border-t border-line pt-2">
+          <div className="flex items-start justify-between gap-3 border-t border-border-subtle pt-2">
             <Text tone="muted" size="xs">
               Buyer&rsquo;s target
             </Text>
-            <p className="text-right text-xs font-medium text-heading">
+            <p className="text-right text-xs font-medium text-text-primary">
               {quote.requestTargetPriceMinor === null
                 ? 'None given'
                 : `${quote.currency} ${major(quote.requestTargetPriceMinor)}`}

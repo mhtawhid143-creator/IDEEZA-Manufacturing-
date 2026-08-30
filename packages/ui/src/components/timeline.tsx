@@ -39,9 +39,9 @@ export const Timeline = ({ items, label = 'Progress', className }: TimelineProps
               aria-hidden
               className={cn(
                 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
-                item.state === 'done' && 'bg-brand text-on-brand',
-                item.state === 'current' && 'bg-brand-weak text-brand ring-2 ring-brand',
-                item.state === 'upcoming' && 'border border-line-strong bg-surface text-muted',
+                item.state === 'done' && 'bg-bg-brand text-text-on-brand',
+                item.state === 'current' && 'bg-bg-brand-subtle text-text-brand ring-2 ring-border-brand',
+                item.state === 'upcoming' && 'border border-border bg-bg-surface text-text-tertiary',
               )}
             >
               {item.state === 'done' ? '✓' : index + 1}
@@ -51,7 +51,7 @@ export const Timeline = ({ items, label = 'Progress', className }: TimelineProps
                 aria-hidden
                 className={cn(
                   'w-px flex-1',
-                  item.state === 'done' ? 'bg-brand/40' : 'bg-line',
+                  item.state === 'done' ? 'bg-bg-brand/40' : 'bg-bg-subtle',
                 )}
               />
             )}
@@ -63,7 +63,7 @@ export const Timeline = ({ items, label = 'Progress', className }: TimelineProps
                 {...(item.state === 'current' ? { 'aria-current': 'step' as const } : {})}
                 className={cn(
                   'text-sm font-semibold',
-                  item.state === 'upcoming' ? 'text-muted' : 'text-heading',
+                  item.state === 'upcoming' ? 'text-text-tertiary' : 'text-text-primary',
                 )}
               >
                 {item.label}
@@ -76,11 +76,11 @@ export const Timeline = ({ items, label = 'Progress', className }: TimelineProps
                 </span>
               </p>
               {item.meta !== undefined && (
-                <span className="text-xs text-muted">{item.meta}</span>
+                <span className="text-xs text-text-tertiary">{item.meta}</span>
               )}
             </div>
             {item.description !== undefined && (
-              <p className="mt-0.5 text-sm text-muted">{item.description}</p>
+              <p className="mt-0.5 text-sm text-text-tertiary">{item.description}</p>
             )}
             {item.children !== undefined && <div className="mt-2">{item.children}</div>}
           </div>

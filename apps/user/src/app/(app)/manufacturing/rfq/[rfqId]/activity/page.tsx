@@ -84,17 +84,17 @@ const RequestActivityPage = async ({
               <div className="flex flex-col items-center">
                 <span
                   aria-hidden
-                  className="mt-1 inline-flex h-4 w-4 shrink-0 rounded-full border-2 border-brand bg-surface"
+                  className="mt-1 inline-flex h-4 w-4 shrink-0 rounded-full border-2 border-border-brand bg-bg-surface"
                 />
                 {index < entries.length - 1 && (
-                  <span aria-hidden className="w-px flex-1 bg-brand/40" />
+                  <span aria-hidden className="w-px flex-1 bg-bg-brand/40" />
                 )}
               </div>
               <div className="min-w-0 pb-6">
                 <Text tone="muted" size="xs">
                   {when(entry.at)}
                 </Text>
-                <p className="text-sm text-heading">
+                <p className="text-sm text-text-primary">
                   <span className="font-semibold">
                     {entry.manufacturerName ?? ACTOR_LABEL[entry.actorRole] ?? entry.actorRole}
                   </span>{' '}

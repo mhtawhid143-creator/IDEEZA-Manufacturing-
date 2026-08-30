@@ -130,38 +130,38 @@ export const Conversation = ({
         ) : (
           <ul aria-label="Conversations" className="min-h-0 flex-1 overflow-y-auto">
             {visible.map((thread) => (
-              <li key={thread.threadId} className="border-b border-line last:border-b-0">
+              <li key={thread.threadId} className="border-b border-border-subtle last:border-b-0">
                 <Link
                   href={`/messages?thread=${thread.threadId}`}
                   className={cn(
-                    'flex items-start gap-3 px-3 py-3 transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-                    thread.threadId === activeId && 'bg-brand-surface',
+                    'flex items-start gap-3 px-3 py-3 transition-colors hover:bg-bg-page focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
+                    thread.threadId === activeId && 'bg-bg-brand-subtle',
                   )}
                 >
                   <span
                     aria-hidden
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-white"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-white"
                   >
                     {thread.counterpartName.slice(0, 2).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-sm font-semibold text-heading">
+                      <span className="truncate text-sm font-semibold text-text-primary">
                         {thread.counterpartName}
                       </span>
-                      <span className="shrink-0 text-xs text-muted">{thread.lastAt}</span>
+                      <span className="shrink-0 text-xs text-text-tertiary">{thread.lastAt}</span>
                     </span>
-                    <span className="mt-0.5 block truncate text-xs text-muted">
+                    <span className="mt-0.5 block truncate text-xs text-text-tertiary">
                       {thread.contextLabel}
                     </span>
                     {thread.preview !== null && (
-                      <span className="mt-0.5 block truncate text-xs text-body">
+                      <span className="mt-0.5 block truncate text-xs text-text-secondary">
                         {thread.preview}
                       </span>
                     )}
                   </span>
                   {thread.unreadCount > 0 && (
-                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-brand px-1.5 text-[11px] font-semibold text-white">
+                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand px-1.5 text-[11px] font-semibold text-white">
                       {thread.unreadCount}
                     </span>
                   )}
@@ -182,16 +182,16 @@ export const Conversation = ({
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-white"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-white"
                 >
                   {counterpartName.slice(0, 2).toUpperCase()}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-heading">
+                  <p className="truncate text-sm font-semibold text-text-primary">
                     {counterpartName}
                   </p>
                   <Text tone="muted" size="xs">
@@ -211,13 +211,13 @@ export const Conversation = ({
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {card !== null && (
-                <div className="mb-4 rounded-xl border border-line bg-canvas p-3">
-                  <p className="text-sm font-semibold text-heading">{card.title}</p>
+                <div className="mb-4 rounded-xl border border-border-subtle bg-bg-page p-3">
+                  <p className="text-sm font-semibold text-text-primary">{card.title}</p>
                   <dl className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
                     {card.rows.map((row) => (
                       <div key={row.label} className="flex items-baseline gap-2">
-                        <dt className="text-xs text-muted">{row.label}:</dt>
-                        <dd className="text-xs font-medium text-heading">{row.value}</dd>
+                        <dt className="text-xs text-text-tertiary">{row.label}:</dt>
+                        <dd className="text-xs font-medium text-text-primary">{row.value}</dd>
                       </div>
                     ))}
                   </dl>
@@ -249,21 +249,21 @@ export const Conversation = ({
                         message.mine ? 'items-end' : 'items-start',
                       )}
                     >
-                      <span className="text-xs text-muted">
+                      <span className="text-xs text-text-tertiary">
                         {message.authorName} · {message.at}
                       </span>
                       <span
                         className={cn(
                           'max-w-[80%] rounded-2xl px-3 py-2 text-sm',
                           message.mine
-                            ? 'bg-brand text-white'
-                            : 'bg-raised text-body',
+                            ? 'bg-bg-brand text-white'
+                            : 'bg-bg-surface-raised text-text-secondary',
                         )}
                       >
                         {message.body ?? ''}
                       </span>
                       {message.attachments.length > 0 && (
-                        <span className="text-xs text-muted">
+                        <span className="text-xs text-text-tertiary">
                           {message.attachments.join(', ')}
                         </span>
                       )}
@@ -274,7 +274,7 @@ export const Conversation = ({
               <div ref={bottom} />
             </div>
 
-            <div className="border-t border-line p-3">
+            <div className="border-t border-border-subtle p-3">
               <FormField label="Your message" labelHidden>
                 <Textarea
                   rows={2}

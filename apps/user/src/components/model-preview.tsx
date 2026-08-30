@@ -31,7 +31,7 @@ export const ModelPreview = ({ name, fileCount, className, tall = false }: Model
       role="img"
       aria-label={`${name}: model preview placeholder. ${fileCount} model ${fileCount === 1 ? 'file' : 'files'} on record, image rendering arrives with file storage.`}
       className={cn(
-        'relative flex items-center justify-center border-b border-line',
+        'relative flex items-center justify-center border-b border-border-subtle',
         tall ? 'h-64' : 'h-40',
         className,
       )}
@@ -53,7 +53,7 @@ export const ModelPreview = ({ name, fileCount, className, tall = false }: Model
           strokeLinejoin="round"
         />
       </svg>
-      <span className="absolute bottom-2 right-2 rounded-full bg-surface/85 px-2 py-0.5 text-[11px] font-semibold text-muted">
+      <span className="absolute bottom-2 right-2 rounded-full bg-bg-surface/85 px-2 py-0.5 text-[11px] font-semibold text-text-tertiary">
         model preview
       </span>
     </div>

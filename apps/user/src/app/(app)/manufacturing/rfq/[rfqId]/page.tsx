@@ -200,8 +200,8 @@ const RequestPage = async ({
                 ]}
               />
               {boardSpec !== null && boardSpec.hasBoard && (
-                <div className="mt-5 border-t border-line pt-4">
-                  <p className="text-sm font-semibold text-heading">
+                <div className="mt-5 border-t border-border-subtle pt-4">
+                  <p className="text-sm font-semibold text-text-primary">
                     Board specification
                   </p>
                   <Text tone="muted" size="xs" className="mt-0.5">

@@ -32,12 +32,12 @@ export const EmptyState = ({
     className={cn(
       'ids-state flex flex-col items-center justify-center gap-3 px-6 text-center',
       framed
-        ? 'rounded-xl border border-dashed border-line-strong bg-surface py-12'
+        ? 'rounded-xl border border-dashed border-border bg-bg-surface py-12'
         : 'py-8',
       className,
     )}
   >
-    {icon !== undefined && <div className="text-muted">{icon}</div>}
+    {icon !== undefined && <div className="text-text-tertiary">{icon}</div>}
     <Heading level={2}>{title}</Heading>
     {description !== undefined && (
       <Text tone="muted" className="max-w-md">
@@ -55,7 +55,7 @@ export interface LoadingStateProps {
 
 export const LoadingState = ({ label = 'Loading', className }: LoadingStateProps) => (
   <div
-    className={cn('flex items-center justify-center gap-3 px-6 py-12 text-muted', className)}
+    className={cn('flex items-center justify-center gap-3 px-6 py-12 text-text-tertiary', className)}
     role="status"
     aria-live="polite"
   >
@@ -80,7 +80,7 @@ export const ErrorState = ({
   <div
     role="alert"
     className={cn(
-      'ids-state flex flex-col items-center justify-center gap-3 rounded-xl border border-danger/30 bg-danger-weak/40 px-6 py-12 text-center',
+      'ids-state flex flex-col items-center justify-center gap-3 rounded-xl border border-border-error/30 bg-red-100/40 px-6 py-12 text-center',
       className,
     )}
   >
@@ -105,7 +105,7 @@ export const Skeleton = ({ className, rounded = 'md' }: SkeletonProps) => (
   <span
     aria-hidden
     className={cn(
-      'block animate-pulse bg-raised',
+      'block animate-pulse bg-bg-surface-raised',
       rounded === 'full' ? 'rounded-full' : rounded === 'sm' ? 'rounded-sm' : 'rounded-md',
       className,
     )}
@@ -140,11 +140,11 @@ export const NotBuiltYet = ({ title, plannedIn, children, className }: NotBuiltY
   <section
     aria-label={`${title} — not implemented yet`}
     className={cn(
-      'rounded-xl border border-dashed border-brand/40 bg-brand-surface px-6 py-10 text-center',
+      'rounded-xl border border-dashed border-border-brand/40 bg-bg-brand-subtle px-6 py-10 text-center',
       className,
     )}
   >
-    <p className="text-xs font-semibold uppercase tracking-wide text-brand">
+    <p className="text-xs font-semibold uppercase tracking-wide text-text-brand">
       Not implemented yet
     </p>
     <Heading level={2} className="mt-2">

@@ -72,7 +72,7 @@ const RefundPage = async ({
               </div>
               <Text size="sm">“{context.openRefund.description}”</Text>
               <Text size="sm" className="block">
-                <span className="font-medium text-heading">
+                <span className="font-medium text-text-primary">
                   {refundStatusLabel(context.openRefund.status)}
                 </span>
                 {context.openRefund.acceptedMinor === null

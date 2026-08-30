@@ -172,23 +172,23 @@ const CompareManufacturersPage = async ({
                 Manufacturers compared for {draft.productName}
               </caption>
               <thead>
-                <tr className="bg-canvas">
-                  <th scope="col" className="px-4 py-3 text-left font-semibold text-heading">
+                <tr className="bg-bg-page">
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-text-primary">
                     Capability
                   </th>
                   {chosen.map((manufacturer) => (
                     <th
                       key={manufacturer.id}
                       scope="col"
-                      className="px-4 py-3 text-left font-semibold text-heading"
+                      className="px-4 py-3 text-left font-semibold text-text-primary"
                     >
                       <span className="flex items-center gap-2">
-                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-weak text-xs font-semibold text-brand">
+                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-xs font-semibold text-text-brand">
                           {manufacturer.displayName.slice(0, 2).toUpperCase()}
                         </span>
                         <span className="min-w-0">
                           <span className="block truncate">{manufacturer.displayName}</span>
-                          <span className="block text-xs font-normal text-muted">
+                          <span className="block text-xs font-normal text-text-tertiary">
                             {manufacturer.city}, {manufacturer.countryCode}
                           </span>
                         </span>
@@ -199,12 +199,12 @@ const CompareManufacturersPage = async ({
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.label} className="border-t border-line">
-                    <th scope="row" className="px-4 py-3 text-left font-medium text-body">
+                  <tr key={row.label} className="border-t border-border-subtle">
+                    <th scope="row" className="px-4 py-3 text-left font-medium text-text-secondary">
                       {row.label}
                     </th>
                     {chosen.map((manufacturer) => (
-                      <td key={manufacturer.id} className="px-4 py-3 text-body">
+                      <td key={manufacturer.id} className="px-4 py-3 text-text-secondary">
                         {row.value(manufacturer)}
                       </td>
                     ))}

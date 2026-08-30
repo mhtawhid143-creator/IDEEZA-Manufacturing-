@@ -304,10 +304,10 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
               {data.members.map((member) => (
                 <li
                   key={member.email}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line p-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle p-3"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-heading">{member.name}</p>
+                    <p className="text-sm font-semibold text-text-primary">{member.name}</p>
                     <Text tone="muted" size="xs">
                       {member.email}
                     </Text>
@@ -351,19 +351,19 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
               />
             </div>
           ) : (
-            <ul aria-label="Reviews" className="border-t border-line">
+            <ul aria-label="Reviews" className="border-t border-border-subtle">
               {data.reviews.map((review) => (
                 <li
                   key={review.id}
-                  className="border-b border-line px-4 py-4 last:border-b-0 md:px-6"
+                  className="border-b border-border-subtle px-4 py-4 last:border-b-0 md:px-6"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-heading">
+                    <p className="text-sm font-semibold text-text-primary">
                       {review.buyerName} · {review.productName}
                     </p>
-                    <span className="text-sm font-semibold text-brand">
+                    <span className="text-sm font-semibold text-text-brand">
                       {'★'.repeat(review.rating)}
-                      <span className="text-muted">{'★'.repeat(5 - review.rating)}</span>
+                      <span className="text-text-tertiary">{'★'.repeat(5 - review.rating)}</span>
                     </span>
                   </div>
                   <Text tone="muted" size="xs" className="mt-0.5 block">
@@ -395,8 +395,8 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
             />
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {EQUIPMENT.map((item) => (
-                <div key={item.label} className="rounded-lg border border-line p-3">
-                  <p className="text-xl font-bold text-heading">{item.count}</p>
+                <div key={item.label} className="rounded-lg border border-border-subtle p-3">
+                  <p className="text-xl font-bold text-text-primary">{item.count}</p>
                   <Text tone="muted" size="xs">
                     {item.label}
                   </Text>
@@ -484,9 +484,9 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {CAPABILITY_SHEETS.map((sheet) => (
               <Card key={sheet.id} padded={false}>
-                <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+                <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
                   <div>
-                    <p className="text-sm font-semibold text-heading">{sheet.title}</p>
+                    <p className="text-sm font-semibold text-text-primary">{sheet.title}</p>
                     <Text tone="muted" size="xs">
                       {sheet.rows.length} parameters
                     </Text>
@@ -500,7 +500,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                         type="button"
                         onClick={onClick}
                         aria-label={`Actions for ${sheet.title}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                         {...aria}
                       >
                         ⋮
@@ -512,7 +512,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   {sheet.rows.map((row) => (
                     <li
                       key={row.label}
-                      className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5 last:border-b-0"
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-2.5 last:border-b-0"
                     >
                       <Text tone="muted" size="sm">
                         {row.label}
@@ -555,13 +555,13 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
               />
             </div>
           ) : (
-            <ul aria-label="Articles" className="border-t border-line">
+            <ul aria-label="Articles" className="border-t border-border-subtle">
               {data.articles.map((article) => (
                 <li
                   key={article.id}
-                  className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                  className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                 >
-                  <p className="text-sm font-semibold text-heading">{article.title}</p>
+                  <p className="text-sm font-semibold text-text-primary">{article.title}</p>
                   <div className="flex items-center gap-2">
                     <Tag tone={article.status === 'published' ? 'success' : 'neutral'}>
                       {article.status}
@@ -602,10 +602,10 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                 data.certifications.map((certification) => (
                   <div
                     key={certification}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-line p-3"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle p-3"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-heading">
+                      <p className="truncate text-sm font-semibold text-text-primary">
                         {certification}
                       </p>
                       <Text tone="muted" size="xs">
@@ -767,7 +767,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       >
         <div className="flex flex-col gap-4">
           <div>
-            <p className="text-sm font-semibold text-heading">Services</p>
+            <p className="text-sm font-semibold text-text-primary">Services</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {SERVICE_OPTIONS.map((option) => (
                 <button
@@ -776,8 +776,8 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   onClick={() => toggle(services, option.value, setServices)}
                   className={
                     services.includes(option.value)
-                      ? 'rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white'
-                      : 'rounded-full border border-line px-3 py-1.5 text-xs font-medium text-body hover:bg-raised'
+                      ? 'rounded-full bg-bg-brand px-3 py-1.5 text-xs font-semibold text-white'
+                      : 'rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-surface-raised'
                   }
                 >
                   {option.label}
@@ -787,7 +787,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-heading">Regions served</p>
+            <p className="text-sm font-semibold text-text-primary">Regions served</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {REGION_OPTIONS.map((region) => (
                 <button
@@ -796,8 +796,8 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   onClick={() => toggle(regions, region, setRegions)}
                   className={
                     regions.includes(region)
-                      ? 'rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white'
-                      : 'rounded-full border border-line px-3 py-1.5 text-xs font-medium text-body hover:bg-raised'
+                      ? 'rounded-full bg-bg-brand px-3 py-1.5 text-xs font-semibold text-white'
+                      : 'rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-surface-raised'
                   }
                 >
                   {region}
@@ -807,7 +807,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-heading">Certifications</p>
+            <p className="text-sm font-semibold text-text-primary">Certifications</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {certifications.map((certification) => (
                 <button
@@ -818,7 +818,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                       certifications.filter((item) => item !== certification),
                     )
                   }
-                  className="rounded-full bg-brand-weak px-3 py-1.5 text-xs font-semibold text-brand"
+                  className="rounded-full bg-bg-brand-subtle px-3 py-1.5 text-xs font-semibold text-text-brand"
                   title="Remove"
                 >
                   {certification} ×

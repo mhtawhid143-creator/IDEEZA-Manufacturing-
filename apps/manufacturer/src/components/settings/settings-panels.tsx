@@ -146,7 +146,7 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
           {SECTIONS.map((group) => (
             <div key={group.group} className="mb-2">
               {group.group !== '' && (
-                <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
                   {group.group}
                 </p>
               )}
@@ -159,8 +159,8 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
                       className={cn(
                         'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
                         section === item.id
-                          ? 'bg-brand-weak font-semibold text-brand'
-                          : 'text-body hover:bg-raised',
+                          ? 'bg-bg-brand-subtle font-semibold text-text-brand'
+                          : 'text-text-secondary hover:bg-bg-surface-raised',
                       )}
                       aria-current={section === item.id ? 'page' : undefined}
                     >
@@ -422,7 +422,7 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
               title="Policy & privacy"
               description="What the platform records about your shop, and who reads it."
             />
-            <ul className="mt-3 flex flex-col gap-2 text-sm text-body">
+            <ul className="mt-3 flex flex-col gap-2 text-sm text-text-secondary">
               <li>
                 Buyers see your name, city, rating, on-time delivery, published services,
                 certifications and reviews.

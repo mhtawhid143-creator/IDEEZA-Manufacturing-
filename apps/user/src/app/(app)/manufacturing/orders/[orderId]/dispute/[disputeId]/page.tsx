@@ -113,14 +113,14 @@ const DisputeCasePage = async ({
             {dispute.statements.map((statement) => (
               <li
                 key={statement.id}
-                className="border-b border-line pb-5 last:border-b-0 last:pb-0"
+                className="border-b border-border-subtle pb-5 last:border-b-0 last:pb-0"
               >
                 <div className="flex items-center gap-3">
                   <Avatar name={statement.authorName} size="sm" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-heading">
+                    <p className="truncate text-sm font-semibold text-text-primary">
                       {statement.authorName}
-                      <span className="ml-1.5 font-normal text-muted">
+                      <span className="ml-1.5 font-normal text-text-tertiary">
                         ({statementAuthorLabel(statement.authorRole, 'buyer')})
                       </span>
                     </p>
@@ -129,7 +129,7 @@ const DisputeCasePage = async ({
                     </Text>
                   </div>
                 </div>
-                <p className="mt-3 text-sm font-semibold text-heading">
+                <p className="mt-3 text-sm font-semibold text-text-primary">
                   {statement.title}
                 </p>
                 <Text size="sm" className="mt-1 whitespace-pre-line">
@@ -140,7 +140,7 @@ const DisputeCasePage = async ({
           </ol>
 
           {dispute.canAddStatement ? (
-            <div className="mt-6 border-t border-line pt-6">
+            <div className="mt-6 border-t border-border-subtle pt-6">
               <DisputeStatementForm
                 orderId={orderId}
                 disputeId={dispute.id}
@@ -148,7 +148,7 @@ const DisputeCasePage = async ({
               />
             </div>
           ) : (
-            <Text tone="muted" size="sm" className="mt-6 border-t border-line pt-6">
+            <Text tone="muted" size="sm" className="mt-6 border-t border-border-subtle pt-6">
               The case is closed, so nothing further can be added to it.
             </Text>
           )}

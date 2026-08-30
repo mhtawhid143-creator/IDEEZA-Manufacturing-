@@ -151,24 +151,24 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
       {orders.map((row) => (
         <li
           key={row.orderId}
-          className="flex flex-wrap items-center gap-4 rounded-lg border border-line bg-surface p-4"
+          className="flex flex-wrap items-center gap-4 rounded-lg border border-border-subtle bg-bg-surface p-4"
         >
           <span
             aria-hidden
-            className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-brand-weak to-info-weak"
+            className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
           />
 
           <div className="min-w-0 flex-1">
             <Link
               href={`/manufacturing/orders/${row.orderId}`}
-              className="truncate text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+              className="truncate text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
             >
               {row.productName}
             </Link>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               <Link
                 href={`/manufacturing/rfq/${row.rfqId}`}
-                className="text-xs font-medium text-brand underline hover:no-underline"
+                className="text-xs font-medium text-text-brand underline hover:no-underline"
               >
                 Show files ({row.fileCount})
               </Link>
@@ -203,7 +203,7 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
                 Cost
               </Text>
             </Tooltip>
-            <p className="text-sm font-semibold text-heading">
+            <p className="text-sm font-semibold text-text-primary">
               {row.currency} {row.totalMajor}
             </p>
           </div>
@@ -226,7 +226,7 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
                   aria-expanded={props['aria-expanded']}
                   aria-haspopup={props['aria-haspopup']}
                   id={props.id}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted hover:bg-raised hover:text-heading focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised hover:text-text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   <span className="sr-only">Actions</span>
                   {DotsIcon}

@@ -88,10 +88,10 @@ const ConfirmDeliveryPage = async ({
                 'The order is marked complete, which closes production.',
                 'Your confirmation is kept as evidence, with anything you write below.',
               ].map((line, index) => (
-                <li key={line} className="ids-measure flex gap-2 text-sm text-body">
+                <li key={line} className="ids-measure flex gap-2 text-sm text-text-secondary">
                   <span
                     aria-hidden
-                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand"
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand"
                   >
                     {index + 1}
                   </span>
@@ -181,7 +181,7 @@ const ConfirmDeliveryPage = async ({
               <ul aria-label="Delivery record" className="mt-3 flex flex-col gap-2">
                 {delivery.deliveryRecords.map((record) => (
                   <li key={record.id} className="text-sm">
-                    <p className="font-semibold text-heading">{record.title}</p>
+                    <p className="font-semibold text-text-primary">{record.title}</p>
                     <Text tone="muted" size="xs">
                       {record.kind.replace(/_/g, ' ')} · {day(record.capturedAt)}
                     </Text>

@@ -72,8 +72,8 @@ export const RequestShell = ({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-            <h1 className="text-xl font-bold text-heading">{request.productName}</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
+            <h1 className="text-xl font-bold text-text-primary">{request.productName}</h1>
             <StatusChip
               status={request.status}
               label={INBOX_LABEL[request.status] ?? request.status}
@@ -102,7 +102,7 @@ export const RequestShell = ({
           <Card className="flex flex-col gap-3">
             {request.myQuote !== null ? (
               <>
-                <Text size="sm" className="font-semibold text-heading">
+                <Text size="sm" className="font-semibold text-text-primary">
                   You quoted {request.currency} {major(request.myQuote.totalPriceMinor)}
                 </Text>
                 <Text tone="muted" size="xs">
@@ -119,7 +119,7 @@ export const RequestShell = ({
               </>
             ) : request.status === 'declined' ? (
               <>
-                <Text size="sm" className="font-semibold text-heading">
+                <Text size="sm" className="font-semibold text-text-primary">
                   You declined this request
                 </Text>
                 <Text tone="muted" size="xs">
@@ -128,7 +128,7 @@ export const RequestShell = ({
                 </Text>
               </>
             ) : !request.open ? (
-              <Text size="sm" className="font-semibold text-heading">
+              <Text size="sm" className="font-semibold text-text-primary">
                 This request is closed. Nothing here is yours to answer any more.
               </Text>
             ) : (
@@ -170,7 +170,7 @@ export const RequestShell = ({
 
           <Card className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-xl font-bold text-brand">
+              <p className="text-xl font-bold text-text-brand">
                 {request.targetPriceMinor === null
                   ? 'Open'
                   : `${request.currency} ${major(request.targetPriceMinor)}`}
@@ -179,11 +179,11 @@ export const RequestShell = ({
                 Buyer&rsquo;s target
               </Text>
             </div>
-            <div className="flex items-start justify-between gap-3 border-t border-line pt-2">
+            <div className="flex items-start justify-between gap-3 border-t border-border-subtle pt-2">
               <Text tone="muted" size="xs">
                 Wanted by
               </Text>
-              <p className="text-right text-xs font-medium text-heading">
+              <p className="text-right text-xs font-medium text-text-primary">
                 {request.neededBy === null
                   ? 'No date given'
                   : `${day(request.receivedAt)} → ${day(request.neededBy)}`}

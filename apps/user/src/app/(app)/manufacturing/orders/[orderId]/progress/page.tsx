@@ -115,10 +115,10 @@ const ProgressPage = async ({
             production.activity.map((entry) => (
               <li
                 key={entry.id}
-                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line pb-3 last:border-b-0 last:pb-0"
+                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-subtle pb-3 last:border-b-0 last:pb-0"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-heading">
+                  <p className="text-sm font-semibold text-text-primary">
                     {entry.kind.replace(/[._]/g, ' ')}
                   </p>
                   <Text tone="muted" size="xs">

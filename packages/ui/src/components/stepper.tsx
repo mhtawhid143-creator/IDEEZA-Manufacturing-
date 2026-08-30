@@ -45,9 +45,9 @@ export const Stepper = ({
                 aria-hidden
                 className={cn(
                   'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors',
-                  done && 'bg-success text-on-brand',
-                  current && 'bg-brand text-on-brand',
-                  !done && !current && 'border border-line-strong bg-surface text-muted',
+                  done && 'bg-bg-success text-text-on-brand',
+                  current && 'bg-bg-brand text-text-on-brand',
+                  !done && !current && 'border border-border bg-bg-surface text-text-tertiary',
                 )}
               >
                 {done ? '✓' : index + 1}
@@ -57,13 +57,13 @@ export const Stepper = ({
                   {...(current ? { 'aria-current': 'step' as const } : {})}
                   className={cn(
                     'block truncate text-sm font-semibold',
-                    current ? 'text-heading' : done ? 'text-body' : 'text-muted',
+                    current ? 'text-text-primary' : done ? 'text-text-secondary' : 'text-text-tertiary',
                   )}
                 >
                   {step.label}
                 </span>
                 {step.description !== undefined && (
-                  <span className="block truncate text-xs text-muted">
+                  <span className="block truncate text-xs text-text-tertiary">
                     {step.description}
                   </span>
                 )}
@@ -73,7 +73,7 @@ export const Stepper = ({
                   aria-hidden
                   className={cn(
                     'hidden h-px flex-1 sm:block',
-                    done ? 'bg-success/50' : 'bg-line',
+                    done ? 'bg-bg-success/50' : 'bg-bg-subtle',
                   )}
                 />
               )}

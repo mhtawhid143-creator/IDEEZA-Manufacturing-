@@ -28,8 +28,8 @@ const MessagesPage = async () => {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
         <Card padded={false}>
-          <div className="border-b border-line px-4 py-3">
-            <p className="text-sm font-semibold text-heading">All conversations</p>
+          <div className="border-b border-border-subtle px-4 py-3">
+            <p className="text-sm font-semibold text-text-primary">All conversations</p>
           </div>
           <ThreadList
             threads={threads.map((thread) => ({
@@ -44,7 +44,7 @@ const MessagesPage = async () => {
         </Card>
 
         <Card>
-          <p className="text-sm font-semibold text-heading">Pick a conversation</p>
+          <p className="text-sm font-semibold text-text-primary">Pick a conversation</p>
           <Text tone="muted" size="sm" className="mt-1">
             Each thread carries the platform&rsquo;s own record of what happened —
             quotes received, replacements suggested, the order confirmed — alongside

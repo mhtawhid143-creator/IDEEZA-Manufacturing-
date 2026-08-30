@@ -133,10 +133,10 @@ export const IssuePage = ({
             <CardHeader title="What this does" />
             <ol className="mt-3 flex flex-col gap-2">
               {consequences.map((line, index) => (
-                <li key={line} className="ids-measure flex gap-2 text-sm text-body">
+                <li key={line} className="ids-measure flex gap-2 text-sm text-text-secondary">
                   <span
                     aria-hidden
-                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand"
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand"
                   >
                     {index + 1}
                   </span>

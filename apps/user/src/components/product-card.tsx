@@ -28,7 +28,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <div className="min-w-0">
             <Link
               href={href}
-              className="text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+              className="text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
             >
               {product.name}
             </Link>

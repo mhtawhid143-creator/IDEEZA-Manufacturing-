@@ -83,8 +83,8 @@ const SectionHeader = ({
   readonly title: string;
   readonly action?: React.ReactNode;
 }) => (
-  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-canvas px-4 py-3">
-    <h3 className="text-sm font-semibold text-heading">{title}</h3>
+  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-page px-4 py-3">
+    <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
     {action}
   </div>
 );
@@ -94,13 +94,13 @@ const ReadyRow = ({ done, label }: { readonly done: boolean; readonly label: str
     <span
       aria-hidden
       className={cn(
-        'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-on-brand',
-        done ? 'bg-success' : 'bg-line-strong',
+        'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-text-on-brand',
+        done ? 'bg-bg-success' : 'bg-gray-200',
       )}
     >
       {done ? '✓' : '!'}
     </span>
-    <span className={cn('text-xs', done ? 'text-body' : 'text-muted')}>{label}</span>
+    <span className={cn('text-xs', done ? 'text-text-secondary' : 'text-text-tertiary')}>{label}</span>
   </li>
 );
 
@@ -227,14 +227,14 @@ export const RequestQuoteForm = ({
         )}
 
         <Card className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-heading">
+          <h3 className="text-sm font-semibold text-text-primary">
             What the manufacturer will receive
           </h3>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle p-3">
             <div className="flex min-w-0 items-center gap-3">
               <span
                 aria-hidden
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-line"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-border-subtle"
                 style={{
                   background: `linear-gradient(135deg, hsl(${boardHue} 45% 74%), hsl(${(boardHue + 40) % 360} 50% 58%))`,
                 }}
@@ -245,7 +245,7 @@ export const RequestQuoteForm = ({
                 </svg>
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-heading">{productName}</p>
+                <p className="truncate text-sm font-semibold text-text-primary">{productName}</p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   <Tag tone="brand">{packageLabel}</Tag>
                   {specChips.map((chip) => (
@@ -278,20 +278,20 @@ export const RequestQuoteForm = ({
                   key={service}
                   className={cn(
                     'flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors',
-                    checked ? 'border-brand bg-brand-surface' : 'border-line bg-surface hover:bg-raised',
+                    checked ? 'border-border-brand bg-bg-brand-subtle' : 'border-border-subtle bg-bg-surface hover:bg-bg-surface-raised',
                   )}
                 >
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-5 w-5 shrink-0 appearance-none rounded border-2 border-line-input bg-surface transition-colors checked:border-brand checked:bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="mt-0.5 h-5 w-5 shrink-0 appearance-none rounded border-2 border-border bg-bg-surface transition-colors checked:border-border-brand checked:bg-bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     checked={checked}
                     onChange={() => toggleService(service)}
                   />
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-heading">
+                    <span className="block text-sm font-semibold text-text-primary">
                       {SERVICE_COPY[service].label}
                     </span>
-                    <span className="block text-xs text-muted">{SERVICE_COPY[service].hint}</span>
+                    <span className="block text-xs text-text-tertiary">{SERVICE_COPY[service].hint}</span>
                   </span>
                 </label>
                 );
@@ -304,8 +304,8 @@ export const RequestQuoteForm = ({
             </Text>
           )}
 
-          <div className="flex flex-col gap-2 rounded-lg bg-canvas p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+          <div className="flex flex-col gap-2 rounded-lg bg-bg-page p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
               Assembly options
             </p>
             <div className="flex flex-wrap gap-2">
@@ -318,12 +318,12 @@ export const RequestQuoteForm = ({
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
                     assembly === mode
-                      ? 'border-brand bg-surface text-brand'
-                      : 'border-line bg-surface text-body hover:border-brand',
+                      ? 'border-border-brand bg-bg-surface text-text-brand'
+                      : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-brand',
                   )}
                 >
                   {assembly === mode && (
-                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand" />
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-bg-brand" />
                   )}
                   {ASSEMBLY_COPY[mode]}
                 </button>
@@ -339,12 +339,12 @@ export const RequestQuoteForm = ({
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
                     sides === side
-                      ? 'border-brand bg-surface text-brand'
-                      : 'border-line bg-surface text-body hover:border-brand',
+                      ? 'border-border-brand bg-bg-surface text-text-brand'
+                      : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-border-brand',
                   )}
                 >
                   {sides === side && (
-                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand" />
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-bg-brand" />
                   )}
                   {SIDES_COPY[side]}
                 </button>
@@ -384,19 +384,19 @@ export const RequestQuoteForm = ({
               {missingFor.map(({ recipient, missing }) => (
                 <li
                   key={recipient.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-surface p-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle bg-bg-surface p-3"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-canvas text-sm font-semibold text-brand">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-page text-sm font-semibold text-text-brand">
                       {recipient.displayName.slice(0, 2).toUpperCase()}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-heading">
+                      <p className="truncate text-sm font-semibold text-text-primary">
                         {recipient.displayName}
                       </p>
-                      <p className="truncate text-xs text-body">
+                      <p className="truncate text-xs text-text-secondary">
                         {recipient.rating !== null && (
-                          <span className="font-semibold text-brand">
+                          <span className="font-semibold text-text-brand">
                             ★ {recipient.rating.toFixed(1)}
                           </span>
                         )}
@@ -404,7 +404,7 @@ export const RequestQuoteForm = ({
                         {recipient.city}, {recipient.countryCode}
                       </p>
                       {missing.length > 0 && (
-                        <p className="truncate text-xs text-warning">
+                        <p className="truncate text-xs text-text-warning">
                           Does not publish {missing.map((service) => SERVICE_COPY[service].label).join(', ')}
                         </p>
                       )}
@@ -448,7 +448,7 @@ export const RequestQuoteForm = ({
                   type="button"
                   aria-label="Fewer units"
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-l-md border border-line-input bg-surface text-lg text-body hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-l-md border border-border bg-bg-surface text-lg text-text-secondary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   −
                 </button>
@@ -457,7 +457,7 @@ export const RequestQuoteForm = ({
                   min={1}
                   step={1}
                   aria-label="Volume"
-                  className="h-10 w-full min-w-0 border-y border-line-input bg-surface text-center text-sm text-heading focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="h-10 w-full min-w-0 border-y border-border bg-bg-surface text-center text-sm text-text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   value={quantity}
                   onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
                 />
@@ -465,7 +465,7 @@ export const RequestQuoteForm = ({
                   type="button"
                   aria-label="More units"
                   onClick={() => setQuantity((current) => current + 1)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-r-md border border-line-input bg-surface text-lg text-body hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-r-md border border-border bg-bg-surface text-lg text-text-secondary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   +
                 </button>
@@ -487,8 +487,8 @@ export const RequestQuoteForm = ({
             </FormField>
           </div>
           {tiers.length > 0 && (
-            <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
-              <p className="text-xs font-semibold text-heading">Also price these volumes</p>
+            <div className="flex flex-col gap-2 rounded-lg border border-border-subtle p-3">
+              <p className="text-xs font-semibold text-text-primary">Also price these volumes</p>
               <ul className="flex flex-wrap gap-2">
                 {tiers.map((tier, index) => (
                   <li key={`${tier}-${index}`} className="flex items-center gap-1">
@@ -497,7 +497,7 @@ export const RequestQuoteForm = ({
                       min={1}
                       step={1}
                       aria-label={`Extra volume ${index + 1}`}
-                      className="h-9 w-24 rounded-md border border-line-input bg-surface px-2 text-sm text-heading focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                      className="h-9 w-24 rounded-md border border-border bg-bg-surface px-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                       value={tier}
                       onChange={(event) =>
                         setTiers((current) =>
@@ -557,7 +557,7 @@ export const RequestQuoteForm = ({
       {/* ----------------------------------------------------------- right */}
       <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
         <Card className="flex flex-col gap-4">
-          <h3 className="text-sm font-semibold text-heading">Your request</h3>
+          <h3 className="text-sm font-semibold text-text-primary">Your request</h3>
           <dl className="flex flex-col gap-2 text-sm">
             {[
               { label: 'Board', value: productName },
@@ -583,14 +583,14 @@ export const RequestQuoteForm = ({
               { label: 'Lead time asked for', value: `${leadTimeDays} days` },
             ].map((row) => (
               <div key={row.label} className="flex items-start justify-between gap-4">
-                <dt className="text-muted">{row.label}</dt>
-                <dd className="text-right font-medium text-heading">{row.value}</dd>
+                <dt className="text-text-tertiary">{row.label}</dt>
+                <dd className="text-right font-medium text-text-primary">{row.value}</dd>
               </div>
             ))}
           </dl>
 
-          <div className="border-t border-line pt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
+          <div className="border-t border-border-subtle pt-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
               Ready to send
             </p>
             <ul className="mt-2 flex flex-col gap-1.5">
@@ -635,7 +635,7 @@ export const RequestQuoteForm = ({
         </Card>
 
         <Card tone="brand" className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-heading">Delivering to</p>
+          <p className="text-sm font-semibold text-text-primary">Delivering to</p>
           <Text size="sm">
             {deliveryAddress.line1}
             {deliveryAddress.line2 === '' ? '' : `, ${deliveryAddress.line2}`}

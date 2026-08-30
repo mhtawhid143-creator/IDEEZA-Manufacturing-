@@ -41,7 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <div className="relative">
       {leadingIcon !== undefined && (
         <span
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
           aria-hidden
         >
           {leadingIcon}

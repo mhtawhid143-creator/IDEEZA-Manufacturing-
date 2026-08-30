@@ -176,7 +176,7 @@ export const SelectManufacturers = ({
             />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
           <Text tone="muted" size="xs">
             {visible.length} of {manufacturers.length}{' '}
             {manufacturers.length === 1 ? 'manufacturer' : 'manufacturers'} shown
@@ -217,12 +217,12 @@ export const SelectManufacturers = ({
 
       {/* The select bar: what is chosen, and the two ways forward. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur md:px-gutter lg:left-sidebar"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border-subtle bg-bg-surface/95 px-4 py-3 backdrop-blur md:px-gutter lg:left-sidebar"
         role="region"
         aria-label="Selected manufacturers"
       >
         <div className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-heading">
+          <p className="text-sm font-semibold text-text-primary">
             {selected.length === 0
               ? 'No manufacturer selected yet'
               : `${selected.length} ${selected.length === 1 ? 'manufacturer' : 'manufacturers'} selected`}

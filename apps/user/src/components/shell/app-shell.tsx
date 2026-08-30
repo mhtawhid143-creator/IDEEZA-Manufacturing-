@@ -30,7 +30,7 @@ export const AppShell = ({
 
   return (
     <ToastProvider>
-    <div className="min-h-dvh bg-canvas">
+    <div className="min-h-dvh bg-bg-page">
       <Navbar
         displayName={displayName}
         email={email}

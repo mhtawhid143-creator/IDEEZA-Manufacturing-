@@ -149,10 +149,10 @@ export const DraftComposition = ({
             return (
               <fieldset
                 key={group.kind}
-                className="rounded-lg border border-line"
+                className="rounded-lg border border-border-subtle"
                 aria-label={group.title}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-3">
                   <Checkbox
                     label={`${group.title} (${groupFiles.length} ${
                       groupFiles.length === 1 ? 'item' : 'items'
@@ -171,7 +171,7 @@ export const DraftComposition = ({
                   {groupFiles.map((file) => (
                     <li
                       key={file.id}
-                      className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 last:border-b-0"
+                      className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-2.5 last:border-b-0"
                     >
                       <Checkbox
                         label={file.name}
@@ -195,8 +195,8 @@ export const DraftComposition = ({
       )}
 
       {needsPrintSpec && (
-        <div className="rounded-lg border border-line p-4">
-          <p className="text-sm font-semibold text-heading">Print specification</p>
+        <div className="rounded-lg border border-border-subtle p-4">
+          <p className="text-sm font-semibold text-text-primary">Print specification</p>
           <Text tone="muted" size="xs" className="mt-0.5">
             A printer quotes on the process, the material and the finish, so these
             travel with the request rather than sitting in a note.

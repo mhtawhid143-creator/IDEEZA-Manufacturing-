@@ -170,13 +170,13 @@ const BomPage = async ({
             />
           </div>
         ) : (
-          <div className="w-full overflow-x-auto border-t border-line">
+          <div className="w-full overflow-x-auto border-t border-border-subtle">
             <table className="w-full border-collapse text-sm">
               <caption className="ids-sr-only">
                 Bill of materials for {request.productName}
               </caption>
               <thead>
-                <tr className="border-b border-line bg-raised">
+                <tr className="border-b border-border-subtle bg-bg-surface-raised">
                   {[
                     'Ref',
                     'Component',
@@ -189,7 +189,7 @@ const BomPage = async ({
                     <th
                       key={header}
                       scope="col"
-                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
                     >
                       {header}
                     </th>
@@ -201,21 +201,21 @@ const BomPage = async ({
                   const matched = byItemId.get(line.id);
                   const coverage = matched?.coverage ?? 'missing';
                   return (
-                    <tr key={line.id} className="border-b border-line last:border-0">
-                      <td className="px-3 py-3 font-medium text-heading">
+                    <tr key={line.id} className="border-b border-border-subtle last:border-0">
+                      <td className="px-3 py-3 font-medium text-text-primary">
                         {line.reference}
                       </td>
-                      <td className="px-3 py-3 text-body">{line.componentName}</td>
-                      <td className="px-3 py-3 text-body">
+                      <td className="px-3 py-3 text-text-secondary">{line.componentName}</td>
+                      <td className="px-3 py-3 text-text-secondary">
                         {line.manufacturerPartNumber ?? (
-                          <span className="text-muted">Not given</span>
+                          <span className="text-text-tertiary">Not given</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-body">
-                        {line.sku ?? <span className="text-muted">Not given</span>}
+                      <td className="px-3 py-3 text-text-secondary">
+                        {line.sku ?? <span className="text-text-tertiary">Not given</span>}
                       </td>
-                      <td className="px-3 py-3 text-body">{line.quantityRequired} pcs</td>
-                      <td className="px-3 py-3 font-medium text-heading">
+                      <td className="px-3 py-3 text-text-secondary">{line.quantityRequired} pcs</td>
+                      <td className="px-3 py-3 font-medium text-text-primary">
                         {line.quantityRequired * request.quantity} pcs
                       </td>
                       <td className="px-3 py-3">

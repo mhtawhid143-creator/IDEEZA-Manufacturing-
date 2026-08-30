@@ -66,9 +66,9 @@ const DisputeCasePage = async ({
         ]}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-heading">
+          <h1 className="text-xl font-bold text-text-primary">
             Dispute {caseReference(dispute.id)}
           </h1>
           <Text tone="muted" size="sm">
@@ -98,10 +98,10 @@ const DisputeCasePage = async ({
                   <div className="flex items-center gap-3">
                     <span
                       aria-hidden
-                      className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-brand-weak to-info-weak"
+                      className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-blue-100"
                     />
                     <div>
-                      <p className="text-sm font-semibold text-heading">
+                      <p className="text-sm font-semibold text-text-primary">
                         {statement.author}
                       </p>
                       <Text tone="muted" size="xs">
@@ -111,7 +111,7 @@ const DisputeCasePage = async ({
                     </div>
                   </div>
                 </div>
-                <p className="mt-4 text-sm font-semibold text-heading">
+                <p className="mt-4 text-sm font-semibold text-text-primary">
                   {statement.title}
                 </p>
                 <Text size="sm" className="mt-2 block whitespace-pre-line">
@@ -178,13 +178,13 @@ const DisputeCasePage = async ({
                 </Text>
               </div>
             ) : (
-              <ul aria-label="Records on the case" className="border-t border-line">
+              <ul aria-label="Records on the case" className="border-t border-border-subtle">
                 {dispute.records.map((record) => (
                   <li
                     key={record.id}
-                    className="border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                    className="border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                   >
-                    <p className="text-sm text-body">{record.title}</p>
+                    <p className="text-sm text-text-secondary">{record.title}</p>
                   </li>
                 ))}
               </ul>

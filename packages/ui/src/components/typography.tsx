@@ -20,7 +20,7 @@ export interface HeadingProps extends HTMLAttributes<HTMLHeadingElement> {
 export const Heading = ({ level = 2, as, className, children, ...rest }: HeadingProps) => {
   const Tag = (as ?? (`h${level}` as ElementType)) as ElementType;
   return (
-    <Tag className={cn('text-heading', HEADING_SIZE[level], className)} {...rest}>
+    <Tag className={cn('text-text-primary', HEADING_SIZE[level], className)} {...rest}>
       {children}
     </Tag>
   );
@@ -30,12 +30,12 @@ export type TextTone = 'default' | 'muted' | 'heading' | 'brand' | 'danger' | 's
 export type TextSize = 'xs' | 'sm' | 'base' | 'lg';
 
 const TONE: Record<TextTone, string> = {
-  default: 'text-body',
-  muted: 'text-muted',
-  heading: 'text-heading',
-  brand: 'text-brand',
-  danger: 'text-danger',
-  success: 'text-success',
+  default: 'text-text-secondary',
+  muted: 'text-text-tertiary',
+  heading: 'text-text-primary',
+  brand: 'text-text-brand',
+  danger: 'text-text-error',
+  success: 'text-text-success',
 };
 
 export interface TextProps extends HTMLAttributes<HTMLElement> {
@@ -83,7 +83,7 @@ export const Text = ({
 /** Small uppercase label used above values in the Figma cards. */
 export const FieldLabel = ({ className, children, ...rest }: HTMLAttributes<HTMLSpanElement>) => (
   <span
-    className={cn('text-xs font-medium uppercase tracking-wide text-muted', className)}
+    className={cn('text-xs font-medium uppercase tracking-wide text-text-tertiary', className)}
     {...rest}
   >
     {children}

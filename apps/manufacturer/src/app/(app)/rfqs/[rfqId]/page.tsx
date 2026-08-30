@@ -56,7 +56,7 @@ const BriefPage = async ({
         />
         <DefinitionList className="mt-4" columns={2} items={brief} />
         {request.notes !== null && request.notes !== '' && (
-          <div className="mt-4 border-t border-line pt-4">
+          <div className="mt-4 border-t border-border-subtle pt-4">
             <Text tone="muted" size="xs" className="block">
               From the buyer
             </Text>

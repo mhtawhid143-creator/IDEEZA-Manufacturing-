@@ -45,7 +45,7 @@ export const DeliveryActionsPanel = ({
       {reviewed && review !== null ? (
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <span aria-hidden className="text-brand">
+            <span aria-hidden className="text-text-brand">
               {'★'.repeat(review.rating)}
               {'☆'.repeat(5 - review.rating)}
             </span>

@@ -106,7 +106,7 @@ export const SendRequestForm = ({
       )}
 
       <Card padded={false}>
-        <div className="border-b border-line p-4 md:p-6">
+        <div className="border-b border-border-subtle p-4 md:p-6">
           <CardHeader
             title="Select manufacturers"
             description="Every manufacturer you choose answers with its own quote. You accept at most one of them, and only that one becomes an order."
@@ -119,7 +119,7 @@ export const SendRequestForm = ({
         </div>
         <ul aria-label="Manufacturers" className="flex flex-col">
           {manufacturers.map((manufacturer) => (
-            <li key={manufacturer.id} className="border-b border-line p-4 last:border-0 md:px-6">
+            <li key={manufacturer.id} className="border-b border-border-subtle p-4 last:border-0 md:px-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <Checkbox
                   name="manufacturerIds"
@@ -128,7 +128,7 @@ export const SendRequestForm = ({
                   onChange={(event) => toggle(manufacturer.id, event.target.checked)}
                   label={
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-heading">
+                      <span className="font-semibold text-text-primary">
                         {manufacturer.displayName}
                       </span>
                       {manufacturer.verified && <Badge tone="success">Verified</Badge>}

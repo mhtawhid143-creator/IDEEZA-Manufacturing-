@@ -163,7 +163,7 @@ export const OrderList = ({
               <div className="min-w-0">
                 <Link
                   href={`/orders/${row.orderId}`}
-                  className="block truncate text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="block truncate text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   {row.productName}
                 </Link>
@@ -210,12 +210,12 @@ export const OrderList = ({
             cell: (row) => (
               <div className="min-w-[140px]">
                 <div
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-line"
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle"
                   role="img"
                   aria-label={`${row.completedStages} of ${row.totalStages} stages completed`}
                 >
                   <div
-                    className={row.late ? 'h-full bg-danger' : 'h-full bg-success'}
+                    className={row.late ? 'h-full bg-bg-error' : 'h-full bg-bg-success'}
                     style={{
                       width: `${Math.round(
                         (row.completedStages / Math.max(1, row.totalStages)) * 100,
@@ -235,7 +235,7 @@ export const OrderList = ({
             header: 'Date',
             cell: (row) => (
               <div>
-                <p className="whitespace-nowrap text-sm text-body">{row.orderedOn}</p>
+                <p className="whitespace-nowrap text-sm text-text-secondary">{row.orderedOn}</p>
                 {row.late && (
                   <Text tone="danger" size="xs">
                     late
@@ -279,7 +279,7 @@ export const OrderList = ({
                     type="button"
                     onClick={onClick}
                     aria-label={`Actions for ${row.productName}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
                     ⋮

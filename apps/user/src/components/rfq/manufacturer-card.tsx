@@ -51,11 +51,11 @@ const SERVICE_LABEL: Readonly<Record<string, string>> = {
 
 const Stat = ({ label, value, tone }: { readonly label: string; readonly value: string; readonly tone?: 'success' }) => (
   <div className="flex flex-col gap-0.5">
-    <span className="text-[10px] font-medium uppercase tracking-wide text-muted">{label}</span>
+    <span className="text-[10px] font-medium uppercase tracking-wide text-text-tertiary">{label}</span>
     <span
       className={cn(
         'text-[13px] font-semibold',
-        tone === 'success' ? 'text-success' : 'text-body',
+        tone === 'success' ? 'text-text-success' : 'text-text-secondary',
       )}
     >
       {value}
@@ -94,13 +94,13 @@ export const ManufacturerCard = ({
       className="flex w-full flex-col gap-3 p-4"
       data-testid={`manufacturer-card-${manufacturer.id}`}
     >
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle px-4 py-3">
         <div className="flex min-w-0 items-center gap-3.5">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-canvas text-lg font-semibold text-brand">
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-page text-lg font-semibold text-text-brand">
             {initials === '' ? 'M' : initials}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-heading">
+            <p className="truncate text-sm font-semibold text-text-primary">
               {manufacturer.displayName}
               {manufacturer.verified && (
                 <Badge tone="success" className="ml-2 align-middle">
@@ -108,9 +108,9 @@ export const ManufacturerCard = ({
                 </Badge>
               )}
             </p>
-            <p className="truncate text-sm text-body">
+            <p className="truncate text-sm text-text-secondary">
               {manufacturer.rating !== null && (
-                <span className="font-semibold text-brand">★ {manufacturer.rating.toFixed(1)}</span>
+                <span className="font-semibold text-text-brand">★ {manufacturer.rating.toFixed(1)}</span>
               )}
               {manufacturer.rating !== null && ' · '}
               {manufacturer.city}, {manufacturer.countryCode}
@@ -125,7 +125,7 @@ export const ManufacturerCard = ({
           </span>
           <input
             type="checkbox"
-            className="peer h-6 w-6 shrink-0 appearance-none rounded-md border-2 border-line-input bg-surface transition-colors checked:border-brand checked:bg-brand hover:border-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus disabled:cursor-not-allowed disabled:border-line-strong disabled:bg-disabled-bg"
+            className="peer h-6 w-6 shrink-0 appearance-none rounded-md border-2 border-border bg-bg-surface transition-colors checked:border-border-brand checked:bg-bg-brand hover:border-border-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus disabled:cursor-not-allowed disabled:border-border disabled:bg-bg-subtle"
             checked={selected}
             disabled={blocked || disabledReason !== undefined}
             onChange={(event) => onToggle(manufacturer.id, event.target.checked)}
@@ -138,18 +138,18 @@ export const ManufacturerCard = ({
         <span
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium',
-            fit.tone === 'success' && 'bg-success-weak text-success',
-            fit.tone === 'warning' && 'bg-warning-weak text-warning',
-            fit.tone === 'danger' && 'bg-danger-weak text-danger',
+            fit.tone === 'success' && 'bg-green-100 text-text-success',
+            fit.tone === 'warning' && 'bg-yellow-100 text-text-warning',
+            fit.tone === 'danger' && 'bg-red-100 text-text-error',
           )}
         >
           <span
             aria-hidden
             className={cn(
               'h-1.5 w-1.5 rounded-full',
-              fit.tone === 'success' && 'bg-success',
-              fit.tone === 'warning' && 'bg-warning',
-              fit.tone === 'danger' && 'bg-danger',
+              fit.tone === 'success' && 'bg-bg-success',
+              fit.tone === 'warning' && 'bg-bg-warning',
+              fit.tone === 'danger' && 'bg-bg-error',
             )}
           />
           {fit.label}
@@ -159,10 +159,10 @@ export const ManufacturerCard = ({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium',
               manufacturer.partsInStock.covered === manufacturer.partsInStock.total
-                ? 'bg-success-weak text-success'
+                ? 'bg-green-100 text-text-success'
                 : manufacturer.partsInStock.covered === 0
-                  ? 'bg-raised text-muted'
-                  : 'bg-info-weak text-info',
+                  ? 'bg-bg-surface-raised text-text-tertiary'
+                  : 'bg-blue-100 text-text-link',
             )}
             title="Parts of your bill of materials this manufacturer holds in stock. A part it does not hold can still be sourced."
           >
@@ -186,7 +186,7 @@ export const ManufacturerCard = ({
       )}
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">Services</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">Services</p>
         <div className="mt-1.5 flex flex-wrap gap-2">
           {manufacturer.services.length === 0 ? (
             <Text tone="muted" size="xs">
@@ -200,7 +200,7 @@ export const ManufacturerCard = ({
         </div>
       </div>
 
-      <div className="h-px w-full bg-line" />
+      <div className="h-px w-full bg-bg-subtle" />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <Stat

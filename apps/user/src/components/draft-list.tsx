@@ -115,13 +115,13 @@ export const DraftList = ({ drafts }: DraftListProps) => {
           return (
             <li
               key={draft.rfqId}
-              className="flex flex-wrap items-center gap-4 rounded-xl border border-line bg-surface p-4"
+              className="flex flex-wrap items-center gap-4 rounded-xl border border-border-subtle bg-bg-surface p-4"
             >
               {/* identity */}
               <div className="flex min-w-[220px] flex-1 items-center gap-3">
                 <span
                   aria-hidden
-                  className="flex h-9 w-12 shrink-0 items-center justify-center rounded border border-line"
+                  className="flex h-9 w-12 shrink-0 items-center justify-center rounded border border-border-subtle"
                   style={{
                     background: `linear-gradient(135deg, hsl(${hue} 45% 74%), hsl(${(hue + 40) % 360} 50% 58%))`,
                   }}
@@ -134,14 +134,14 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                 <div className="min-w-0">
                   <Link
                     href={`/manufacturing/draft/${draft.rfqId}`}
-                    className="block truncate text-sm font-medium text-body hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="block truncate text-sm font-medium text-text-secondary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   >
                     {draft.productName}
                   </Link>
                   <button
                     type="button"
                     onClick={() => setShowFiles(draft)}
-                    className="text-sm font-medium text-brand underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="text-sm font-medium text-text-brand underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   >
                     Show files ({draft.fileCount})
                   </button>
@@ -153,16 +153,16 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                 <Text tone="muted" size="xs">
                   Type included
                 </Text>
-                <div className="flex items-center gap-1.5 text-body">
+                <div className="flex items-center gap-1.5 text-text-secondary">
                   {TYPE_ICONS[draft.kind].map((entry, index) => (
                     <span key={entry.key} className="flex items-center gap-1.5">
-                      {index > 0 && <span aria-hidden className="text-muted">·</span>}
+                      {index > 0 && <span aria-hidden className="text-text-tertiary">·</span>}
                       <Tooltip content={entry.label}>
                         <span aria-label={entry.label}>{entry.icon}</span>
                       </Tooltip>
                     </span>
                   ))}
-                  <span className="ml-1 text-xs text-muted">{PACKAGE_COPY[draft.kind]}</span>
+                  <span className="ml-1 text-xs text-text-tertiary">{PACKAGE_COPY[draft.kind]}</span>
                 </div>
               </div>
 
@@ -171,7 +171,7 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                 <Text tone="muted" size="xs">
                   Volume
                 </Text>
-                <span className="text-base font-semibold text-body">{draft.quantity}</span>
+                <span className="text-base font-semibold text-text-secondary">{draft.quantity}</span>
               </div>
 
               {/* cost, which nobody has quoted yet */}
@@ -183,13 +183,13 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                   <Tooltip content="A cost appears once a manufacturer has quoted this request.">
                     <span
                       aria-label="Why is there no cost?"
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-line-strong text-[10px] text-muted"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-border text-[10px] text-text-tertiary"
                     >
                       i
                     </span>
                   </Tooltip>
                 </span>
-                <span className="text-base font-semibold text-muted">Not quoted</span>
+                <span className="text-base font-semibold text-text-tertiary">Not quoted</span>
               </div>
 
               {/* the one action, plus the rest behind a menu */}
@@ -262,10 +262,10 @@ export const DraftList = ({ drafts }: DraftListProps) => {
               showFiles.files.map((file) => (
                 <li
                   key={file.id}
-                  className="flex items-center gap-2 rounded-lg border border-line px-3 py-2"
+                  className="flex items-center gap-2 rounded-lg border border-border-subtle px-3 py-2"
                 >
-                  <span className={cn('text-muted')}>{FileIcon}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-heading">{file.name}</span>
+                  <span className={cn('text-text-tertiary')}>{FileIcon}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-text-primary">{file.name}</span>
                   <Badge tone="neutral">rev {file.revision}</Badge>
                 </li>
               ))

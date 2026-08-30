@@ -151,7 +151,7 @@ export const RefundBanner = ({
       >
         {claimReference(refundId)} · {issueReasonLabel(reason)} — {description}
         {!answered && (
-          <span className="mt-1 block font-medium text-heading">
+          <span className="mt-1 block font-medium text-text-primary">
             Answer by {respondByOn}. If you do not, IDEEZA decides on what is on the
             record, which will be the buyer’s account alone.
           </span>

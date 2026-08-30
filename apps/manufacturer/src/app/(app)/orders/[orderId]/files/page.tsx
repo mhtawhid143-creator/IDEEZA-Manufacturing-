@@ -69,21 +69,21 @@ const OrderFilesPage = async ({
             />
           </div>
         ) : (
-          <ul aria-label="Production files" className="border-t border-line">
+          <ul aria-label="Production files" className="border-t border-border-subtle">
             {files.map((file) => (
               <li
                 key={file.id}
-                className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-raised text-xs font-semibold text-muted"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-surface-raised text-xs font-semibold text-text-tertiary"
                   >
                     {file.name.split('.').pop()?.slice(0, 4).toUpperCase() ?? 'FILE'}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-heading">
+                    <p className="truncate text-sm font-semibold text-text-primary">
                       {file.name}
                     </p>
                     <Text tone="muted" size="xs">
@@ -94,7 +94,7 @@ const OrderFilesPage = async ({
                 </div>
                 <div className="flex items-center gap-2">
                   <Tag tone="neutral">{KIND_LABEL[file.kind]}</Tag>
-                  <code className="rounded bg-raised px-2 py-1 text-[11px] text-muted">
+                  <code className="rounded bg-bg-surface-raised px-2 py-1 text-[11px] text-text-tertiary">
                     {file.contentHash.slice(0, 12)}…
                   </code>
                 </div>

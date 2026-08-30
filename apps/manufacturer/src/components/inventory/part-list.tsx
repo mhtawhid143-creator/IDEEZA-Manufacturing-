@@ -168,7 +168,7 @@ export const PartList = ({
               <div className="min-w-0">
                 <Link
                   href={`/inventory/${row.id}`}
-                  className="block truncate text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="block truncate text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   {row.partName}
                 </Link>
@@ -197,7 +197,7 @@ export const PartList = ({
             header: 'Reserved',
             cell: (row) => (
               <div>
-                <p className="text-sm text-body">{row.reservedQuantity} pcs</p>
+                <p className="text-sm text-text-secondary">{row.reservedQuantity} pcs</p>
                 <Text tone="muted" size="xs">
                   of {row.stockQuantity} on the shelf
                 </Text>
@@ -240,7 +240,7 @@ export const PartList = ({
                     type="button"
                     onClick={onClick}
                     aria-label={`Actions for ${row.partName}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
                     ⋮

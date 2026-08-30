@@ -9,7 +9,7 @@ import { Button, Card, Heading, Text } from '@ideeza/ui';
  * read this".
  */
 const UnavailablePage = () => (
-  <main className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+  <main className="flex min-h-dvh items-center justify-center bg-bg-page px-4">
     <Card className="max-w-lg text-center">
       <Heading level={1} className="text-xl">
         This route is not part of the manufacturer panel

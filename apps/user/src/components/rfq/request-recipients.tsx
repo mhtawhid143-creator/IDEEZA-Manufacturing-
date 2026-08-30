@@ -52,11 +52,11 @@ export interface RequestRecipientsProps {
 }
 
 const TONE: Readonly<Record<RfqRecipientStatus, string>> = {
-  routed: 'bg-warning-weak text-warning',
-  viewed: 'bg-warning-weak text-warning',
-  quoted: 'bg-success-weak text-success',
-  declined: 'bg-danger-weak text-danger',
-  expired: 'bg-raised text-muted',
+  routed: 'bg-yellow-100 text-text-warning',
+  viewed: 'bg-yellow-100 text-text-warning',
+  quoted: 'bg-green-100 text-text-success',
+  declined: 'bg-red-100 text-text-error',
+  expired: 'bg-bg-surface-raised text-text-tertiary',
 };
 
 /**
@@ -124,8 +124,8 @@ export const RequestRecipients = ({
 
   return (
     <Card padded={false} className="flex flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 md:px-6">
-        <h2 className="text-sm font-semibold text-heading">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 md:px-6">
+        <h2 className="text-sm font-semibold text-text-primary">
           Requested proposals
           <Badge tone="neutral" className="ml-2 align-middle">
             {recipients.length}
@@ -149,20 +149,20 @@ export const RequestRecipients = ({
           return (
             <li
               key={recipient.manufacturerId}
-              className="flex flex-col gap-3 border-b border-line p-4 last:border-0 md:px-6"
+              className="flex flex-col gap-3 border-b border-border-subtle p-4 last:border-0 md:px-6"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas text-sm font-semibold text-brand">
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg-page text-sm font-semibold text-text-brand">
                     {recipient.manufacturerName.slice(0, 2).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-heading">
+                    <p className="truncate text-sm font-semibold text-text-primary">
                       {recipient.manufacturerName}
                     </p>
-                    <p className="truncate text-xs text-body">
+                    <p className="truncate text-xs text-text-secondary">
                       {recipient.rating !== null && (
-                        <span className="font-semibold text-brand">
+                        <span className="font-semibold text-text-brand">
                           ★ {recipient.rating.toFixed(1)}
                         </span>
                       )}
@@ -181,10 +181,10 @@ export const RequestRecipients = ({
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
                 <div className="min-w-0">
-                  <p className="text-xs text-muted">Quote</p>
-                  <p className="text-sm font-semibold text-brand">
+                  <p className="text-xs text-text-tertiary">Quote</p>
+                  <p className="text-sm font-semibold text-text-brand">
                     {recipient.status === 'quoted' ? 'Quote received' : copy.note}
                   </p>
                 </div>
@@ -222,7 +222,7 @@ export const RequestRecipients = ({
         {available.length === 0 ? (
           <Text>
             Every manufacturer that can build this request already has it.{' '}
-            <Link href="/manufacturing/rfq" className="font-semibold text-brand underline">
+            <Link href="/manufacturing/rfq" className="font-semibold text-text-brand underline">
               Back to requests
             </Link>
           </Text>
@@ -234,14 +234,14 @@ export const RequestRecipients = ({
                   className={cn(
                     'flex cursor-pointer items-center gap-3 rounded-lg border p-3',
                     picked.includes(manufacturer.id)
-                      ? 'border-brand bg-brand-surface'
-                      : 'border-line',
+                      ? 'border-border-brand bg-bg-brand-subtle'
+                      : 'border-border-subtle',
                     manufacturer.blocked && 'cursor-not-allowed opacity-60',
                   )}
                 >
                   <input
                     type="checkbox"
-                    className="h-5 w-5 shrink-0 appearance-none rounded border-2 border-line-input bg-surface checked:border-brand checked:bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="h-5 w-5 shrink-0 appearance-none rounded border-2 border-border bg-bg-surface checked:border-border-brand checked:bg-bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     checked={picked.includes(manufacturer.id)}
                     disabled={manufacturer.blocked}
                     onChange={(event) =>
@@ -253,10 +253,10 @@ export const RequestRecipients = ({
                     }
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-heading">
+                    <span className="block truncate text-sm font-semibold text-text-primary">
                       {manufacturer.displayName}
                     </span>
-                    <span className="block truncate text-xs text-muted">
+                    <span className="block truncate text-xs text-text-tertiary">
                       {manufacturer.blocked
                         ? manufacturer.blockedReason
                         : `${manufacturer.city}, ${manufacturer.countryCode}`}

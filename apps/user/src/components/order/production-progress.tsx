@@ -54,7 +54,7 @@ export const ProductionProgress = ({ stages, delayDays }: ProductionProgressProp
               <ul aria-label={`${stage.label} tasks`} className="flex flex-col gap-1.5">
                 {stage.tasks.map((task) => (
                   <li key={task.id} className="flex items-center justify-between gap-3">
-                    <span className="min-w-0 truncate text-sm text-body">{task.label}</span>
+                    <span className="min-w-0 truncate text-sm text-text-secondary">{task.label}</span>
                     <StatusChip status={task.status} />
                   </li>
                 ))}

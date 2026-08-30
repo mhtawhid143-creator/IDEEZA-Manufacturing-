@@ -100,9 +100,9 @@ export const PayoutList = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-bg-surface p-4 md:p-6">
         <div>
-          <p className="text-2xl font-bold text-brand">
+          <p className="text-2xl font-bold text-text-brand">
             {currency} {availableMajor}
           </p>
           <Text tone="muted" size="sm">
@@ -184,7 +184,7 @@ export const PayoutList = ({
               <div className="min-w-0">
                 <Link
                   href={`/orders/${row.orderId}`}
-                  className="block truncate text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  className="block truncate text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                 >
                   {row.productName}
                 </Link>
@@ -219,7 +219,7 @@ export const PayoutList = ({
             header: 'You get',
             align: 'right',
             cell: (row) => (
-              <span className="font-semibold text-heading">
+              <span className="font-semibold text-text-primary">
                 {row.currency} {row.netAmountMajor}
               </span>
             ),
@@ -255,7 +255,7 @@ export const PayoutList = ({
                     type="button"
                     onClick={onClick}
                     aria-label={`Actions for payout ${row.id.slice(-8)}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
                     ⋮

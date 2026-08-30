@@ -81,7 +81,7 @@ export const DisputeStatementForm = ({
 
       {attachable.length > 0 && (
         <div>
-          <p className="text-sm font-medium text-heading">Attachment</p>
+          <p className="text-sm font-medium text-text-primary">Attachment</p>
           <Text tone="muted" size="xs" className="mt-0.5">
             Records already on this order. New photographs need the file storage
             service, which is part of the deployment work.

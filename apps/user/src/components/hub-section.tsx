@@ -40,7 +40,7 @@ export const HubSection = async ({
       />
 
       <Card padded={false}>
-        <div className="border-b border-line px-4 py-3 md:px-6">
+        <div className="border-b border-border-subtle px-4 py-3 md:px-6">
           <HubTabs
             items={MANUFACTURING_TABS.map((tab) => ({
               id: tab.id,

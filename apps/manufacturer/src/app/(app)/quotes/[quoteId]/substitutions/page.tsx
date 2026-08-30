@@ -91,14 +91,14 @@ const QuoteSubstitutionsPage = async ({
             />
           </div>
         ) : (
-          <ul aria-label="Suggested substitutes" className="border-t border-line">
+          <ul aria-label="Suggested substitutes" className="border-t border-border-subtle">
             {quote.suggestions.map((suggestion) => (
               <li
                 key={suggestion.id}
-                className="border-b border-line px-4 py-4 last:border-b-0 md:px-6"
+                className="border-b border-border-subtle px-4 py-4 last:border-b-0 md:px-6"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-heading">
+                  <p className="text-sm font-semibold text-text-primary">
                     {suggestion.requestedPartReference} → {suggestion.suggestedPartName}
                   </p>
                   <StatusChip

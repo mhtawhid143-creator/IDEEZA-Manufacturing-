@@ -91,7 +91,7 @@ export const DisputeStatement = ({
         </FormField>
         {attachable.length > 0 && (
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium text-heading">
+            <legend className="mb-1 text-sm font-medium text-text-primary">
               Records to attach
             </legend>
             <Text tone="muted" size="xs" className="mb-1 block">

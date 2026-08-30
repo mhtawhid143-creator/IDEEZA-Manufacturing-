@@ -52,7 +52,7 @@ const QuotesPage = async ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-heading">Quotes received</h2>
+            <h2 className="text-sm font-semibold text-text-primary">Quotes received</h2>
             <Text tone="muted" size="xs">
               {quotes.length} of {request.recipientCount}{' '}
               {request.recipientCount === 1 ? 'manufacturer' : 'manufacturers'} answered

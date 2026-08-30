@@ -34,8 +34,8 @@ const Counter = ({
   readonly note: string;
 }) => (
   <Card>
-    <p className="text-2xl font-bold text-heading">{String(value).padStart(2, '0')}</p>
-    <Text size="sm" className="mt-0.5 block font-medium text-body">
+    <p className="text-2xl font-bold text-text-primary">{String(value).padStart(2, '0')}</p>
+    <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
       {label}
     </Text>
     <Text tone="muted" size="xs" className="mt-0.5 block">
@@ -151,7 +151,7 @@ const InventoryPage = async ({
       </Card>
 
       <Card tone="brand">
-        <p className="text-sm font-semibold text-heading">
+        <p className="text-sm font-semibold text-text-primary">
           What your inventory decides
         </p>
         <Text size="sm" className="mt-2 block">

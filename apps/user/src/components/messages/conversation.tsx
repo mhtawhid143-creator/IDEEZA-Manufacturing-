@@ -93,11 +93,11 @@ export const Conversation = ({
 
   return (
     <div className="flex h-full min-h-[32rem] flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar name={counterpartName} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-heading">
+            <p className="truncate text-sm font-semibold text-text-primary">
               {counterpartName}
             </p>
             {contextHref === null ? (
@@ -107,7 +107,7 @@ export const Conversation = ({
             ) : (
               <Link
                 href={contextHref}
-                className="text-xs font-medium text-brand underline hover:no-underline"
+                className="text-xs font-medium text-text-brand underline hover:no-underline"
               >
                 {contextLabel}
               </Link>
@@ -153,8 +153,8 @@ export const Conversation = ({
                 className={cn(
                   'max-w-[36rem] rounded-2xl px-3.5 py-2.5 text-sm',
                   message.mine
-                    ? 'bg-brand text-on-brand'
-                    : 'bg-raised text-body border border-line',
+                    ? 'bg-bg-brand text-text-on-brand'
+                    : 'bg-bg-surface-raised text-text-secondary border border-border-subtle',
                 )}
               >
                 {message.body}
@@ -162,16 +162,16 @@ export const Conversation = ({
             )}
 
             {message.card !== null && (
-              <div className="w-full max-w-[36rem] rounded-xl border border-line bg-surface p-4">
+              <div className="w-full max-w-[36rem] rounded-xl border border-border-subtle bg-bg-surface p-4">
                 <Text tone="muted" size="xs">
                   From the order record
                 </Text>
-                <p className="text-sm font-semibold text-heading">{message.card.title}</p>
+                <p className="text-sm font-semibold text-text-primary">{message.card.title}</p>
                 <dl className="mt-3 flex flex-col gap-1.5">
                   {message.card.rows.map((row) => (
                     <div key={row.label} className="flex justify-between gap-4 text-sm">
-                      <dt className="text-muted">{row.label}</dt>
-                      <dd className="font-medium text-body">{row.value}</dd>
+                      <dt className="text-text-tertiary">{row.label}</dt>
+                      <dd className="font-medium text-text-secondary">{row.value}</dd>
                     </div>
                   ))}
                 </dl>
@@ -212,7 +212,7 @@ export const Conversation = ({
         </div>
       )}
 
-      <div className="flex items-end gap-2 border-t border-line px-4 py-3">
+      <div className="flex items-end gap-2 border-t border-border-subtle px-4 py-3">
         <label htmlFor={`composer-${threadId}`} className="sr-only">
           Type your message
         </label>
@@ -228,7 +228,7 @@ export const Conversation = ({
             }
           }}
           placeholder="Type your message…"
-          className="min-w-0 flex-1 resize-none rounded-lg border border-line-input bg-surface px-3 py-2 text-sm text-body placeholder:text-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+          className="min-w-0 flex-1 resize-none rounded-lg border border-border bg-bg-surface px-3 py-2 text-sm text-text-secondary placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
         />
         <Button
           onClick={send}

@@ -67,9 +67,9 @@ const PartDetailPage = async ({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
             <div>
-              <h1 className="text-xl font-bold text-heading">{part.partName}</h1>
+              <h1 className="text-xl font-bold text-text-primary">{part.partName}</h1>
               <Text tone="muted" size="sm">
                 {part.sku} · {part.category}
               </Text>
@@ -141,14 +141,14 @@ const PartDetailPage = async ({
                 />
               </div>
             ) : (
-              <ol aria-label="Movement history" className="border-t border-line">
+              <ol aria-label="Movement history" className="border-t border-border-subtle">
                 {part.movements.map((movement) => (
                   <li
                     key={movement.id}
-                    className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                    className="flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-heading">
+                      <p className="text-sm font-semibold text-text-primary">
                         {MOVEMENT_WORDS[movement.kind]}
                         {movement.kind === 'price_change'
                           ? movement.unitCostMinor === null
@@ -180,7 +180,7 @@ const PartDetailPage = async ({
 
         <aside className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3">
-            <Text size="sm" className="font-semibold text-heading">
+            <Text size="sm" className="font-semibold text-text-primary">
               Change this part
             </Text>
             <StockControls

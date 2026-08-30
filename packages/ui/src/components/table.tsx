@@ -44,18 +44,18 @@ export const DataTable = <TRow,>({
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
       <table className="w-full border-collapse text-sm">
-        <caption className={cn('text-left text-sm text-muted', captionHidden && 'ids-sr-only')}>
+        <caption className={cn('text-left text-sm text-text-tertiary', captionHidden && 'ids-sr-only')}>
           {caption}
         </caption>
         <thead>
-          <tr className="border-b border-line">
+          <tr className="border-b border-border-subtle">
             {columns.map((column) => (
               <th
                 key={column.id}
                 scope="col"
                 style={column.width === undefined ? undefined : { width: column.width }}
                 className={cn(
-                  'whitespace-nowrap px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted',
+                  'whitespace-nowrap px-3 py-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary',
                   ALIGN[column.align ?? 'left'],
                   column.hideBelowLg === true && 'hidden lg:table-cell',
                 )}
@@ -67,12 +67,12 @@ export const DataTable = <TRow,>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-line last:border-0 hover:bg-canvas">
+            <tr key={rowKey(row)} className="border-b border-border-subtle last:border-0 hover:bg-bg-page">
               {columns.map((column) => (
                 <td
                   key={column.id}
                   className={cn(
-                    'px-3 py-3.5 align-middle text-sm text-body',
+                    'px-3 py-3.5 align-middle text-sm text-text-secondary',
                     ALIGN[column.align ?? 'left'],
                     column.hideBelowLg === true && 'hidden lg:table-cell',
                   )}
@@ -105,8 +105,8 @@ export const DefinitionList = ({ items, className, columns = 1 }: DefinitionList
   >
     {items.map((item) => (
       <div key={item.label} className="flex items-start justify-between gap-4">
-        <dt className="text-sm text-muted">{item.label}</dt>
-        <dd className="text-right text-sm font-medium text-heading">{item.value}</dd>
+        <dt className="text-sm text-text-tertiary">{item.label}</dt>
+        <dd className="text-right text-sm font-medium text-text-primary">{item.value}</dd>
       </div>
     ))}
   </dl>

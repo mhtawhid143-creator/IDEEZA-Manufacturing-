@@ -95,8 +95,8 @@ const OrderTermsPage = async ({
         <Text size="sm" className="mt-3 block whitespace-pre-line">
           {order.materialProcessNotes}
         </Text>
-        <div className="mt-4 border-t border-line pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+        <div className="mt-4 border-t border-border-subtle pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
             Terms
           </p>
           <Text size="sm" className="mt-1 block whitespace-pre-line">
@@ -104,8 +104,8 @@ const OrderTermsPage = async ({
           </Text>
         </div>
         {order.warrantyTerms !== null && (
-          <div className="mt-4 border-t border-line pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <div className="mt-4 border-t border-border-subtle pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
               Warranty
             </p>
             <Text size="sm" className="mt-1 block whitespace-pre-line">

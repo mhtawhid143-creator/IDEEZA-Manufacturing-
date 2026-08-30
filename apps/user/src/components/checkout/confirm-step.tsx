@@ -127,11 +127,11 @@ export const ConfirmStep = ({
       <div className="flex min-w-0 flex-col gap-5">
         <Card className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas text-sm font-semibold text-brand">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg-page text-sm font-semibold text-text-brand">
               {manufacturerName.slice(0, 2).toUpperCase()}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-heading">
+              <p className="truncate text-sm font-semibold text-text-primary">
                 {manufacturerName}
               </p>
               <Text tone="muted" size="xs">
@@ -151,34 +151,34 @@ export const ConfirmStep = ({
             {includedServices.map((service) => (
               <li
                 key={service}
-                className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-0"
+                className="flex items-center justify-between gap-3 border-b border-border-subtle py-2.5 last:border-0"
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     aria-hidden
-                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-weak text-[11px] font-bold text-success"
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-[11px] font-bold text-text-success"
                   >
                     ✓
                   </span>
-                  <span className="truncate text-sm text-heading">{service}</span>
+                  <span className="truncate text-sm text-text-primary">{service}</span>
                 </span>
-                <span className="shrink-0 text-xs text-muted">Included</span>
+                <span className="shrink-0 text-xs text-text-tertiary">Included</span>
               </li>
             ))}
             {specRows.map((row) => (
               <li
                 key={row.label}
-                className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-0"
+                className="flex items-center justify-between gap-3 border-b border-border-subtle py-2.5 last:border-0"
               >
-                <span className="min-w-0 truncate text-sm text-body">{row.label}</span>
-                <span className="shrink-0 text-xs font-medium text-heading">
+                <span className="min-w-0 truncate text-sm text-text-secondary">{row.label}</span>
+                <span className="shrink-0 text-xs font-medium text-text-primary">
                   {row.value}
                 </span>
               </li>
             ))}
             <li className="flex items-center justify-between gap-3 py-2.5">
-              <span className="text-sm text-body">Build time</span>
-              <span className="text-xs font-medium text-heading">
+              <span className="text-sm text-text-secondary">Build time</span>
+              <span className="text-xs font-medium text-text-primary">
                 {leadTimeDays} days · as quoted
               </span>
             </li>
@@ -192,13 +192,13 @@ export const ConfirmStep = ({
               <li key={item.name} className="flex items-start gap-3">
                 <span
                   aria-hidden
-                  className="h-11 w-11 shrink-0 rounded-lg bg-gradient-to-br from-brand-weak to-brand-surface"
+                  className="h-11 w-11 shrink-0 rounded-lg bg-gradient-to-br from-bg-brand-subtle to-bg-brand-subtle"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-heading">
+                  <span className="block truncate text-sm font-semibold text-text-primary">
                     {item.name}
                   </span>
-                  <span className="block truncate text-xs text-muted">{item.detail}</span>
+                  <span className="block truncate text-xs text-text-tertiary">{item.detail}</span>
                 </span>
                 <Tag>{item.quantityNote}</Tag>
               </li>
@@ -238,11 +238,11 @@ export const ConfirmStep = ({
                 onChange={() => setChoice('express')}
               />
             </RadioGroup>
-            <div className="rounded-lg border border-line p-3 text-sm md:max-w-xs">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="rounded-lg border border-border-subtle p-3 text-sm md:max-w-xs">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Delivering to
               </p>
-              <p className="mt-1 text-body">
+              <p className="mt-1 text-text-secondary">
                 {deliveryAddress.line1}
                 {deliveryAddress.line2 === null ? '' : `, ${deliveryAddress.line2}`}
                 <br />

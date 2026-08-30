@@ -51,10 +51,10 @@ export const OrderItems = ({ groups, currency, spec }: OrderItemsProps) => {
     <div className="flex flex-col gap-4">
       {groups.map((group) => (
         <Card key={group.id} padded={false}>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 md:px-6">
-            <p className="text-sm font-semibold text-heading">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 md:px-6">
+            <p className="text-sm font-semibold text-text-primary">
               {group.title}{' '}
-              <span className="font-normal text-muted">
+              <span className="font-normal text-text-tertiary">
                 ({group.items.length} {group.items.length === 1 ? 'item' : 'items'})
               </span>
             </p>
@@ -62,7 +62,7 @@ export const OrderItems = ({ groups, currency, spec }: OrderItemsProps) => {
               <Text tone="muted" size="xs">
                 Grand Total
               </Text>
-              <p className="text-sm font-bold text-heading">
+              <p className="text-sm font-bold text-text-primary">
                 {currency} {group.grandTotalMajor}
               </p>
             </div>
@@ -72,14 +72,14 @@ export const OrderItems = ({ groups, currency, spec }: OrderItemsProps) => {
             {group.items.map((item) => (
               <li
                 key={item.id}
-                className="flex flex-wrap items-center gap-4 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                className="flex flex-wrap items-center gap-4 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
               >
                 <span
                   aria-hidden
-                  className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-brand-weak to-info-weak"
+                  className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-heading">{item.name}</p>
+                  <p className="truncate text-sm font-semibold text-text-primary">{item.name}</p>
                   <Text tone="muted" size="xs" className="mt-0.5">
                     {item.detail}
                   </Text>
@@ -88,7 +88,7 @@ export const OrderItems = ({ groups, currency, spec }: OrderItemsProps) => {
                   <Text tone="muted" size="xs">
                     Per unit
                   </Text>
-                  <p className="text-sm font-semibold text-heading">
+                  <p className="text-sm font-semibold text-text-primary">
                     {currency} {item.unitPriceMajor}
                   </p>
                 </div>
@@ -126,7 +126,7 @@ export const OrderItems = ({ groups, currency, spec }: OrderItemsProps) => {
               ]}
             />
             <div>
-              <p className="text-sm font-semibold text-heading">Production specification</p>
+              <p className="text-sm font-semibold text-text-primary">Production specification</p>
               <Text tone="muted" size="xs" className="mt-0.5">
                 Frozen when the quote was accepted. It applies to the whole order.
               </Text>

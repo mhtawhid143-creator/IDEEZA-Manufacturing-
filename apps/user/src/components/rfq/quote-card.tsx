@@ -36,13 +36,13 @@ export interface QuoteCardData {
 }
 
 const STATE: Readonly<Record<string, { readonly label: string; readonly tone: string }>> = {
-  submitted: { label: 'Quote received', tone: 'bg-success-weak text-success' },
-  revised: { label: 'Revised quote', tone: 'bg-info-weak text-info' },
-  revision_requested: { label: 'Revision requested', tone: 'bg-warning-weak text-warning' },
-  accepted: { label: 'Accepted', tone: 'bg-brand-weak text-brand' },
-  rejected: { label: 'Declined by you', tone: 'bg-danger-weak text-danger' },
-  withdrawn: { label: 'Withdrawn', tone: 'bg-raised text-muted' },
-  expired: { label: 'Expired', tone: 'bg-raised text-muted' },
+  submitted: { label: 'Quote received', tone: 'bg-green-100 text-text-success' },
+  revised: { label: 'Revised quote', tone: 'bg-blue-100 text-text-link' },
+  revision_requested: { label: 'Revision requested', tone: 'bg-yellow-100 text-text-warning' },
+  accepted: { label: 'Accepted', tone: 'bg-bg-brand-subtle text-text-brand' },
+  rejected: { label: 'Declined by you', tone: 'bg-red-100 text-text-error' },
+  withdrawn: { label: 'Withdrawn', tone: 'bg-bg-surface-raised text-text-tertiary' },
+  expired: { label: 'Expired', tone: 'bg-bg-surface-raised text-text-tertiary' },
 };
 
 /**
@@ -98,14 +98,14 @@ export const QuoteCard = ({ quote }: { readonly quote: QuoteCardData }) => {
     <Card padded={false} className="flex flex-col" data-testid={`quote-${quote.id}`}>
       <div className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-canvas text-sm font-semibold text-brand">
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-bg-page text-sm font-semibold text-text-brand">
             {quote.manufacturerName.slice(0, 2).toUpperCase()}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-heading">{quote.manufacturerName}</p>
-            <p className="truncate text-xs text-body">
+            <p className="truncate text-sm font-semibold text-text-primary">{quote.manufacturerName}</p>
+            <p className="truncate text-xs text-text-secondary">
               {quote.rating !== null && (
-                <span className="font-semibold text-brand">★ {quote.rating.toFixed(1)}</span>
+                <span className="font-semibold text-text-brand">★ {quote.rating.toFixed(1)}</span>
               )}
               {quote.rating !== null && ' · '}
               {quote.city}, {quote.countryCode}
@@ -115,17 +115,17 @@ export const QuoteCard = ({ quote }: { readonly quote: QuoteCardData }) => {
         <span
           className={cn(
             'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
-            state?.tone ?? 'bg-raised text-muted',
+            state?.tone ?? 'bg-bg-surface-raised text-text-tertiary',
           )}
         >
           {state?.label ?? quote.status}
         </span>
       </div>
 
-      <div className="flex flex-wrap items-end justify-between gap-4 border-t border-line p-4">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle p-4">
         <div className="min-w-0">
-          <p className="text-xs text-muted">Quote total</p>
-          <p className="text-xl font-semibold text-brand">
+          <p className="text-xs text-text-tertiary">Quote total</p>
+          <p className="text-xl font-semibold text-text-brand">
             {quote.currency} {quote.totalMajor}
           </p>
           <Text tone="muted" size="xs" className="mt-0.5">

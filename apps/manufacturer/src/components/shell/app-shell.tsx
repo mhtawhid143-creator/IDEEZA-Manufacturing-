@@ -32,7 +32,7 @@ export const AppShell = ({
   const [navigationOpen, setNavigationOpen] = useState(false);
 
   return (
-      <div className="min-h-dvh bg-canvas">
+      <div className="min-h-dvh bg-bg-page">
         <Navbar
           displayName={displayName}
           email={email}

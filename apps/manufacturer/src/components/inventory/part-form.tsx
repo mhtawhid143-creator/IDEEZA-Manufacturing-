@@ -171,7 +171,7 @@ export const PartForm = ({
         }
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm font-semibold text-heading">Basic information</p>
+          <p className="text-sm font-semibold text-text-primary">Basic information</p>
 
           <FormField label="Part name" required>
             <Input
@@ -280,8 +280,8 @@ export const PartForm = ({
             </FormField>
           </div>
 
-          <div className="border-t border-line pt-4">
-            <p className="text-sm font-semibold text-heading">Visibility and settings</p>
+          <div className="border-t border-border-subtle pt-4">
+            <p className="text-sm font-semibold text-text-primary">Visibility and settings</p>
             <FormField
               className="mt-3"
               label="Enable for order matching"

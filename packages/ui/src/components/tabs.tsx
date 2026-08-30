@@ -31,7 +31,7 @@ const tabClasses = (active: boolean): string =>
   cn(
     'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
     'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-    active ? 'bg-brand-weak text-brand' : 'text-body hover:bg-raised',
+    active ? 'bg-bg-brand-subtle text-text-brand' : 'text-text-secondary hover:bg-bg-surface-raised',
   );
 
 /**

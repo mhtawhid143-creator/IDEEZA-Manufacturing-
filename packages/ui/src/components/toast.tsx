@@ -35,10 +35,10 @@ export const useToast = (): ToastContextValue => {
 };
 
 const TONE = {
-  info: 'border-info/30',
-  success: 'border-success/40',
-  warning: 'border-warning/40',
-  danger: 'border-danger/40',
+  info: 'border-border-blue/30',
+  success: 'border-border-success/40',
+  warning: 'border-border-warning/40',
+  danger: 'border-border-error/40',
 } as const;
 
 let counter = 0;
@@ -85,15 +85,15 @@ export const ToastProvider = ({ children }: { readonly children: ReactNode }) =>
           <div
             key={toast.id}
             className={cn(
-              'pointer-events-auto animate-fade-in rounded-lg border bg-surface p-4 shadow-dropdown',
+              'pointer-events-auto animate-fade-in rounded-lg border bg-bg-surface p-4 shadow-3',
               TONE[toast.tone ?? 'info'],
             )}
           >
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-heading">{toast.title}</p>
+                <p className="text-sm font-semibold text-text-primary">{toast.title}</p>
                 {toast.body !== undefined && (
-                  <p className="mt-0.5 text-sm text-body">{toast.body}</p>
+                  <p className="mt-0.5 text-sm text-text-secondary">{toast.body}</p>
                 )}
               </div>
               <IconButton

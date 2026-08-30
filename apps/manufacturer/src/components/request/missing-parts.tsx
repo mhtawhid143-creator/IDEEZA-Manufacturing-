@@ -155,7 +155,7 @@ export const MissingParts = ({
         {lines.length} {lines.length === 1 ? 'component' : 'components'}{' '}
         {lines.length === 1 ? 'needs' : 'need'} a substitute suggestion, and the buyer has
         to approve each one before production can start.
-        <span className="mt-1 block font-medium text-heading">
+        <span className="mt-1 block font-medium text-text-primary">
           {lines
             .map((line, index) => `(${index + 1}) ${line.componentName}`)
             .join('  ')}
@@ -204,12 +204,12 @@ export const MissingParts = ({
                 Parts this shop cannot cover from stock
               </caption>
               <thead>
-                <tr className="border-b border-line bg-raised">
+                <tr className="border-b border-border-subtle bg-bg-surface-raised">
                   {['Qty', 'Missing part', 'Substitute', 'Action'].map((header) => (
                     <th
                       key={header}
                       scope="col"
-                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
                     >
                       {header}
                     </th>
@@ -223,13 +223,13 @@ export const MissingParts = ({
                   return (
                     <tr
                       key={line.rfqItemId}
-                      className="border-b border-line align-top last:border-0"
+                      className="border-b border-border-subtle align-top last:border-0"
                     >
-                      <td className="whitespace-nowrap px-3 py-3 text-body">
+                      <td className="whitespace-nowrap px-3 py-3 text-text-secondary">
                         {line.requiredTotal} pcs
                       </td>
                       <td className="px-3 py-3">
-                        <p className="font-medium text-heading">{line.componentName}</p>
+                        <p className="font-medium text-text-primary">{line.componentName}</p>
                         <Text tone="muted" size="xs">
                           {line.reference}
                           {line.sku === null ? '' : ` · ${line.sku}`} ·{' '}
@@ -319,9 +319,9 @@ export const MissingParts = ({
             rows[line.rfqItemId]?.noteOpen === true ? (
               <div
                 key={`note-${line.rfqItemId}`}
-                className="rounded-lg border border-line bg-raised p-3"
+                className="rounded-lg border border-border-subtle bg-bg-surface-raised p-3"
               >
-                <p className="text-sm font-semibold text-heading">
+                <p className="text-sm font-semibold text-text-primary">
                   Why this stands in for {line.componentName}
                 </p>
                 <Text tone="muted" size="xs" className="mt-0.5 block">

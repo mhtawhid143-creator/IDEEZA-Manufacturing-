@@ -61,7 +61,7 @@ const initialsOf = (name: string): string =>
 export const Avatar = ({ name, size = 'md', imageUrl, className }: AvatarProps) => (
   <span
     className={cn(
-      'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-weak font-semibold text-brand',
+      'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg-brand-subtle font-semibold text-text-brand',
       AVATAR_SIZE[size],
       className,
     )}
@@ -101,7 +101,7 @@ export const Pagination = ({ page, pageCount, onChange, className }: PaginationP
         aria-label="Previous page"
         disabled={page <= 1}
         onClick={() => onChange?.(page - 1)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-body hover:bg-raised disabled:cursor-not-allowed disabled:text-disabled-text"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-secondary hover:bg-bg-surface-raised disabled:cursor-not-allowed disabled:text-text-disabled"
       >
         ‹
       </button>
@@ -110,7 +110,7 @@ export const Pagination = ({ page, pageCount, onChange, className }: PaginationP
         const gap = previous !== undefined && candidate - previous > 1;
         return (
           <span key={candidate} className="flex items-center gap-1">
-            {gap && <span className="px-1 text-muted">…</span>}
+            {gap && <span className="px-1 text-text-tertiary">…</span>}
             <button
               type="button"
               aria-current={candidate === page ? 'page' : undefined}
@@ -118,8 +118,8 @@ export const Pagination = ({ page, pageCount, onChange, className }: PaginationP
               className={cn(
                 'inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm',
                 candidate === page
-                  ? 'bg-brand-weak font-semibold text-brand'
-                  : 'text-body hover:bg-raised',
+                  ? 'bg-bg-brand-subtle font-semibold text-text-brand'
+                  : 'text-text-secondary hover:bg-bg-surface-raised',
               )}
             >
               {candidate}
@@ -132,7 +132,7 @@ export const Pagination = ({ page, pageCount, onChange, className }: PaginationP
         aria-label="Next page"
         disabled={page >= pageCount}
         onClick={() => onChange?.(page + 1)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-body hover:bg-raised disabled:cursor-not-allowed disabled:text-disabled-text"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-secondary hover:bg-bg-surface-raised disabled:cursor-not-allowed disabled:text-text-disabled"
       >
         ›
       </button>
@@ -141,5 +141,5 @@ export const Pagination = ({ page, pageCount, onChange, className }: PaginationP
 };
 
 export const Divider = ({ className, ...rest }: HTMLAttributes<HTMLHRElement>) => (
-  <hr className={cn('border-0 border-t border-line', className)} {...rest} />
+  <hr className={cn('border-0 border-t border-border-subtle', className)} {...rest} />
 );

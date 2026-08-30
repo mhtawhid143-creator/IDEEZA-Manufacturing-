@@ -84,12 +84,12 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-brand-weak to-info-weak"
+                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
                 />
                 <div className="min-w-0">
                   <Link
                     href={`/rfqs/${row.rfqId}`}
-                    className="block truncate text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="block truncate text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   >
                     {row.productName}
                   </Link>
@@ -106,7 +106,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
             hideBelowLg: true,
             cell: (row) => (
               <div className="max-w-[260px]">
-                <p className="truncate text-sm text-body">{row.description}</p>
+                <p className="truncate text-sm text-text-secondary">{row.description}</p>
                 <Text tone="muted" size="xs">
                   {row.fileCount} {row.fileCount === 1 ? 'file' : 'files'} ·{' '}
                   {row.bomLineCount} BOM {row.bomLineCount === 1 ? 'line' : 'lines'}
@@ -135,7 +135,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
             header: 'Date',
             cell: (row) => (
               <div>
-                <p className="whitespace-nowrap text-sm text-body">{row.receivedOn}</p>
+                <p className="whitespace-nowrap text-sm text-text-secondary">{row.receivedOn}</p>
                 {row.respondBy !== null && (
                   <Text tone="muted" size="xs">
                     reply by {row.respondBy}
@@ -171,7 +171,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
                     type="button"
                     onClick={onClick}
                     aria-label={`Actions for ${row.productName}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
                     ⋮

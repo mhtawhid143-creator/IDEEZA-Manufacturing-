@@ -104,7 +104,7 @@ export const ReviewModal = ({
     >
       <div className="flex flex-col gap-4">
         <div>
-          <p className="text-sm font-semibold text-heading">Rate your experience</p>
+          <p className="text-sm font-semibold text-text-primary">Rate your experience</p>
           <div
             role="radiogroup"
             aria-label="Rating"
@@ -123,7 +123,7 @@ export const ReviewModal = ({
                 }}
                 className={cn(
                   'rounded-md p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-                  value <= rating ? 'text-brand' : 'text-line-strong hover:text-brand',
+                  value <= rating ? 'text-text-brand' : 'text-border-strong hover:text-text-brand',
                 )}
               >
                 <StarIcon filled={value <= rating} />
@@ -140,7 +140,7 @@ export const ReviewModal = ({
         <div>
           <label
             htmlFor={`review-body-${orderId}`}
-            className="text-sm font-semibold text-heading"
+            className="text-sm font-semibold text-text-primary"
           >
             Share your experience
           </label>

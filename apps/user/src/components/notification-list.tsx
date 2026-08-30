@@ -90,11 +90,11 @@ export const NotificationList = ({
         {notifications.map((row) => (
           <li
             key={row.id}
-            className="flex items-start gap-3 border-b border-line py-4 last:border-b-0"
+            className="flex items-start gap-3 border-b border-border-subtle py-4 last:border-b-0"
           >
             <span
               aria-hidden
-              className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-weak text-brand"
+              className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-text-brand"
             >
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
                 <path
@@ -109,13 +109,13 @@ export const NotificationList = ({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 {row.deepLink === null ? (
-                  <p className="text-sm font-semibold text-heading">{row.title}</p>
+                  <p className="text-sm font-semibold text-text-primary">{row.title}</p>
                 ) : (
                   <button
                     type="button"
                     onClick={() => open(row)}
                     disabled={pending}
-                    className="text-left text-sm font-semibold text-heading hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="text-left text-sm font-semibold text-text-primary hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                   >
                     {row.title}
                   </button>
@@ -132,7 +132,7 @@ export const NotificationList = ({
                 {row.deepLink !== null && (
                   <Link
                     href={row.deepLink}
-                    className="text-xs font-medium text-brand underline hover:no-underline"
+                    className="text-xs font-medium text-text-brand underline hover:no-underline"
                     onClick={() => {
                       if (!row.read) void markReadAction(row.id);
                     }}
@@ -144,7 +144,7 @@ export const NotificationList = ({
             </div>
 
             {!row.read && (
-              <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand" />
+              <span aria-hidden className="mt-2 h-2 w-2 shrink-0 rounded-full bg-bg-brand" />
             )}
           </li>
         ))}

@@ -31,16 +31,16 @@ export const ClientPanel = ({
 
   return (
     <Card className="flex flex-col gap-3">
-      <Text size="sm" className="font-semibold text-heading">
+      <Text size="sm" className="font-semibold text-text-primary">
         About the client
       </Text>
       <div className="flex items-center gap-3">
         <span
           aria-hidden
-          className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-brand-weak to-info-weak"
+          className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-blue-100"
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-heading">{buyerName}</p>
+          <p className="truncate text-sm font-semibold text-text-primary">{buyerName}</p>
           <Text tone="muted" size="xs">
             {creatorName === buyerName ? 'Owns the design' : `Design by ${creatorName}`}
           </Text>
@@ -70,9 +70,9 @@ export const ClientPanel = ({
         </Link>
       )}
 
-      <div className="flex flex-col gap-2 border-t border-line pt-3">
+      <div className="flex flex-col gap-2 border-t border-border-subtle pt-3">
         <div>
-          <Text size="sm" className="font-semibold text-heading">
+          <Text size="sm" className="font-semibold text-text-primary">
             Ships to
           </Text>
           <Text tone="muted" size="xs">
@@ -82,7 +82,7 @@ export const ClientPanel = ({
         {client !== null && (
           <>
             <div>
-              <Text size="sm" className="font-semibold text-heading">
+              <Text size="sm" className="font-semibold text-text-primary">
                 Requests sent on IDEEZA
               </Text>
               <Text tone="muted" size="xs">
@@ -93,7 +93,7 @@ export const ClientPanel = ({
               </Text>
             </div>
             <div>
-              <Text size="sm" className="font-semibold text-heading">
+              <Text size="sm" className="font-semibold text-text-primary">
                 Asks for
               </Text>
               <Text tone="muted" size="xs">
@@ -103,7 +103,7 @@ export const ClientPanel = ({
               </Text>
             </div>
             <div>
-              <Text size="sm" className="font-semibold text-heading">
+              <Text size="sm" className="font-semibold text-text-primary">
                 Member since
               </Text>
               <Text tone="muted" size="xs">

@@ -113,13 +113,13 @@ const QuoteDetailPage = async ({
             },
           ].map((row) => (
             <div key={row.label} className="flex items-center justify-between gap-4">
-              <dt className="text-sm text-muted">{row.label}</dt>
-              <dd className="text-sm font-medium text-heading">{row.value}</dd>
+              <dt className="text-sm text-text-tertiary">{row.label}</dt>
+              <dd className="text-sm font-medium text-text-primary">{row.value}</dd>
             </div>
           ))}
-          <div className="flex items-center justify-between gap-4 border-t border-line pt-2">
-            <dt className="text-sm font-semibold text-heading">Grand total</dt>
-            <dd className="text-base font-bold text-heading">
+          <div className="flex items-center justify-between gap-4 border-t border-border-subtle pt-2">
+            <dt className="text-sm font-semibold text-text-primary">Grand total</dt>
+            <dd className="text-base font-bold text-text-primary">
               {quote.currency} {major(quote.landedTotalMinor)}
             </dd>
           </div>
@@ -138,16 +138,16 @@ const QuoteDetailPage = async ({
               description="The buyer asked for these, and reads them beside your main price."
             />
           </div>
-          <div className="w-full overflow-x-auto border-t border-line">
+          <div className="w-full overflow-x-auto border-t border-border-subtle">
             <table className="w-full border-collapse text-sm">
               <caption className="ids-sr-only">Prices at other volumes</caption>
               <thead>
-                <tr className="border-b border-line bg-raised">
+                <tr className="border-b border-border-subtle bg-bg-surface-raised">
                   {['Volume', 'Unit price', 'Total', 'Lead time'].map((header) => (
                     <th
                       key={header}
                       scope="col"
-                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
                     >
                       {header}
                     </th>
@@ -156,17 +156,17 @@ const QuoteDetailPage = async ({
               </thead>
               <tbody>
                 {quote.volumePrices.map((price) => (
-                  <tr key={price.quantity} className="border-b border-line last:border-0">
-                    <td className="px-3 py-3 font-medium text-heading">
+                  <tr key={price.quantity} className="border-b border-border-subtle last:border-0">
+                    <td className="px-3 py-3 font-medium text-text-primary">
                       {price.quantity} units
                     </td>
-                    <td className="px-3 py-3 text-body">
+                    <td className="px-3 py-3 text-text-secondary">
                       {quote.currency} {major(price.unitPriceMinor)}
                     </td>
-                    <td className="px-3 py-3 text-body">
+                    <td className="px-3 py-3 text-text-secondary">
                       {quote.currency} {major(price.totalPriceMinor)}
                     </td>
-                    <td className="px-3 py-3 text-body">
+                    <td className="px-3 py-3 text-text-secondary">
                       {price.leadTimeDays === null
                         ? 'As quoted'
                         : `${price.leadTimeDays} days`}
@@ -184,8 +184,8 @@ const QuoteDetailPage = async ({
         <Text size="sm" className="mt-3 block whitespace-pre-line">
           {quote.materialProcessNotes}
         </Text>
-        <div className="mt-4 border-t border-line pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+        <div className="mt-4 border-t border-border-subtle pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
             Terms
           </p>
           <Text size="sm" className="mt-1 block whitespace-pre-line">
@@ -193,8 +193,8 @@ const QuoteDetailPage = async ({
           </Text>
         </div>
         {quote.warrantyTerms !== null && (
-          <div className="mt-4 border-t border-line pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <div className="mt-4 border-t border-border-subtle pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
               Warranty
             </p>
             <Text size="sm" className="mt-1 block whitespace-pre-line">
@@ -214,10 +214,10 @@ const QuoteDetailPage = async ({
             {[...quote.revisions].reverse().map((revision) => (
               <li
                 key={revision.version}
-                className="rounded-lg border border-line p-3"
+                className="rounded-lg border border-border-subtle p-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-heading">
+                  <p className="text-sm font-semibold text-text-primary">
                     Version {revision.version}
                   </p>
                   <Text tone="muted" size="xs">

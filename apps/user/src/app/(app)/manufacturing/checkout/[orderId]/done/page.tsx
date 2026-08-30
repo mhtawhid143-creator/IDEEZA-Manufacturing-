@@ -130,7 +130,7 @@ const CheckoutDonePage = async ({
         <div className="flex flex-col gap-4">
           <Card tone="brand">
             <Heading level={3}>{secured ? 'What happens next' : 'What you can do'}</Heading>
-            <ol className="mt-3 flex flex-col gap-2 text-sm text-body">
+            <ol className="mt-3 flex flex-col gap-2 text-sm text-text-secondary">
               {(secured
                 ? [
                     'The manufacturer reviews your files and confirms materials.',
@@ -145,7 +145,7 @@ const CheckoutDonePage = async ({
                   ]
               ).map((step, index) => (
                 <li key={step} className="flex gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand">
                     {index + 1}
                   </span>
                   {step}

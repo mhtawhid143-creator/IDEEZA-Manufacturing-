@@ -86,14 +86,14 @@ const QuoteActivityPage = async ({
             />
           </div>
         ) : (
-          <ol aria-label="Quote activity" className="border-t border-line">
+          <ol aria-label="Quote activity" className="border-t border-border-subtle">
             {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
               >
-                <p className="text-sm text-body">
-                  <span className="font-semibold text-heading">
+                <p className="text-sm text-text-secondary">
+                  <span className="font-semibold text-text-primary">
                     {ACTOR_LABEL[entry.actorRole] ?? entry.actorRole}
                   </span>{' '}
                   {EVENT_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}

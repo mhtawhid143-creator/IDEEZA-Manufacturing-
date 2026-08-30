@@ -11,11 +11,11 @@ export interface AlertProps {
 }
 
 const TONE = {
-  info: 'border-info/30 bg-info-weak text-info',
-  warning: 'border-warning/40 bg-warning-weak text-warning-ink',
-  danger: 'border-danger/40 bg-danger-weak text-danger-strong',
-  success: 'border-success/30 bg-success-weak text-success',
-  brand: 'border-brand/30 bg-brand-weak text-brand',
+  info: 'border-border-blue/30 bg-blue-100 text-text-link',
+  warning: 'border-border-warning/40 bg-yellow-100 text-text-warning',
+  danger: 'border-border-error/40 bg-red-100 text-red-700',
+  success: 'border-border-success/30 bg-green-100 text-text-success',
+  brand: 'border-border-brand/30 bg-bg-brand-subtle text-text-brand',
 } as const;
 
 /**

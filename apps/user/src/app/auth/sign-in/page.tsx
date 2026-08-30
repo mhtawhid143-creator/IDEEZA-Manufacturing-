@@ -26,16 +26,16 @@ const SignInPage = async ({
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-canvas px-4 py-10">
+    <main className="flex min-h-dvh items-center justify-center bg-bg-page px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center gap-2">
           <span
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand text-sm font-bold text-on-brand"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-brand text-sm font-bold text-text-on-brand"
             aria-hidden
           >
             ID
           </span>
-          <span className="text-lg font-bold tracking-wide text-heading">IDEEZA</span>
+          <span className="text-lg font-bold tracking-wide text-text-primary">IDEEZA</span>
         </div>
 
         <Card>
@@ -62,10 +62,10 @@ const SignInPage = async ({
                   <li key={account.email}>
                     <Link
                       href={`/auth/enter?as=${encodeURIComponent(account.email)}&next=${encodeURIComponent(next)}`}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 transition-colors hover:bg-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-4 py-3 transition-colors hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-heading">
+                        <span className="block truncate text-sm font-semibold text-text-primary">
                           {account.displayName}
                         </span>
                         <Text tone="muted" size="xs">
@@ -98,7 +98,7 @@ const SignInPage = async ({
           ) : (
             <>
               The component gallery is readable without an account at{' '}
-              <Link href="/design-system" className="font-medium text-brand hover:underline">
+              <Link href="/design-system" className="font-medium text-text-brand hover:underline">
                 /design-system
               </Link>
               .

@@ -77,21 +77,21 @@ export const CheckoutSummary = ({
 
   return (
     <Card className="flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-heading">Order summary</h3>
+      <h3 className="text-sm font-semibold text-text-primary">Order summary</h3>
 
       <dl className="flex flex-col gap-2 text-sm">
         {lines.map((line) => (
           <div key={line.label} className="flex items-start justify-between gap-4">
-            <dt className="text-body">
+            <dt className="text-text-secondary">
               {line.label}
               {line.note !== undefined && (
-                <span className="block text-xs text-muted">{line.note}</span>
+                <span className="block text-xs text-text-tertiary">{line.note}</span>
               )}
             </dt>
             <dd
               className={cn(
                 'text-right font-medium',
-                line.amountMinor < 0 ? 'text-success' : 'text-heading',
+                line.amountMinor < 0 ? 'text-text-success' : 'text-text-primary',
               )}
             >
               {line.amountMinor < 0 ? '−' : ''}
@@ -101,13 +101,13 @@ export const CheckoutSummary = ({
         ))}
       </dl>
 
-      <div className="border-t border-line pt-3">
+      <div className="border-t border-border-subtle pt-3">
         {appliedCode === null ? (
           open ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-end gap-2">
                 <label className="min-w-0 flex-1">
-                  <span className="mb-1 block text-xs font-medium text-body">
+                  <span className="mb-1 block text-xs font-medium text-text-secondary">
                     Coupon code
                   </span>
                   <Input
@@ -155,13 +155,13 @@ export const CheckoutSummary = ({
         )}
       </div>
 
-      <div className="flex items-end justify-between gap-4 border-t border-line pt-3">
-        <span className="text-sm font-semibold text-heading">Total to pay now</span>
+      <div className="flex items-end justify-between gap-4 border-t border-border-subtle pt-3">
+        <span className="text-sm font-semibold text-text-primary">Total to pay now</span>
         <span className="text-right">
-          <span className="block text-xl font-semibold text-heading">
+          <span className="block text-xl font-semibold text-text-primary">
             {money(currency, totalMinor)}
           </span>
-          <span className="block text-xs text-muted">held by IDEEZA until delivery</span>
+          <span className="block text-xs text-text-tertiary">held by IDEEZA until delivery</span>
         </span>
       </div>
 

@@ -179,7 +179,7 @@ const OrderPage = async ({
           {liveRefund.approvedMinor === null ? (
             ' No money reaches the manufacturer while this is open.'
           ) : (
-            <span className="mt-1 block font-medium text-heading">
+            <span className="mt-1 block font-medium text-text-primary">
               {order.manufacturerName} accepts {order.currency}{' '}
               {major(BigInt(liveRefund.approvedMinor))} of it. IDEEZA decides the
               outcome, and no money reaches the manufacturer while this is open.
@@ -302,16 +302,16 @@ const OrderPage = async ({
                     key={service}
                     className="flex items-center justify-between gap-3 text-sm"
                   >
-                    <span className="flex items-center gap-2 text-body">
+                    <span className="flex items-center gap-2 text-text-secondary">
                       <span
                         aria-hidden
-                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-success-weak text-[11px] font-bold text-success"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-[11px] font-bold text-text-success"
                       >
                         ✓
                       </span>
                       {SERVICE_LABEL[service] ?? service.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-success">Included</span>
+                    <span className="text-text-success">Included</span>
                   </li>
                 ))
               )}
@@ -324,10 +324,10 @@ const OrderPage = async ({
               <li className="flex items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-11 w-11 shrink-0 rounded-md bg-gradient-to-br from-brand-weak to-info-weak"
+                  className="h-11 w-11 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-heading">
+                  <p className="truncate text-sm font-semibold text-text-primary">
                     {order.productName}
                   </p>
                   <Text tone="muted" size="xs">
@@ -442,10 +442,10 @@ const OrderPage = async ({
                 {decidedAlerts.map((alert) => (
                   <li
                     key={alert.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line p-3"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-subtle p-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-heading">
+                      <p className="text-sm font-semibold text-text-primary">
                         {alert.partReference} · {alert.partName}
                       </p>
                       <Text tone="muted" size="xs">
@@ -466,7 +466,7 @@ const OrderPage = async ({
             <div className="flex items-center gap-3">
               <Avatar name={order.manufacturerName} />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-heading">
+                <p className="truncate text-sm font-semibold text-text-primary">
                   {order.manufacturerName}
                 </p>
                 <Text tone="muted" size="xs">

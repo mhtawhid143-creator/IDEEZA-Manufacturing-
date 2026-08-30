@@ -121,7 +121,7 @@ export const InventoryAlertCard = ({ alert }: { readonly alert: AlertRowProps })
     <Card className="flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-heading">
+          <p className="text-sm font-semibold text-text-primary">
             {alert.partReference} · {alert.partName}
           </p>
           <Text tone="muted" size="xs" className="mt-0.5">
@@ -139,11 +139,11 @@ export const InventoryAlertCard = ({ alert }: { readonly alert: AlertRowProps })
       <Text size="sm">{alert.note}</Text>
 
       {alert.suggestedPartName !== null && (
-        <div className="rounded-lg border border-line bg-raised p-3">
+        <div className="rounded-lg border border-border-subtle bg-bg-surface-raised p-3">
           <Text tone="muted" size="xs">
             Suggested instead
           </Text>
-          <p className="text-sm font-semibold text-heading">{alert.suggestedPartName}</p>
+          <p className="text-sm font-semibold text-text-primary">{alert.suggestedPartName}</p>
           {alert.technicalJustification !== null && (
             <Text size="sm" className="mt-1">
               {alert.technicalJustification}
@@ -155,7 +155,7 @@ export const InventoryAlertCard = ({ alert }: { readonly alert: AlertRowProps })
       {alert.status === 'open' ? (
         <>
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-semibold text-heading">
+            <legend className="text-sm font-semibold text-text-primary">
               What should the manufacturer do?
             </legend>
             {options.map((option) => (
@@ -205,7 +205,7 @@ export const InventoryAlertCard = ({ alert }: { readonly alert: AlertRowProps })
           </Text>
         </>
       ) : (
-        <div className="border-t border-line pt-3">
+        <div className="border-t border-border-subtle pt-3">
           <Text tone="muted" size="xs">
             Answered {alert.decidedOn ?? '—'}
           </Text>

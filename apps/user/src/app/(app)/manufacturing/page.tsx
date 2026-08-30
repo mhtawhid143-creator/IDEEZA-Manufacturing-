@@ -95,13 +95,13 @@ const ManufacturingPage = async ({
         {JOURNEY.map((item, index) => (
           <li key={item.step} className="flex gap-3">
             <span
-              className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-weak text-xs font-semibold text-brand"
+              className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-xs font-semibold text-text-brand"
               aria-hidden
             >
               {index + 1}
             </span>
             <div className="min-w-0">
-              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-heading">
+              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-text-primary">
                 {item.step}
                 {item.corrected === true && (
                   <StatusChip status="awaiting_payment" label="corrected from the design file" />

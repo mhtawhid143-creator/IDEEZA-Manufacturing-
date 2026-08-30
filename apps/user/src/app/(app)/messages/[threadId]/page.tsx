@@ -37,8 +37,8 @@ const ThreadPage = async ({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
         <Card padded={false} className="hidden lg:block">
-          <div className="border-b border-line px-4 py-3">
-            <p className="text-sm font-semibold text-heading">All conversations</p>
+          <div className="border-b border-border-subtle px-4 py-3">
+            <p className="text-sm font-semibold text-text-primary">All conversations</p>
           </div>
           <ThreadList
             activeId={thread.threadId}

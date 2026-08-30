@@ -159,7 +159,7 @@ export const PaymentStep = ({
         </Alert>
 
         <Card padded={false}>
-          <div className="border-b border-line p-4 md:px-6">
+          <div className="border-b border-border-subtle p-4 md:px-6">
             <CardHeader
               title="Payment method"
               description={`${productName} · ${quantity} units`}
@@ -167,11 +167,11 @@ export const PaymentStep = ({
           </div>
           <ul aria-label="Payment methods" className="flex flex-col">
             {METHODS.map((option) => (
-              <li key={option.id} className="border-b border-line last:border-0">
+              <li key={option.id} className="border-b border-border-subtle last:border-0">
                 <label
                   className={cn(
                     'flex cursor-pointer items-start gap-3 p-4 transition-colors md:px-6',
-                    method === option.id ? 'bg-brand-surface' : 'hover:bg-raised',
+                    method === option.id ? 'bg-bg-brand-subtle' : 'hover:bg-bg-surface-raised',
                   )}
                 >
                   <input
@@ -180,17 +180,17 @@ export const PaymentStep = ({
                     value={option.id}
                     checked={method === option.id}
                     onChange={() => setMethod(option.id)}
-                    className="mt-0.5 h-5 w-5 shrink-0 appearance-none rounded-full border-2 border-line-input bg-surface checked:border-brand checked:bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    className="mt-0.5 h-5 w-5 shrink-0 appearance-none rounded-full border-2 border-border bg-bg-surface checked:border-border-brand checked:bg-bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     aria-label={option.label}
                   />
                   <span className="min-w-0">
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-heading">
+                      <span className="text-sm font-semibold text-text-primary">
                         {option.label}
                       </span>
                       {option.badge !== undefined && <Tag tone="brand">{option.badge}</Tag>}
                     </span>
-                    <span className="block text-xs text-muted">{option.detail}</span>
+                    <span className="block text-xs text-text-tertiary">{option.detail}</span>
                   </span>
                 </label>
               </li>
@@ -319,9 +319,9 @@ export const PaymentStep = ({
               name="acceptTerms"
               checked={terms}
               onChange={(event) => setTerms(event.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 appearance-none rounded border-2 border-line-input bg-surface checked:border-brand checked:bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+              className="mt-0.5 h-5 w-5 shrink-0 appearance-none rounded border-2 border-border bg-bg-surface checked:border-border-brand checked:bg-bg-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
             />
-            <span className="text-sm text-body">
+            <span className="text-sm text-text-secondary">
               I agree to the IDEEZA Terms &amp; Conditions and the product-specific
               terms, and I understand that accepting a quote and paying opens a
               manufacturing order that only IDEEZA operations can cancel once

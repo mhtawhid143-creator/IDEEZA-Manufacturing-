@@ -52,14 +52,18 @@ const ago = (at: Date, now: number): string => {
  * in any case.
  */
 const ACTIVITY_DOT: Readonly<Record<string, string>> = {
-  request: 'bg-brand',
-  quote: 'bg-success',
-  order: 'bg-info',
-  money: 'bg-accent-strong',
+  request: 'bg-bg-brand',
+  quote: 'bg-bg-success',
+  order: 'bg-bg-info',
+  money: 'bg-orange-700',
 };
 
 /** The donut's slices, in the fixed order the palette was validated in. */
-const MIX_COLOUR = ['var(--ids-color-brand)', 'var(--ids-color-success)', 'var(--ids-color-info)'];
+const MIX_COLOUR = [
+  'var(--color-bg-brand)',
+  'var(--color-text-success)',
+  'var(--color-text-link)',
+];
 
 /**
  * The work mix as a ring.
@@ -83,7 +87,7 @@ const WorkMixRing = ({
 
   return (
     <svg viewBox="0 0 140 140" className="h-32 w-32 shrink-0" role="img" aria-label="Work mix">
-      <circle cx="70" cy="70" r={radius} fill="none" stroke="var(--ids-color-line)" strokeWidth="16" />
+      <circle cx="70" cy="70" r={radius} fill="none" stroke="var(--color-border-subtle)" strokeWidth="16" />
       {slices.map((slice, index) => {
         const length = (slice.count / total) * circumference;
         // A hairline of the card behind each slice keeps two of them apart.
@@ -161,16 +165,16 @@ const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
     <Card
       className={
         tone === 'danger'
-          ? 'border-danger-weak'
+          ? 'border-red-100'
           : tone === 'warning'
-            ? 'border-warning-weak'
+            ? 'border-yellow-100'
             : undefined
       }
     >
       <Text tone="muted" size="xs">
         {label}
       </Text>
-      <p className="mt-1 text-2xl font-bold text-heading">{value}</p>
+      <p className="mt-1 text-2xl font-bold text-text-primary">{value}</p>
       <Text
         tone={tone === 'danger' ? 'danger' : 'muted'}
         size="xs"
@@ -306,21 +310,21 @@ const DashboardPage = async () => {
           <ul aria-label="Production status" className="mt-4 flex flex-col gap-3">
             {sections.production.map((bar) => (
               <li key={bar.label} className="flex items-center gap-3">
-                <span className="w-40 shrink-0 text-sm text-body">{bar.label}</span>
-                <span className="w-8 shrink-0 text-sm font-semibold text-heading">
+                <span className="w-40 shrink-0 text-sm text-text-secondary">{bar.label}</span>
+                <span className="w-8 shrink-0 text-sm font-semibold text-text-primary">
                   {bar.count}
                 </span>
-                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-subtle">
                   <span
                     className={
                       bar.label === 'Needing attention'
-                        ? 'block h-full bg-danger'
-                        : 'block h-full bg-brand'
+                        ? 'block h-full bg-bg-error'
+                        : 'block h-full bg-bg-brand'
                     }
                     style={{ width: `${Math.max(bar.count === 0 ? 0 : 4, bar.share)}%` }}
                   />
                 </span>
-                <span className="w-10 shrink-0 text-right text-xs text-muted">
+                <span className="w-10 shrink-0 text-right text-xs text-text-tertiary">
                   {bar.share}%
                 </span>
               </li>
@@ -332,7 +336,7 @@ const DashboardPage = async () => {
           <CardHeader title="Orders" description="What kind of work they are." />
 
           <div className="mt-2 flex flex-wrap items-baseline gap-2">
-            <p className="text-2xl font-bold text-heading">{sections.orderCount}</p>
+            <p className="text-2xl font-bold text-text-primary">{sections.orderCount}</p>
             <Text tone="muted" size="xs">
               {orderTrend}
             </Text>
@@ -353,8 +357,8 @@ const DashboardPage = async () => {
                       className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: MIX_COLOUR[index % MIX_COLOUR.length] }}
                     />
-                    <span className="flex-1 text-sm text-body">{slice.label}</span>
-                    <span className="text-sm font-semibold text-heading">{slice.count}</span>
+                    <span className="flex-1 text-sm text-text-secondary">{slice.label}</span>
+                    <span className="text-sm font-semibold text-text-primary">{slice.count}</span>
                   </li>
                 ))}
               </ul>
@@ -386,32 +390,32 @@ const DashboardPage = async () => {
               </Text>
             </div>
           ) : (
-            <div className="overflow-x-auto border-t border-line">
+            <div className="overflow-x-auto border-t border-border-subtle">
               <table className="w-full border-collapse text-sm">
                 <caption className="ids-sr-only">Orders in production</caption>
                 <thead>
-                  <tr className="bg-canvas">
-                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-heading md:px-6">
+                  <tr className="bg-bg-page">
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary md:px-6">
                       Name
                     </th>
-                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-heading">
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary">
                       Order
                     </th>
-                    <th scope="col" className="px-4 py-2.5 text-right font-semibold text-heading">
+                    <th scope="col" className="px-4 py-2.5 text-right font-semibold text-text-primary">
                       Qty
                     </th>
-                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-heading md:px-6">
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary md:px-6">
                       Current stage
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {sections.ordersInProduction.map((order) => (
-                    <tr key={order.orderId} className="border-t border-line">
+                    <tr key={order.orderId} className="border-t border-border-subtle">
                       <td className="px-4 py-3 md:px-6">
                         <Link
                           href={`/orders/${order.orderId}`}
-                          className="block max-w-[22ch] truncate font-semibold text-heading hover:text-brand"
+                          className="block max-w-[22ch] truncate font-semibold text-text-primary hover:text-text-brand"
                         >
                           {order.productName}
                         </Link>
@@ -419,16 +423,16 @@ const DashboardPage = async () => {
                           {order.buyerName}
                         </Text>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-muted">
+                      <td className="whitespace-nowrap px-4 py-3 text-text-tertiary">
                         {order.orderReference}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-body">
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-text-secondary">
                         {order.quantity}
                       </td>
                       <td className="px-4 py-3 md:px-6">
-                        <span className="block h-1.5 w-full min-w-24 overflow-hidden rounded-full bg-line">
+                        <span className="block h-1.5 w-full min-w-24 overflow-hidden rounded-full bg-bg-subtle">
                           <span
-                            className="block h-full bg-success"
+                            className="block h-full bg-bg-success"
                             style={{
                               width: `${Math.round(
                                 (order.completedStages / order.totalStages) * 100,
@@ -469,14 +473,14 @@ const DashboardPage = async () => {
               </Text>
             </div>
           ) : (
-            <ul aria-label="Requests needing an answer" className="border-t border-line">
+            <ul aria-label="Requests needing an answer" className="border-t border-border-subtle">
               {sections.requestsNeedingAction.map((request) => (
                 <li
                   key={request.rfqId}
-                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-heading">
+                    <p className="truncate text-sm font-semibold text-text-primary">
                       {request.reference}
                     </p>
                     <Text tone="muted" size="xs">
@@ -522,16 +526,16 @@ const DashboardPage = async () => {
               </Text>
             </div>
           ) : (
-            <div className="w-full overflow-x-auto border-t border-line">
+            <div className="w-full overflow-x-auto border-t border-border-subtle">
               <table className="w-full border-collapse text-sm">
                 <caption className="ids-sr-only">Inventory health</caption>
                 <thead>
-                  <tr className="border-b border-line bg-raised">
+                  <tr className="border-b border-border-subtle bg-bg-surface-raised">
                     {['Part', 'MOQ', 'Available', 'Status'].map((header) => (
                       <th
                         key={header}
                         scope="col"
-                        className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                        className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
                       >
                         {header}
                       </th>
@@ -540,19 +544,19 @@ const DashboardPage = async () => {
                 </thead>
                 <tbody>
                   {sections.inventoryHealth.map((part) => (
-                    <tr key={part.id} className="border-b border-line last:border-0">
+                    <tr key={part.id} className="border-b border-border-subtle last:border-0">
                       <td className="px-4 py-2.5">
                         <Link
                           href={`/inventory/${part.id}`}
-                          className="text-sm text-heading hover:text-brand"
+                          className="text-sm text-text-primary hover:text-text-brand"
                         >
                           {part.partName}
                         </Link>
                       </td>
-                      <td className="px-4 py-2.5 text-body">
+                      <td className="px-4 py-2.5 text-text-secondary">
                         {part.minimumOrderQuantity ?? '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-body">{part.available}</td>
+                      <td className="px-4 py-2.5 text-text-secondary">{part.available}</td>
                       <td className="px-4 py-2.5">
                         <Tag
                           tone={
@@ -592,19 +596,19 @@ const DashboardPage = async () => {
               }
             />
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-line p-3">
+              <div className="rounded-lg border border-border-subtle p-3">
                 <Text tone="muted" size="xs" className="block">
                   Held
                 </Text>
-                <p className="text-lg font-bold text-heading">
+                <p className="text-lg font-bold text-text-primary">
                   {sections.currency} {major(sections.pendingPayoutMinor)}
                 </p>
               </div>
-              <div className="rounded-lg border border-line p-3">
+              <div className="rounded-lg border border-border-subtle p-3">
                 <Text tone="muted" size="xs" className="block">
                   Released
                 </Text>
-                <p className="text-lg font-bold text-heading">
+                <p className="text-lg font-bold text-text-primary">
                   {sections.currency} {major(sections.releasedPayoutMinor)}
                 </p>
               </div>
@@ -617,16 +621,16 @@ const DashboardPage = async () => {
               </Text>
             </div>
           ) : (
-            <ul aria-label="Recent payouts" className="border-t border-line">
+            <ul aria-label="Recent payouts" className="border-t border-border-subtle">
               {sections.payouts.map((payout) => (
                 <li
                   key={payout.id}
-                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar name={payout.buyerName} size="sm" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-heading">
+                      <p className="truncate text-sm font-semibold text-text-primary">
                         {payout.buyerName}
                       </p>
                       <Text tone="muted" size="xs">
@@ -635,7 +639,7 @@ const DashboardPage = async () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-heading">
+                    <span className="text-sm font-semibold text-text-primary">
                       {sections.currency} {major(payout.netAmountMinor)}
                     </span>
                     <StatusChip status={payout.status} />
@@ -662,23 +666,23 @@ const DashboardPage = async () => {
             </Text>
           </div>
         ) : (
-          <ol aria-label="Recent activity" className="border-t border-line">
+          <ol aria-label="Recent activity" className="border-t border-border-subtle">
             {sections.activity.map((entry) => (
               <li
                 key={entry.id}
-                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-2.5 last:border-b-0 md:px-6"
+                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border-subtle px-4 py-2.5 last:border-b-0 md:px-6"
               >
-                <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm text-body">
+                <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm text-text-secondary">
                   <span
                     aria-hidden
-                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${ACTIVITY_DOT[entry.tone] ?? 'bg-neutral'}`}
+                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${ACTIVITY_DOT[entry.tone] ?? 'bg-gray-600'}`}
                   />
-                  <span className="font-semibold text-heading">
+                  <span className="font-semibold text-text-primary">
                     {ACTIVITY_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}
                   </span>
-                  <span className="font-medium text-brand">{entry.reference}</span>
+                  <span className="font-medium text-text-brand">{entry.reference}</span>
                   {entry.detail !== null && (
-                    <span className="text-muted">· {entry.detail}</span>
+                    <span className="text-text-tertiary">· {entry.detail}</span>
                   )}
                 </p>
                 <Text tone="muted" size="xs">
@@ -704,10 +708,10 @@ const DashboardPage = async () => {
             'You move the ten production stages and attach the evidence. The buyer reads them.',
             'The money is released against a documented event: delivery confirmed, the review window closing, or a resolved issue.',
           ].map((line, index) => (
-            <li key={line} className="ids-measure flex gap-2 text-sm text-body">
+            <li key={line} className="ids-measure flex gap-2 text-sm text-text-secondary">
               <span
                 aria-hidden
-                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand"
+                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand"
               >
                 {index + 1}
               </span>

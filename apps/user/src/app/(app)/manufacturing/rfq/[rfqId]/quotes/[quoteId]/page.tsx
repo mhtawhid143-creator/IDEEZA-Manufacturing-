@@ -145,7 +145,7 @@ const QuoteDetailPage = async ({
 
           {quote.volumePrices.length > 0 && (
             <Card padded={false}>
-              <div className="border-b border-line px-4 py-3 md:px-6">
+              <div className="border-b border-border-subtle px-4 py-3 md:px-6">
                 <Heading level={3}>Priced at other volumes</Heading>
                 <Text tone="muted" size="xs" className="mt-0.5 block">
                   You asked for these volumes on the request, and this manufacturer
@@ -190,7 +190,7 @@ const QuoteDetailPage = async ({
 
           {quote.items.length > 0 && (
             <Card padded={false}>
-              <div className="border-b border-line px-4 py-3 md:px-6">
+              <div className="border-b border-border-subtle px-4 py-3 md:px-6">
                 <Heading level={3}>Priced lines</Heading>
               </div>
               <DataTable
@@ -227,8 +227,8 @@ const QuoteDetailPage = async ({
             <Text size="sm" className="mt-3 whitespace-pre-line">
               {quote.materialProcessNotes}
             </Text>
-            <div className="mt-4 border-t border-line pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="mt-4 border-t border-border-subtle pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Terms
               </p>
               <Text size="sm" className="mt-1 whitespace-pre-line">
@@ -236,8 +236,8 @@ const QuoteDetailPage = async ({
               </Text>
             </div>
             {quote.warrantyTerms !== null && (
-              <div className="mt-4 border-t border-line pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              <div className="mt-4 border-t border-border-subtle pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                   Warranty
                 </p>
                 <Text size="sm" className="mt-1 whitespace-pre-line">
@@ -264,10 +264,10 @@ const QuoteDetailPage = async ({
                 {quote.substitutions.map((substitution) => (
                   <li
                     key={substitution.id}
-                    className="rounded-lg border border-line p-3"
+                    className="rounded-lg border border-border-subtle p-3"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-heading">
+                      <p className="text-sm font-semibold text-text-primary">
                         {substitution.requestedPartReference} → {substitution.suggestedPartName}
                       </p>
                       <StatusChip status={substitution.status} />
@@ -353,14 +353,14 @@ const QuoteDetailPage = async ({
 
           <Card tone="brand">
             <Heading level={3}>What happens if you accept</Heading>
-            <ol className="mt-3 flex flex-col gap-2 text-sm text-body">
+            <ol className="mt-3 flex flex-col gap-2 text-sm text-text-secondary">
               {[
                 'The request closes and every other quote on it loses.',
                 'An order opens awaiting payment, with an immutable copy of these terms.',
                 'The order is confirmed once the platform holds the funds; production may not start before that.',
               ].map((step, index) => (
                 <li key={step} className="flex gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-weak text-[11px] font-semibold text-brand">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand">
                     {index + 1}
                   </span>
                   {step}

@@ -146,26 +146,26 @@ const CompareQuotesPage = async ({
                 Quotes compared for {request.productName}
               </caption>
               <thead>
-                <tr className="bg-canvas">
-                  <th scope="col" className="px-4 py-3 text-left font-semibold text-heading">
+                <tr className="bg-bg-page">
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-text-primary">
                     Term
                   </th>
                   {quotes.map((quote) => (
                     <th
                       key={quote.id}
                       scope="col"
-                      className="px-4 py-3 text-left font-semibold text-heading"
+                      className="px-4 py-3 text-left font-semibold text-text-primary"
                     >
                       <Link
                         href={`/manufacturing/rfq/${rfqId}/quotes/${quote.id}`}
-                        className="flex items-center gap-2 hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                        className="flex items-center gap-2 hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                       >
-                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-weak text-xs font-semibold text-brand">
+                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-xs font-semibold text-text-brand">
                           {quote.manufacturerName.slice(0, 2).toUpperCase()}
                         </span>
                         <span className="min-w-0">
                           <span className="block truncate">{quote.manufacturerName}</span>
-                          <span className="block text-xs font-normal text-muted">
+                          <span className="block text-xs font-normal text-text-tertiary">
                             {quote.city}, {quote.countryCode}
                           </span>
                         </span>
@@ -176,8 +176,8 @@ const CompareQuotesPage = async ({
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.label} className="border-t border-line">
-                    <th scope="row" className="px-4 py-3 text-left font-medium text-body">
+                  <tr key={row.label} className="border-t border-border-subtle">
+                    <th scope="row" className="px-4 py-3 text-left font-medium text-text-secondary">
                       {row.label}
                     </th>
                     {quotes.map((quote) => {
@@ -187,8 +187,8 @@ const CompareQuotesPage = async ({
                           key={quote.id}
                           className={
                             best
-                              ? 'px-4 py-3 font-semibold text-success'
-                              : 'px-4 py-3 text-body'
+                              ? 'px-4 py-3 font-semibold text-text-success'
+                              : 'px-4 py-3 text-text-secondary'
                           }
                         >
                           {row.value(quote)}

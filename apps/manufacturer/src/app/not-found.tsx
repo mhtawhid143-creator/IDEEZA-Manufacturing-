@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Button, Card, Heading, Text } from '@ideeza/ui';
 
 const NotFound = () => (
-  <main className="flex min-h-dvh items-center justify-center bg-canvas px-4">
+  <main className="flex min-h-dvh items-center justify-center bg-bg-page px-4">
     <Card className="max-w-lg text-center">
       <Heading level={1} className="text-xl">
         Page not found

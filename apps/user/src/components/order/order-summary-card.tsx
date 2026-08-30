@@ -34,24 +34,24 @@ export const OrderSummaryCard = ({
     <dl className="mt-4 flex flex-col gap-2">
       {summary.lines.map((line) => (
         <div key={line.label} className="flex items-baseline justify-between gap-4">
-          <dt className="min-w-0 text-sm text-body">
+          <dt className="min-w-0 text-sm text-text-secondary">
             {line.label}
             {line.note !== undefined && (
-              <span className="block text-xs text-muted">{line.note}</span>
+              <span className="block text-xs text-text-tertiary">{line.note}</span>
             )}
           </dt>
-          <dd className="shrink-0 text-sm font-semibold text-heading">
+          <dd className="shrink-0 text-sm font-semibold text-text-primary">
             {signed(summary.currency, line.amountMinor)}
           </dd>
         </div>
       ))}
     </dl>
 
-    <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-line pt-4">
-      <span className="text-sm font-semibold text-heading">
+    <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border-subtle pt-4">
+      <span className="text-sm font-semibold text-text-primary">
         {awaitingPayment ? 'To pay' : 'Paid and held'}
       </span>
-      <span className="text-lg font-bold text-brand">
+      <span className="text-lg font-bold text-text-brand">
         {summary.currency} {major(BigInt(summary.paidMinor))}
       </span>
     </div>
@@ -62,12 +62,12 @@ export const OrderSummaryCard = ({
     )}
 
     {summary.adjustmentMinor !== 0 && (
-      <div className="mt-3 rounded-lg border border-warning-weak bg-warning-weak/40 p-3">
+      <div className="mt-3 rounded-lg border border-yellow-100 bg-yellow-100/40 p-3">
         <div className="flex items-baseline justify-between gap-4">
-          <span className="text-sm font-semibold text-heading">
+          <span className="text-sm font-semibold text-text-primary">
             {summary.adjustmentMinor > 0 ? 'Still to settle' : 'Owed back to you'}
           </span>
-          <span className="text-sm font-bold text-heading">
+          <span className="text-sm font-bold text-text-primary">
             {summary.currency} {major(BigInt(Math.abs(summary.adjustmentMinor)))}
           </span>
         </div>

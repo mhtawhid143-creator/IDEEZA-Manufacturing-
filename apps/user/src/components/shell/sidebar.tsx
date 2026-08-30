@@ -15,10 +15,10 @@ const rowClasses = (active: boolean, disabled: boolean): string =>
   cn(
     'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
     disabled
-      ? 'cursor-not-allowed text-muted'
+      ? 'cursor-not-allowed text-text-tertiary'
       : active
-        ? 'bg-brand-weak font-semibold text-brand'
-        : 'text-body hover:bg-raised',
+        ? 'bg-bg-brand-subtle font-semibold text-text-brand'
+        : 'text-text-secondary hover:bg-bg-surface-raised',
   );
 
 const NavRow = ({ entry, depth = 0 }: { readonly entry: NavEntry; readonly depth?: number }) => {
@@ -35,7 +35,7 @@ const NavRow = ({ entry, depth = 0 }: { readonly entry: NavEntry; readonly depth
           >
             <NavIconGlyph name={entry.icon} />
             <span className="truncate">{entry.label}</span>
-            <span className="ml-auto text-[11px] uppercase tracking-wide text-muted">
+            <span className="ml-auto text-[11px] uppercase tracking-wide text-text-tertiary">
               n/a
             </span>
           </span>
@@ -89,14 +89,14 @@ export const Sidebar = ({ onNavigate, className }: SidebarProps) => (
   <nav
     aria-label="Main"
     className={cn(
-      'flex h-full w-sidebar shrink-0 flex-col gap-4 border-r border-line bg-surface px-3 py-4',
+      'flex h-full w-sidebar shrink-0 flex-col gap-4 border-r border-border-subtle bg-bg-surface px-3 py-4',
       className,
     )}
     onClick={onNavigate}
   >
     <Link
       href="/manufacturing"
-      className="mx-1 flex items-center justify-between gap-2 rounded-lg border border-brand/40 px-3 py-2.5 text-sm font-semibold text-brand hover:bg-brand-weak"
+      className="mx-1 flex items-center justify-between gap-2 rounded-lg border border-border-brand/40 px-3 py-2.5 text-sm font-semibold text-text-brand hover:bg-bg-brand-subtle"
     >
       Quick Start
       <span aria-hidden>›</span>
@@ -109,8 +109,8 @@ export const Sidebar = ({ onNavigate, className }: SidebarProps) => (
     </ul>
 
     <div className="mt-auto flex flex-col gap-4">
-      <div className="rounded-xl border border-line bg-canvas p-4">
-        <p className="text-sm font-semibold text-heading">Unlock all features</p>
+      <div className="rounded-xl border border-border-subtle bg-bg-page p-4">
+        <p className="text-sm font-semibold text-text-primary">Unlock all features</p>
         <Text tone="muted" size="xs" className="mt-1">
           Plan upgrades are part of the wider IDEEZA product and are not wired up
           in this platform yet.
@@ -118,14 +118,14 @@ export const Sidebar = ({ onNavigate, className }: SidebarProps) => (
         <button
           type="button"
           disabled
-          className="mt-3 w-full cursor-not-allowed rounded-md bg-disabled-bg px-3 py-2 text-sm font-semibold text-muted"
+          className="mt-3 w-full cursor-not-allowed rounded-md bg-bg-subtle px-3 py-2 text-sm font-semibold text-text-tertiary"
         >
           Upgrade Plus
         </button>
       </div>
 
       <div>
-        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted">For you</p>
+        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">For you</p>
         <ul className="mt-1 flex flex-col gap-1">
           {SECONDARY_NAV.map((entry) => (
             <NavRow key={entry.id} entry={entry} />
