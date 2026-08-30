@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { orderReference, payoutReference } from '@ideeza/domain';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -189,7 +190,7 @@ export const PayoutList = ({
                   {row.productName}
                 </Link>
                 <Text tone="muted" size="xs">
-                  {row.orderId.slice(-8)}
+                  {orderReference(row.orderId)}
                 </Text>
               </div>
             ),
@@ -198,7 +199,7 @@ export const PayoutList = ({
             id: 'payout',
             header: 'Payout',
             hideBelowLg: true,
-            cell: (row) => row.id.slice(-8).toUpperCase(),
+            cell: (row) => payoutReference(row.id),
           },
           { id: 'client', header: 'Client', cell: (row) => row.buyerName },
           {
@@ -245,7 +246,7 @@ export const PayoutList = ({
             align: 'right',
             cell: (row) => (
               <RowMenu
-                label={`Actions for payout ${row.id.slice(-8)}`}
+                label={`Actions for payout ${payoutReference(row.id)}`}
                 items={[
                   { id: 'order', label: 'Open the order', href: `/orders/${row.orderId}` },
                 ]}
@@ -254,7 +255,7 @@ export const PayoutList = ({
                     ref={ref}
                     type="button"
                     onClick={onClick}
-                    aria-label={`Actions for payout ${row.id.slice(-8)}`}
+                    aria-label={`Actions for payout ${payoutReference(row.id)}`}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >

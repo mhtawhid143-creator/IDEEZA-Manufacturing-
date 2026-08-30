@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import {
   Avatar,
+  buttonAppearance,
   Card,
   CardHeader,
+  cn,
   PageHeader,
   StatusChip,
   Tag,
   Text,
-  buttonAppearance,
 } from '@ideeza/ui';
 import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
 import { getShopContext } from '@/data/shop.js';
@@ -163,22 +164,24 @@ interface TileProps {
 const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
   const body = (
     <Card
-      className={
-        tone === 'danger'
-          ? 'border-red-100'
-          : tone === 'warning'
-            ? 'border-yellow-100'
-            : undefined
-      }
+      interactive={href !== undefined}
+      className={cn(
+        'h-full',
+        tone === 'danger' && 'border-red-100',
+        tone === 'warning' && 'border-yellow-100',
+      )}
     >
-      <Text tone="muted" size="xs">
-        {label}
-      </Text>
-      <p className="mt-1 text-2xl font-bold text-text-primary">{value}</p>
+      <p className="text-sm font-medium text-text-tertiary">{label}</p>
+      <p
+        data-numeric
+        className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-text-primary"
+      >
+        {value}
+      </p>
       <Text
         tone={tone === 'danger' ? 'danger' : 'muted'}
         size="xs"
-        className="mt-1 block"
+        className="mt-1.5 block"
       >
         {note}
       </Text>
@@ -190,7 +193,7 @@ const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
   return (
     <Link
       href={target}
-      className="rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+      className="block rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
     >
       {body}
     </Link>

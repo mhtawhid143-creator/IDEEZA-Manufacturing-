@@ -13,12 +13,16 @@ import { NavIconGlyph } from './nav-icon.js';
 
 const rowClasses = (active: boolean, disabled: boolean): string =>
   cn(
-    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+    'relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+    // The mark that says "here": a bar on the edge the rail is anchored to,
+    // which nothing else in the list carries.
+    active &&
+      'before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-bg-brand',
     disabled
       ? 'cursor-not-allowed text-text-tertiary'
       : active
-        ? 'bg-bg-brand-subtle font-semibold text-text-brand'
-        : 'text-text-secondary hover:bg-bg-surface-raised',
+        ? 'bg-bg-brand-subtle font-medium text-text-brand'
+        : 'text-text-secondary hover:bg-bg-surface-raised hover:text-text-primary',
   );
 
 const NavRow = ({ entry }: { readonly entry: NavEntry }) => {

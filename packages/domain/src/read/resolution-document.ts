@@ -137,6 +137,9 @@ export const quoteReference = (quoteId: string): string => reference('QUOTE', qu
 /** `ORDER-1A2B3C4D` — a confirmed order, as quoted by either side. */
 export const orderReference = (orderId: string): string => reference('ORDER', orderId);
 
+/** `PAYOUT-1A2B3C4D` — one release of money to a shop. */
+export const payoutReference = (payoutId: string): string => reference('PAYOUT', payoutId);
+
 /** `PART-1A2B3C4D` — a line in a shop's own inventory. */
 export const partReference = (partId: string): string => reference('PART', partId);
 

@@ -8,7 +8,7 @@ import {
   Text,
   buttonAppearance,
 } from '@ideeza/ui';
-import { asId, type OrderId } from '@ideeza/domain';
+import { asId, caseReference, type OrderId } from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
 import { ProductionTimeline } from '@/components/order/production-timeline.js';
 import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
@@ -122,7 +122,7 @@ const OrderProductionPage = async ({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-text-primary">
-                    Case {dispute.id.slice(-8).toUpperCase()} ·{' '}
+                    Case {caseReference(dispute.id)} ·{' '}
                     {dispute.reason.replace(/_/g, ' ')}
                   </p>
                   <Text tone="muted" size="xs">

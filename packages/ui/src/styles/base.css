@@ -58,3 +58,55 @@ h6 {
   padding-block: 2rem;
 }
 
+
+/*
+ * The surfaces the browser draws for us.
+ *
+ * Selection, the caret, the scrollbar and the underline offset ship with
+ * defaults that belong to no design system, and they are visible on every
+ * screen. Painting them from the palette is what separates a built page from
+ * an assembled one.
+ */
+::selection {
+  background-color: var(--color-violet-100);
+  color: var(--color-text-primary);
+}
+
+:root {
+  accent-color: var(--color-bg-brand);
+  caret-color: var(--color-bg-brand);
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-default);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-strong);
+}
+
+/* A link's underline sits clear of the descenders rather than through them. */
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: from-font;
+}
+
+/* Figures that sit in columns line up as columns. */
+table,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}

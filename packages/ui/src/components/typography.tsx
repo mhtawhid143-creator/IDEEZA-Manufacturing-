@@ -4,10 +4,10 @@ import { cn } from '../lib/cn.js';
 export type HeadingLevel = 1 | 2 | 3 | 4;
 
 const HEADING_SIZE: Record<HeadingLevel, string> = {
-  1: 'text-2xl font-semibold',
-  2: 'text-xl font-semibold',
-  3: 'text-lg font-semibold',
-  4: 'text-base font-semibold',
+  1: 'text-3xl font-semibold tracking-[-0.02em]',
+  2: 'text-xl font-semibold tracking-[-0.01em]',
+  3: 'text-base font-semibold',
+  4: 'text-sm font-semibold',
 };
 
 export interface HeadingProps extends HTMLAttributes<HTMLHeadingElement> {

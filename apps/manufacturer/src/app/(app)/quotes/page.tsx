@@ -52,7 +52,9 @@ const Counter = ({
   readonly note: string;
 }) => (
   <Card>
-    <p className="text-2xl font-bold text-text-primary">{String(value).padStart(2, '0')}</p>
+    <p data-numeric className="text-3xl font-semibold tracking-[-0.02em] text-text-primary">
+      {value}
+    </p>
     <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
       {label}
     </Text>

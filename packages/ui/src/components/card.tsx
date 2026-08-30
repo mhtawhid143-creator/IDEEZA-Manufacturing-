@@ -28,11 +28,11 @@ export const Card = ({
 }: CardProps) => (
   <div
     className={cn(
-      'ui-card rounded-xl border bg-bg-surface',
+      'ui-card rounded-xl border bg-bg-surface shadow-1',
       TONE[tone],
-      padded && 'p-4 md:p-6',
+      padded && 'p-5 md:p-6',
       interactive &&
-        'transition-shadow hover:shadow-1 focus-within:ring-4 focus-within:ring-focus',
+        'transition-shadow duration-150 hover:shadow-3 focus-within:ring-4 focus-within:ring-focus',
       selected && 'border-border-brand ring-2 ring-border-brand/30',
       className,
     )}

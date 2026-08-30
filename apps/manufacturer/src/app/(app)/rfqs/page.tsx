@@ -36,7 +36,7 @@ interface CounterProps {
 const Counter = ({ value, label, note }: CounterProps) => (
   <Card>
     <p className="text-2xl font-bold text-text-primary">
-      {String(value).padStart(2, '0')}
+      {value}
     </p>
     <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
       {label}

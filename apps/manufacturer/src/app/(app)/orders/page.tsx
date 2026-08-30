@@ -44,7 +44,9 @@ const Counter = ({
   readonly tone?: 'neutral' | 'danger';
 }) => (
   <Card className={tone === 'danger' ? 'border-red-100' : undefined}>
-    <p className="text-2xl font-bold text-text-primary">{String(value).padStart(2, '0')}</p>
+    <p data-numeric className="text-3xl font-semibold tracking-[-0.02em] text-text-primary">
+      {value}
+    </p>
     <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
       {label}
     </Text>

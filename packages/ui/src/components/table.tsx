@@ -48,14 +48,14 @@ export const DataTable = <TRow,>({
           {caption}
         </caption>
         <thead>
-          <tr className="border-b border-border-subtle">
+          <tr className="border-b border-border">
             {columns.map((column) => (
               <th
                 key={column.id}
                 scope="col"
                 style={column.width === undefined ? undefined : { width: column.width }}
                 className={cn(
-                  'whitespace-nowrap px-3 py-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary',
+                  'whitespace-nowrap px-3 pb-2.5 pt-1 text-xs font-medium uppercase tracking-[0.06em] text-text-tertiary',
                   ALIGN[column.align ?? 'left'],
                   column.hideBelowLg === true && 'hidden lg:table-cell',
                 )}
@@ -67,12 +67,15 @@ export const DataTable = <TRow,>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-border-subtle last:border-0 hover:bg-bg-page">
+            <tr
+              key={rowKey(row)}
+              className="border-b border-border-subtle transition-colors last:border-0 hover:bg-bg-surface-raised/60"
+            >
               {columns.map((column) => (
                 <td
                   key={column.id}
                   className={cn(
-                    'px-3 py-3.5 align-middle text-sm text-text-secondary',
+                    'px-3 py-3 align-middle text-sm text-text-secondary',
                     ALIGN[column.align ?? 'left'],
                     column.hideBelowLg === true && 'hidden lg:table-cell',
                   )}

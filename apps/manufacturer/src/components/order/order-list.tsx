@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { orderReference } from '@ideeza/domain';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -168,7 +169,7 @@ export const OrderList = ({
                   {row.productName}
                 </Link>
                 <Text tone="muted" size="xs">
-                  {row.buyerName} · {row.orderId.slice(-8)}
+                  {row.buyerName} · {orderReference(row.orderId)}
                 </Text>
               </div>
             ),
