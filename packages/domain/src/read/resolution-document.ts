@@ -92,20 +92,53 @@ export const refundStatusLabel = (status: string): string =>
  *
  * A database id is not a reference a person can read down a phone line, and the
  * two panels were shortening it differently. This is the one form: a prefix that
- * says what kind of record it is, and the last eight characters of its id, which
- * are the part that differs between records.
+ * says what kind of record it is, and eight characters that stand for the record
+ * and nothing else.
+ *
+ * They are computed from the id rather than cut out of it. Cutting looked fine
+ * against random ids and turned an id like `verify_order_delivered` into
+ * ORDER-ELIVERED — a reference that reads as a half-spelled word and invites the
+ * reader to make something of it. A digest has no such accidents, is the same on
+ * both panels for the same record, and collides about once in three trillion.
  */
-const reference = (prefix: string, id: string): string =>
-  // Identifiers carry separators the reader does not need — an id like
-  // `rfd_open_9f21` would otherwise read out as CLAIM-PEN_9F21. Only the
-  // letters and digits go into a reference, which is what makes it quotable.
-  `${prefix}-${id.replace(/[^0-9a-zA-Z]/g, '').slice(-8).toUpperCase()}`;
+const DIGEST_ALPHABET = 36;
+const DIGEST_LENGTH = 8;
+
+const reference = (prefix: string, id: string): string => {
+  // FNV-1a, twice over, for enough bits to fill eight base-36 characters.
+  let low = 0x811c9dc5;
+  let high = 0x01000193;
+  for (let index = 0; index < id.length; index += 1) {
+    const code = id.charCodeAt(index);
+    low = Math.imul(low ^ code, 0x01000193) >>> 0;
+    high = Math.imul(high ^ (code + index), 0x85ebca6b) >>> 0;
+  }
+  // Composed as a big integer: 2^64 does not fit a double, and folding it
+  // through one would quietly drop the low bits — which showed up as every
+  // reference ending in the same two characters.
+  const digest = ((BigInt(low) << 32n) | BigInt(high))
+    .toString(DIGEST_ALPHABET)
+    .toUpperCase();
+  return `${prefix}-${digest.slice(-DIGEST_LENGTH).padStart(DIGEST_LENGTH, '0')}`;
+};
 
 /** `CASE-1A2B3C4D` — a dispute, as quoted by either side. */
 export const caseReference = (disputeId: string): string => reference('CASE', disputeId);
 
 /** `CLAIM-1A2B3C4D` — a refund claim, as quoted by either side. */
 export const claimReference = (refundId: string): string => reference('CLAIM', refundId);
+
+/** `RFQ-1A2B3C4D` — a request for quotes. */
+export const requestReference = (rfqId: string): string => reference('RFQ', rfqId);
+
+/** `QUOTE-1A2B3C4D` — one shop's answer to a request. */
+export const quoteReference = (quoteId: string): string => reference('QUOTE', quoteId);
+
+/** `ORDER-1A2B3C4D` — a confirmed order, as quoted by either side. */
+export const orderReference = (orderId: string): string => reference('ORDER', orderId);
+
+/** `PART-1A2B3C4D` — a line in a shop's own inventory. */
+export const partReference = (partId: string): string => reference('PART', partId);
 
 /**
  * Who said it, from the reader's side.

@@ -1,6 +1,9 @@
 import {
   OPEN_RFQ_STATUSES,
   TRANSIT_DAYS,
+  orderReference,
+  quoteReference,
+  requestReference,
   type ManufacturerId,
 } from '@ideeza/domain';
 import { database } from '@/lib/db.js';
@@ -162,6 +165,8 @@ export interface WorkMixSlice {
 
 export interface DashboardOrderRow {
   readonly orderId: string;
+  /** The order as a person would quote it, rather than its database id. */
+  readonly orderReference: string;
   readonly productName: string;
   readonly buyerName: string;
   readonly quantity: number;
@@ -172,6 +177,8 @@ export interface DashboardOrderRow {
 
 export interface DashboardRequestRow {
   readonly rfqId: string;
+  /** The request as a person would quote it, rather than its database id. */
+  readonly reference: string;
   readonly productName: string;
   readonly quantity: number;
   readonly kindLabel: string;
@@ -190,6 +197,8 @@ export interface DashboardPayoutRow {
   readonly id: string;
   readonly buyerName: string;
   readonly orderId: string;
+  /** The order as a person would quote it, rather than its database id. */
+  readonly orderReference: string;
   readonly netAmountMinor: number;
   readonly status: string;
 }
@@ -198,6 +207,15 @@ export interface DashboardActivityRow {
   readonly id: string;
   readonly kind: string;
   readonly subject: string;
+  /**
+   * What the row says about itself: the record as a person would quote it, and
+   * what it was about where this shop's own rows can say. The subject id alone
+   * read as `_quote_a` on screen, which tells the reader nothing.
+   */
+  readonly reference: string;
+  readonly detail: string | null;
+  /** Which of the four kinds of news this is, for the dot beside it. */
+  readonly tone: 'request' | 'quote' | 'order' | 'money';
   readonly at: Date;
 }
 
@@ -205,6 +223,9 @@ export interface DashboardSections {
   readonly production: readonly ProductionBar[];
   readonly workMix: readonly WorkMixSlice[];
   readonly orderCount: number;
+  /** Orders taken in the last 30 days, and in the 30 before that. */
+  readonly ordersThisPeriod: number;
+  readonly ordersLastPeriod: number;
   readonly ordersInProduction: readonly DashboardOrderRow[];
   readonly requestsNeedingAction: readonly DashboardRequestRow[];
   readonly inventoryHealth: readonly DashboardPartRow[];
@@ -331,10 +352,62 @@ export const getDashboardSections = async (
     readonly reservedQuantity: number;
   }): number => Math.max(0, item.stockQuantity - item.reservedQuantity);
 
+  const day = 24 * 60 * 60 * 1_000;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * day);
+  const sixtyDaysAgo = new Date(Date.now() - 60 * day);
+
+  // What a line of the log is about. The event carries a kind and the id of the
+  // record it happened to; the product name comes from this shop's own rows
+  // where they hold it, and is left out rather than guessed where they do not.
+  const orderNames = new Map(
+    orders.map((order) => [order.id, order.rfq.package.product.name] as const),
+  );
+  const requestNames = new Map(
+    requests.map(
+      (recipient) => [recipient.rfq.id, recipient.rfq.package.product.name] as const,
+    ),
+  );
+
+  const describe = (
+    kind: string,
+    subjectId: string,
+  ): {
+    readonly reference: string;
+    readonly detail: string | null;
+    readonly tone: 'request' | 'quote' | 'order' | 'money';
+  } => {
+    if (kind.startsWith('payout')) {
+      return {
+        reference: orderReference(subjectId),
+        detail: orderNames.get(subjectId) ?? null,
+        tone: 'money',
+      };
+    }
+    if (kind.startsWith('order') || kind.startsWith('production') || kind.startsWith('stage')) {
+      return {
+        reference: orderReference(subjectId),
+        detail: orderNames.get(subjectId) ?? null,
+        tone: 'order',
+      };
+    }
+    if (kind.startsWith('quote') || kind.startsWith('substitution')) {
+      return { reference: quoteReference(subjectId), detail: null, tone: 'quote' };
+    }
+    return {
+      reference: requestReference(subjectId),
+      detail: requestNames.get(subjectId) ?? null,
+      tone: 'request',
+    };
+  };
+
   return {
     production: bars,
     workMix: [...mix].map(([label, count]) => ({ label, count })),
     orderCount: orders.length,
+    ordersThisPeriod: orders.filter((order) => order.createdAt >= thirtyDaysAgo).length,
+    ordersLastPeriod: orders.filter(
+      (order) => order.createdAt >= sixtyDaysAgo && order.createdAt < thirtyDaysAgo,
+    ).length,
     ordersInProduction: live.slice(0, 5).map((order) => {
       const current =
         order.stages.find((stage) => stage.status === 'in_progress') ??
@@ -342,6 +415,7 @@ export const getDashboardSections = async (
         null;
       return {
         orderId: order.id,
+        orderReference: orderReference(order.id),
         productName: order.rfq.package.product.name,
         buyerName: order.rfq.buyer.displayName,
         quantity: order.snapshot?.quantity ?? 0,
@@ -353,6 +427,7 @@ export const getDashboardSections = async (
     }),
     requestsNeedingAction: requests.map((recipient) => ({
       rfqId: recipient.rfq.id,
+      reference: requestReference(recipient.rfq.id),
       productName: recipient.rfq.package.product.name,
       quantity: recipient.rfq.quantity,
       kindLabel: PACKAGE_LABEL[recipient.rfq.package.kind] ?? recipient.rfq.package.kind,
@@ -374,6 +449,7 @@ export const getDashboardSections = async (
       id: payout.id,
       buyerName: payout.order.rfq.buyer.displayName,
       orderId: payout.order.id,
+      orderReference: orderReference(payout.order.id),
       netAmountMinor: Number(payout.netAmountMinor),
       status: payout.status,
     })),
@@ -384,11 +460,17 @@ export const getDashboardSections = async (
       .filter((payout) => payout.status === 'released')
       .reduce((sum, payout) => sum + Number(payout.netAmountMinor), 0),
     currency: payouts[0]?.currency ?? 'USD',
-    activity: events.map((event) => ({
-      id: event.id,
-      kind: event.kind,
-      subject: event.subjectId,
-      at: event.occurredAt,
-    })),
+    activity: events.map((event) => {
+      const named = describe(event.kind, event.subjectId);
+      return {
+        id: event.id,
+        kind: event.kind,
+        subject: event.subjectId,
+        reference: named.reference,
+        detail: named.detail,
+        tone: named.tone,
+        at: event.occurredAt,
+      };
+    }),
   };
 };

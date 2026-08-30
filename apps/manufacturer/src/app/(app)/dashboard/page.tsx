@@ -1,5 +1,14 @@
 import Link from 'next/link';
-import { Card, CardHeader, PageHeader, StatusChip, Tag, Text, buttonAppearance } from '@ideeza/ui';
+import {
+  Avatar,
+  Card,
+  CardHeader,
+  PageHeader,
+  StatusChip,
+  Tag,
+  Text,
+  buttonAppearance,
+} from '@ideeza/ui';
 import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
 import { getShopContext } from '@/data/shop.js';
 import { linkIfBuilt } from '@/lib/navigation.js';
@@ -14,6 +23,90 @@ const percent = (rate: number | null): string =>
 
 const day = (at: Date): string =>
   at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/**
+ * How long ago, in the shortest true form.
+ *
+ * A feed of things that just happened is read for recency, and "Aug 30" does not
+ * say whether that was this morning or last month. Past a week the date is the
+ * more useful answer, so it goes back to one.
+ */
+const ago = (at: Date, now: number): string => {
+  const seconds = Math.max(0, Math.round((now - at.getTime()) / 1_000));
+  if (seconds < 60) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days <= 7) return `${days}d ago`;
+  return day(at);
+};
+
+/**
+ * The dot beside a line of the feed: what kind of news it is.
+ *
+ * The three hues are the design system's own, in this order, because adjacent
+ * hues have to stay apart for a reader who cannot separate them by colour —
+ * measured, not chosen by eye — and the words beside the dot carry the meaning
+ * in any case.
+ */
+const ACTIVITY_DOT: Readonly<Record<string, string>> = {
+  request: 'bg-brand',
+  quote: 'bg-success',
+  order: 'bg-info',
+  money: 'bg-accent-strong',
+};
+
+/** The donut's slices, in the fixed order the palette was validated in. */
+const MIX_COLOUR = ['var(--ids-color-brand)', 'var(--ids-color-success)', 'var(--ids-color-info)'];
+
+/**
+ * The work mix as a ring.
+ *
+ * Part of a whole, at a glance, with three kinds at most — which is what a ring
+ * is for. The counts sit beside it in the legend rather than on the slices,
+ * because a number on every slice is noise and the ring is the shape of the
+ * answer, not the answer itself.
+ */
+const WorkMixRing = ({
+  slices,
+}: {
+  readonly slices: readonly { readonly label: string; readonly count: number }[];
+}) => {
+  const total = slices.reduce((sum, slice) => sum + slice.count, 0);
+  if (total === 0) return null;
+
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <svg viewBox="0 0 140 140" className="h-32 w-32 shrink-0" role="img" aria-label="Work mix">
+      <circle cx="70" cy="70" r={radius} fill="none" stroke="var(--ids-color-line)" strokeWidth="16" />
+      {slices.map((slice, index) => {
+        const length = (slice.count / total) * circumference;
+        // A hairline of the card behind each slice keeps two of them apart.
+        const dash = `${Math.max(0, length - 2)} ${circumference - Math.max(0, length - 2)}`;
+        const rotation = (offset / circumference) * 360;
+        offset += length;
+        return (
+          <circle
+            key={slice.label}
+            cx="70"
+            cy="70"
+            r={radius}
+            fill="none"
+            stroke={MIX_COLOUR[index % MIX_COLOUR.length]}
+            strokeWidth="16"
+            strokeDasharray={dash}
+            transform={`rotate(${rotation - 90} 70 70)`}
+          />
+        );
+      })}
+    </svg>
+  );
+};
 
 /**
  * Event kinds, said in a sentence a shop floor would recognise.
@@ -116,15 +209,20 @@ const DashboardPage = async () => {
     getDashboardSections(actor.manufacturerId),
   ]);
 
+  const now = Date.now();
+  const orderTrend =
+    sections.ordersLastPeriod === 0
+      ? `${sections.ordersThisPeriod} in the last 30 days`
+      : `${sections.ordersThisPeriod >= sections.ordersLastPeriod ? '+' : ''}${Math.round(
+          ((sections.ordersThisPeriod - sections.ordersLastPeriod) /
+            sections.ordersLastPeriod) *
+            100,
+        )}% vs the 30 days before`;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Analytics"
-        description={
-          shop === null
-            ? 'Your shop'
-            : `${shop.displayName} · ${shop.city}, ${shop.countryCode}`
-        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {shop !== null && (
@@ -231,31 +329,37 @@ const DashboardPage = async () => {
         </Card>
 
         <Card>
-          <CardHeader
-            title="Orders"
-            description="What kind of work they are."
-          />
-          <p className="mt-2 text-2xl font-bold text-heading">{sections.orderCount}</p>
-          <ul aria-label="Work mix" className="mt-4 flex flex-col gap-2">
-            {sections.workMix.length === 0 ? (
-              <Text tone="muted" size="sm">
-                No orders yet.
-              </Text>
-            ) : (
-              sections.workMix.map((slice) => (
-                <li key={slice.label} className="flex items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-brand"
-                  />
-                  <span className="flex-1 text-sm text-body">{slice.label}</span>
-                  <span className="text-sm font-semibold text-heading">
-                    {slice.count}
-                  </span>
-                </li>
-              ))
-            )}
-          </ul>
+          <CardHeader title="Orders" description="What kind of work they are." />
+
+          <div className="mt-2 flex flex-wrap items-baseline gap-2">
+            <p className="text-2xl font-bold text-heading">{sections.orderCount}</p>
+            <Text tone="muted" size="xs">
+              {orderTrend}
+            </Text>
+          </div>
+
+          {sections.workMix.length === 0 ? (
+            <Text tone="muted" size="sm" className="mt-4">
+              No orders yet.
+            </Text>
+          ) : (
+            <div className="mt-4 flex flex-wrap items-center gap-5">
+              <WorkMixRing slices={sections.workMix} />
+              <ul aria-label="Work mix" className="flex min-w-40 flex-1 flex-col gap-2">
+                {sections.workMix.map((slice, index) => (
+                  <li key={slice.label} className="flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: MIX_COLOUR[index % MIX_COLOUR.length] }}
+                    />
+                    <span className="flex-1 text-sm text-body">{slice.label}</span>
+                    <span className="text-sm font-semibold text-heading">{slice.count}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -282,41 +386,65 @@ const DashboardPage = async () => {
               </Text>
             </div>
           ) : (
-            <ul aria-label="Orders in production" className="border-t border-line">
-              {sections.ordersInProduction.map((order) => (
-                <li
-                  key={order.orderId}
-                  className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
-                >
-                  <div className="min-w-0">
-                    <Link
-                      href={`/orders/${order.orderId}`}
-                      className="block truncate text-sm font-semibold text-heading hover:text-brand"
-                    >
-                      {order.productName}
-                    </Link>
-                    <Text tone="muted" size="xs">
-                      {order.buyerName} · {order.quantity} units
-                    </Text>
-                  </div>
-                  <div className="min-w-[140px]">
-                    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-line">
-                      <span
-                        className="block h-full bg-success"
-                        style={{
-                          width: `${Math.round(
-                            (order.completedStages / order.totalStages) * 100,
-                          )}%`,
-                        }}
-                      />
-                    </span>
-                    <Text tone="muted" size="xs" className="mt-1 block">
-                      {order.stageLabel} · {order.completedStages}/{order.totalStages}
-                    </Text>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="overflow-x-auto border-t border-line">
+              <table className="w-full border-collapse text-sm">
+                <caption className="ids-sr-only">Orders in production</caption>
+                <thead>
+                  <tr className="bg-canvas">
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-heading md:px-6">
+                      Name
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-heading">
+                      Order
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 text-right font-semibold text-heading">
+                      Qty
+                    </th>
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-heading md:px-6">
+                      Current stage
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sections.ordersInProduction.map((order) => (
+                    <tr key={order.orderId} className="border-t border-line">
+                      <td className="px-4 py-3 md:px-6">
+                        <Link
+                          href={`/orders/${order.orderId}`}
+                          className="block max-w-[22ch] truncate font-semibold text-heading hover:text-brand"
+                        >
+                          {order.productName}
+                        </Link>
+                        <Text tone="muted" size="xs">
+                          {order.buyerName}
+                        </Text>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-muted">
+                        {order.orderReference}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-body">
+                        {order.quantity}
+                      </td>
+                      <td className="px-4 py-3 md:px-6">
+                        <span className="block h-1.5 w-full min-w-24 overflow-hidden rounded-full bg-line">
+                          <span
+                            className="block h-full bg-success"
+                            style={{
+                              width: `${Math.round(
+                                (order.completedStages / order.totalStages) * 100,
+                              )}%`,
+                            }}
+                          />
+                        </span>
+                        <Text tone="muted" size="xs" className="mt-1 block">
+                          {order.stageLabel} · {order.completedStages}/{order.totalStages}
+                        </Text>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
 
@@ -349,10 +477,10 @@ const DashboardPage = async () => {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-heading">
-                      {request.productName}
+                      {request.reference}
                     </p>
                     <Text tone="muted" size="xs">
-                      {request.kindLabel} · {request.quantity} units
+                      {request.productName} · {request.kindLabel} · {request.quantity} units
                       {request.respondBy === null
                         ? ''
                         : ` · reply by ${day(request.respondBy)}`}
@@ -495,13 +623,16 @@ const DashboardPage = async () => {
                   key={payout.id}
                   className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 last:border-b-0 md:px-6"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-heading">
-                      {payout.buyerName}
-                    </p>
-                    <Text tone="muted" size="xs">
-                      {payout.orderId.slice(-8)}
-                    </Text>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={payout.buyerName} size="sm" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-heading">
+                        {payout.buyerName}
+                      </p>
+                      <Text tone="muted" size="xs">
+                        {payout.orderReference}
+                      </Text>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-heading">
@@ -537,14 +668,21 @@ const DashboardPage = async () => {
                 key={entry.id}
                 className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-2.5 last:border-b-0 md:px-6"
               >
-                <p className="text-sm text-body">
+                <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm text-body">
+                  <span
+                    aria-hidden
+                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${ACTIVITY_DOT[entry.tone] ?? 'bg-neutral'}`}
+                  />
                   <span className="font-semibold text-heading">
                     {ACTIVITY_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}
-                  </span>{' '}
-                  <span className="text-muted">{entry.subject.slice(-8)}</span>
+                  </span>
+                  <span className="font-medium text-brand">{entry.reference}</span>
+                  {entry.detail !== null && (
+                    <span className="text-muted">· {entry.detail}</span>
+                  )}
                 </p>
                 <Text tone="muted" size="xs">
-                  {day(entry.at)}
+                  {ago(entry.at, now)}
                 </Text>
               </li>
             ))}
