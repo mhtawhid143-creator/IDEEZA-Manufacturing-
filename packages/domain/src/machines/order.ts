@@ -67,6 +67,21 @@ const onlyBuyerOrOperationsMayRaiseIssue: TransitionGuard<
     ? null
     : 'a refund request is raised by the buyer';
 
+/**
+ * The outcomes of a refund or a dispute are operations' decisions.
+ *
+ * A buyer raises the issue and a manufacturer answers it, but the order only
+ * ends in `refunded`, `partially_refunded` or `resolved` because IDEEZA
+ * operations decided so — the permission matrix says as much, and the machine
+ * says it here so no data layer can reach those states with another actor.
+ */
+const onlyOperationsMayDecide: TransitionGuard<OrderStatus, OrderTransitionContext> = (
+  context,
+) =>
+  context.actorRole === 'ops_admin'
+    ? null
+    : 'only IDEEZA operations may decide a refund or resolve a dispute';
+
 export const orderMachine: StateMachine<OrderStatus, OrderTransitionContext> = {
   name: 'ManufacturingOrder',
   initial: 'awaiting_payment',
@@ -99,5 +114,8 @@ export const orderMachine: StateMachine<OrderStatus, OrderTransitionContext> = {
     completed: [requireDocumentedCompletion],
     cancelled: [onlyOperationsMayCancel],
     refund_requested: [onlyBuyerOrOperationsMayRaiseIssue],
+    refunded: [onlyOperationsMayDecide],
+    partially_refunded: [onlyOperationsMayDecide],
+    resolved: [onlyOperationsMayDecide],
   },
 };

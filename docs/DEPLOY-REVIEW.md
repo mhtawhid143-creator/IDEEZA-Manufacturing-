@@ -51,7 +51,8 @@ twice from this machine. Each project needs:
 | Name | Value | Why |
 | --- | --- | --- |
 | `DATABASE_URL` | «the hosted connection string» | Both panels read the same database, so both get the same value |
-| `REVIEW_DIRECT_SIGN_IN` | `1` | Replaces the password form with one click per seeded account, so a reviewer with the link is straight in |
+| `REVIEW_DIRECT_SIGN_IN` | `1` | Replaces the password form with one click per seeded account |
+| `REVIEW_DIRECT_SIGN_IN_TOKEN` | «a long random string, 16+ characters — `openssl rand -hex 24`» | Off the local machine the password-less entry also demands this token. Share the links **with** `?token=«it»` appended; the first visit stores it in a cookie and the panel is one click from then on. Without the token a hosted panel answers 404, so the variable above can never by itself open the panel to whoever finds the address |
 
 ### The CLI path
 
@@ -73,8 +74,14 @@ sees the second shop, and it is where signing out lands.
 
 ## Read this before sharing the links
 
-`REVIEW_DIRECT_SIGN_IN=1` means **anyone holding the link is signed in**. That is
-the point for a design review, and it is only acceptable because:
+`REVIEW_DIRECT_SIGN_IN=1` together with the token means **anyone holding the
+tokened link is signed in**, as any seeded buyer or shop member on either panel.
+That is the point for a design review, and it is only acceptable because:
+
+- the entry is closed to anyone who has the address but not the token — the
+  panels answer 404 exactly as they do with review mode off — so a leaked
+  hostname is not a leaked panel; treat the token like a password and rotate it
+  (change the variable, redeploy) when the review is over;
 
 - the data is seeded fixture data — invented companies, invented orders, no real
   person's information and no real money;

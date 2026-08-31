@@ -153,12 +153,26 @@ describe('the secured checkout', () => {
 
     const order = await prisma.manufacturingOrder.findUniqueOrThrow({
       where: { id: orderId },
-      include: { payment: true, stages: true },
+      include: { payment: true, stages: true, payouts: true },
     });
     expect(order.status).toBe('confirmed');
     expect(order.confirmedAt).not.toBeNull();
     expect(order.payment?.status).toBe('secured');
     expect(order.payment?.securedAt).not.toBeNull();
+
+    // The money held has a destination from the moment it is held: one payout,
+    // for this manufacturer, against this payment, waiting for a release event.
+    expect(order.payouts).toHaveLength(1);
+    const payout = order.payouts[0]!;
+    expect(payout.status).toBe('pending_release');
+    expect(payout.manufacturerId).toBe(order.manufacturerId);
+    expect(payout.paymentId).toBe(order.payment?.id);
+    expect(payout.currency).toBe(order.payment?.currency);
+    expect(payout.platformFeeMinor).toBe(order.payment?.platformFeeMinor);
+    expect(payout.netAmountMinor).toBe(payout.orderAmountMinor - payout.platformFeeMinor);
+    expect(payout.orderAmountMinor).toBe(
+      (order.payment?.goodsAmountMinor ?? 0n) + (order.payment?.shippingAmountMinor ?? 0n),
+    );
 
     // Production can be tracked from here: the ten canonical stages exist, and
     // the two that are already true are complete.

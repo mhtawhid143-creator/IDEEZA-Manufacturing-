@@ -646,6 +646,38 @@ export const moveStage = async (
     delivered: 'delivered',
   };
 
+  // The order's own status follows the stage, and it only ever moves through
+  // its machine. Starting a stage brings the order to that stage's status;
+  // completing one does the same when the order has not reached it yet, since a
+  // stage may be completed in one move without being started first (the
+  // shipment is recorded that way). The order is never moved backwards: a stage
+  // behind where the order already stands leaves the status alone. Asking the
+  // machine first is what stops a shop from delivering an order that is
+  // disputed, has a refund open, or was never shipped — the machine has no such
+  // transition, so the whole move is refused before anything is written.
+  const nextStatus = orderStatusFor[key];
+  const statusLine = Object.values(orderStatusFor);
+  const reachedIndex = statusLine.indexOf(order.status);
+  const nextIndex = nextStatus === undefined ? -1 : statusLine.indexOf(nextStatus);
+  const alreadyThereOrPast = reachedIndex !== -1 && reachedIndex >= nextIndex;
+  let orderStatusAfter: OrderStatus | undefined;
+  try {
+    if (nextStatus !== undefined && !alreadyThereOrPast) {
+      orderStatusAfter = applyTransition(orderMachine, order.status, nextStatus, {
+        actorRole: 'manufacturer',
+        paymentStatus: order.payment?.status,
+      });
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof Error
+          ? `The order cannot move from "${order.status}" here: ${error.message}`
+          : 'the order cannot move here',
+    };
+  }
+
   await database().$transaction(async (transaction) => {
     await transaction.productionStage.update({
       where: { id: stage.id },
@@ -664,24 +696,13 @@ export const moveStage = async (
       });
     }
 
-    // The order's own status follows the stage that is being worked on, because
-    // that is what the buyer's screens read.
-    const nextStatus = orderStatusFor[key];
-    if (nextStatus !== undefined && to === 'in_progress' && order.status !== nextStatus) {
-      const allowed = applyTransition(orderMachine, order.status, nextStatus, {
-        actorRole: 'manufacturer',
-        paymentStatus: order.payment?.status,
-      });
+    if (orderStatusAfter !== undefined) {
       await transaction.manufacturingOrder.update({
         where: { id: orderId },
-        data: { status: allowed },
-      });
-    }
-
-    if (to === 'completed' && key === 'delivered') {
-      await transaction.manufacturingOrder.update({
-        where: { id: orderId },
-        data: { status: 'delivered', deliveredAt: now },
+        data: {
+          status: orderStatusAfter,
+          ...(orderStatusAfter === 'delivered' ? { deliveredAt: now } : {}),
+        },
       });
     }
 

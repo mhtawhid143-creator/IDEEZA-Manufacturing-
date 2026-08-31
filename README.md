@@ -12,10 +12,14 @@ release. The buyer and the manufacturer remain the commercial counterparties.
 
 ```
 apps/
-  user/            Buyer panel: design system, app shell, navigation,
-                   protected routes; business features arrive per task
-  manufacturer/    Manufacturer panel         (placeholder until a later task)
-  ops/             IDEEZA operations panel    (placeholder until a later task)
+  user/            Buyer panel: products, the draft, the request, quotes and
+                   comparison, secured checkout, the order, production,
+                   delivery, refund and dispute, reviews, messages
+  manufacturer/    Manufacturer panel: dashboard, routed requests, quotes,
+                   orders and the production line, inventory, resolution,
+                   payouts and withdrawals, shop settings
+  ops/             IDEEZA operations panel    (not built — see "What is not
+                   built" below)
 packages/
   domain/          Business rules: entities, statuses, state machines,
                    invariants, permissions, structured business events
@@ -38,13 +42,33 @@ packages/
 | T05 | Favorites, single product, manufacturing call to action | done |
 | T06 | Package and manufacturing requirements (the draft) | done |
 | T07 | Select manufacturers and send the request | done |
-| T08+ | Quotes, comparison, checkout, orders, production, resolution | not started |
+| T08 | Quotes, comparison and acceptance | done |
+| T09 | Secured checkout and payment | done |
+| T10 | Order detail and production tracking | done |
+| T11 | Delivery, review window and history | done |
+| T12 | Issues: cancellation, refund, dispute | done from the buyer's side; deciding them is operations' (see below) |
+| T13 | Notifications and conversations | done |
+| T14–T15 | The 3D route; editing the specification from a draft | see `docs/USER-SIDE-PLAN.md` |
+| M01–M14 | Manufacturer panel | built where a table exists; screens without one say so — see `docs/MANUFACTURER-SIDE-PLAN.md`, "Where the manufacturer side stands" |
+| Ops | Operations panel | not started |
 
-The buyer can keep products, prepare a manufacturing request from one and send
-it to manufacturers. Everything from the quotes onwards — comparison,
-acceptance, secured checkout, the order, production, delivery, refund, dispute
-and payout — is still unbuilt, and the app marks each of those routes as not
-implemented yet rather than faking it.
+The buyer path runs from a kept product to a released payout, and the
+manufacturer path from a routed request to the money. Both panels read one
+database through the shared domain layer.
+
+### What is not built
+
+There is no operations panel, so nothing that the business model gives to
+IDEEZA operations can yet be performed by anyone: deciding a cancellation
+request, deciding a refund, resolving a dispute, releasing a payout that a
+dispute held, or paying a withdrawal. Those cases can be raised and answered by
+the two sides and then stop, and the screens say so rather than pretending an
+outcome. `docs/GAP-REPORT-BN.md` (Bengali) lists the gaps in detail.
+
+The only release of money that happens without operations is the automatic one
+against a documented order event — today, the buyer confirming delivery with
+nothing contested — which is what the business model calls for
+(`docs/DOMAIN.md` §3 and §4).
 
 - `docs/DOMAIN.md` — the rules the domain layer encodes
 - `docs/DATABASE.md` — the schema, its guards and the seed
