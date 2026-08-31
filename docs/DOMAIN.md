@@ -73,6 +73,18 @@ Release is allowed only against one of these recorded events:
 A buyer holds no `inventory.*` capability at all, and a manufacturer actor must
 carry the manufacturer it acts for.
 
+`payout.release` being operations-only refers to a person releasing money by
+hand. The platform itself releases a payout automatically when a documented
+release trigger from §3 is recorded and nothing on the order is contested — the
+buyer confirming delivery does this today, inside the same transaction, with the
+event id written on the payout. That is not the buyer holding `payout.release`;
+it is the system acting on the rule in §3, and the payout machine's guard is
+what checks it. An open refund or dispute holds the payout for operations.
+
+The order machine carries the matching guards: `refunded`, `partially_refunded`
+and `resolved` are reachable only with an `ops_admin` actor, as `cancelled` is
+for a funded order.
+
 ## 5. Retired vocabulary
 
 The design files still use service-marketplace words. These are refused in
@@ -115,7 +127,15 @@ a refund — the screens say so and point at the right instrument.
 These are undefined in the business model and are therefore *not* encoded. Each
 one is currently represented only as a field or a parameter, never as a default:
 
-- platform fee (who pays, how much) — `Payment.platformFee` exists, no rate
+- platform fee (who pays, how much) — **not decided by the business, but this
+  build has a working figure**: `apps/user/src/data/checkout.ts` charges
+  `PLATFORM_FEE_BASIS_POINTS = 300` (3% of the goods) to the buyer on top of the
+  quote, and the payout opened at payment records the same fee against the
+  manufacturer's net (`Payout.netAmount = orderAmount − platformFee`), as the
+  seed and the manufacturer's payouts screen already did. Both sides therefore
+  carry the fee in this build. That is a placeholder so the screens have a
+  number, not a decision: confirm who bears it and the rate, then make the
+  constant configuration and remove one of the two charges.
 - review window length — `ManufacturingOrder.reviewWindowEndsAt` exists, no default
 - tax and merchant-of-record responsibility — `Payment.taxAmount` exists only
 - cancellation policy per stage, and any penalty

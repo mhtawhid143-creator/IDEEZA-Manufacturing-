@@ -484,6 +484,6 @@ describe('buttonAppearance', () => {
   it('keeps the focus ring and the disabled treatment in the shared base', () => {
     const classes = buttonAppearance();
     expect(classes).toContain('focus-visible:ring-focus');
-    expect(classes).toContain('disabled:bg-bg-subtle');
+    expect(classes).toContain('disabled:bg-button-disabled-bg');
   });
 });

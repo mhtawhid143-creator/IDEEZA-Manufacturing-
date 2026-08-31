@@ -156,7 +156,7 @@ export const ConfirmStep = ({
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     aria-hidden
-                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-[11px] font-bold text-text-success"
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-success-subtle text-2xs font-bold text-text-success"
                   >
                     ✓
                   </span>
@@ -239,7 +239,7 @@ export const ConfirmStep = ({
               />
             </RadioGroup>
             <div className="rounded-lg border border-border-subtle p-3 text-sm md:max-w-xs">
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+              <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
                 Delivering to
               </p>
               <p className="mt-1 text-text-secondary">

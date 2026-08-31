@@ -524,8 +524,10 @@ export const payOrder = async (
     // The funding invariant, applied to the row that was just written.
     assertOrderMayBeConfirmed({ id: asId(paymentId), status: 'secured' });
 
+    // The status predicate makes a concurrent second payment fail here, on the
+    // row, rather than relying on anything written after it to collide.
     await transaction.manufacturingOrder.update({
-      where: { id: orderId },
+      where: { id: orderId, status: 'awaiting_payment' },
       data: {
         status: confirmedStatus,
         paymentId,
@@ -540,6 +542,29 @@ export const payOrder = async (
         data: { redeemedCount: { increment: 1 } },
       });
     }
+
+    // The money now held has a destination: the manufacturer's payout ledger
+    // entry is opened here, in the same transaction, so that from the moment the
+    // platform holds the funds there is a record of whom they are for and how
+    // much of it is theirs. It waits in `pending_release` until a documented
+    // order event (delivery confirmation and its siblings) releases it — see
+    // docs/DOMAIN.md §3. Without this row the release path has nothing to
+    // release, and the funds would leave escrow with no ledger behind them.
+    const orderAmountMinor = checkout.goodsMinor + checkout.toolingMinor + checkout.shippingMinor;
+    await transaction.payout.create({
+      data: {
+        id: identifier('po'),
+        orderId,
+        paymentId,
+        manufacturerId: order.manufacturerId,
+        status: 'pending_release',
+        currency: checkout.currency,
+        orderAmountMinor: BigInt(orderAmountMinor),
+        platformFeeMinor: BigInt(checkout.platformFeeMinor),
+        netAmountMinor: BigInt(orderAmountMinor - checkout.platformFeeMinor),
+        createdAt: now,
+      },
+    });
 
     // Production can be tracked from here, so the canonical stages appear, each
     // with the shop-floor tasks that stage is made of. The buyer reads the

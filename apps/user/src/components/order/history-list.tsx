@@ -123,7 +123,7 @@ export const HistoryList = ({ orders }: { readonly orders: readonly HistoryRowVi
           >
             <span
               aria-hidden
-              className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
+              className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
             />
 
             <div className="min-w-0 flex-1">

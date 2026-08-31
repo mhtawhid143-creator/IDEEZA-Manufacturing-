@@ -155,7 +155,7 @@ export const QuoteList = ({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
+                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
                 />
                 <div className="min-w-0">
                   <Link

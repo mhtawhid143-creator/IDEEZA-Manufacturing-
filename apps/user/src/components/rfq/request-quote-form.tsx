@@ -75,8 +75,8 @@ const ReadyRow = ({ done, label }: { readonly done: boolean; readonly label: str
     <span
       aria-hidden
       className={cn(
-        'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-text-on-brand',
-        done ? 'bg-bg-success' : 'bg-gray-200',
+        'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-3xs font-bold text-text-on-brand',
+        done ? 'bg-bg-success' : 'bg-bg-subtle',
       )}
     >
       {done ? '✓' : '!'}
@@ -217,10 +217,11 @@ export const RequestQuoteForm = ({
                 aria-hidden
                 className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-border-subtle"
                 style={{
+                  // eslint-disable-next-line ideeza/design-tokens -- placeholder artwork generated from the board's own hue, not a colour of the interface
                   background: `linear-gradient(135deg, hsl(${boardHue} 45% 74%), hsl(${(boardHue + 40) % 360} 50% 58%))`,
                 }}
               >
-                <Icon name="board" size={24} className="opacity-85" />
+                <Icon name="board" size={24} className="opacity-overlay" />
               </span>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-text-primary">{productName}</p>
@@ -283,7 +284,7 @@ export const RequestQuoteForm = ({
           )}
 
           <div className="flex flex-col gap-2 rounded-lg bg-bg-page p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+            <p className="text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
               Assembly options
             </p>
             <div className="flex flex-wrap gap-2">
@@ -568,7 +569,7 @@ export const RequestQuoteForm = ({
           </dl>
 
           <div className="border-t border-border-subtle pt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+            <p className="text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
               Ready to send
             </p>
             <ul className="mt-2 flex flex-col gap-1.5">

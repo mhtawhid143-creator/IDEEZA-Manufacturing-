@@ -98,7 +98,7 @@ const DisputeCasePage = async ({
                   <div className="flex items-center gap-3">
                     <span
                       aria-hidden
-                      className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-blue-100"
+                      className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
                     />
                     <div>
                       <p className="text-sm font-semibold text-text-primary">

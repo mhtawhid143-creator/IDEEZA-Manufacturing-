@@ -350,3 +350,77 @@ describe('asking to cancel', () => {
     expect(refused.ok).toBe(false);
   });
 });
+
+describe('the order status only moves through its machine', () => {
+  /**
+   * Puts the seeded order back to "shipped, not yet delivered" — the delivered
+   * stage pending and every open shortage parked — so the machine, not an
+   * earlier refusal, is what answers. Returns the undo.
+   */
+  const shippedNotDelivered = async (orderStatus: 'disputed' | 'ready_to_ship') => {
+    const source = await prisma.manufacturingOrder.findUniqueOrThrow({ where: { id: ORDER } });
+    const stage = await prisma.productionStage.findUniqueOrThrow({
+      where: { orderId_key: { orderId: ORDER, key: 'delivered' } },
+    });
+    const parked = await prisma.inventoryAlert.findMany({
+      where: { orderId: ORDER, status: 'open' },
+      select: { id: true },
+    });
+    await prisma.inventoryAlert.updateMany({
+      where: { id: { in: parked.map((alert) => alert.id) } },
+      data: { status: 'stock_awaited', decidedAt: new Date() },
+    });
+    await prisma.productionStage.update({
+      where: { id: stage.id },
+      data: { status: 'pending', startedAt: null, completedAt: null },
+    });
+    await prisma.manufacturingOrder.update({
+      where: { id: ORDER },
+      data: { status: orderStatus },
+    });
+
+    return async () => {
+      await prisma.manufacturingOrder.update({
+        where: { id: ORDER },
+        data: { status: source.status },
+      });
+      await prisma.productionStage.update({
+        where: { id: stage.id },
+        data: { status: stage.status, startedAt: stage.startedAt, completedAt: stage.completedAt },
+      });
+      await prisma.inventoryAlert.updateMany({
+        where: { id: { in: parked.map((alert) => alert.id) } },
+        data: { status: 'open', decidedAt: null },
+      });
+    };
+  };
+
+  it('refuses to deliver an order that is disputed, and writes nothing', async () => {
+    const undo = await shippedNotDelivered('disputed');
+    try {
+      const moved = await orders.moveStage(SHOP, MEMBER, ORDER, 'delivered', 'completed', undefined);
+      expect(moved.ok).toBe(false);
+      if (!moved.ok) expect(moved.message).toMatch(/disputed/);
+
+      const after = await prisma.manufacturingOrder.findUniqueOrThrow({ where: { id: ORDER } });
+      expect(after.status).toBe('disputed');
+      const stage = await prisma.productionStage.findUniqueOrThrow({
+        where: { orderId_key: { orderId: ORDER, key: 'delivered' } },
+      });
+      expect(stage.status).toBe('pending');
+    } finally {
+      await undo();
+    }
+  });
+
+  it('refuses to deliver an order that was never shipped', async () => {
+    const undo = await shippedNotDelivered('ready_to_ship');
+    try {
+      const moved = await orders.moveStage(SHOP, MEMBER, ORDER, 'delivered', 'completed', undefined);
+      expect(moved.ok).toBe(false);
+      if (!moved.ok) expect(moved.message).toMatch(/ready_to_ship/);
+    } finally {
+      await undo();
+    }
+  });
+});

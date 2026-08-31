@@ -82,10 +82,11 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                   aria-hidden
                   className="flex h-9 w-12 shrink-0 items-center justify-center rounded border border-border-subtle"
                   style={{
+                    // eslint-disable-next-line ideeza/design-tokens -- placeholder artwork generated from the board's own hue, not a colour of the interface
                     background: `linear-gradient(135deg, hsl(${hue} 45% 74%), hsl(${(hue + 40) % 360} 50% 58%))`,
                   }}
                 >
-                  <Icon name="board" size={18} className="opacity-85" />
+                  <Icon name="board" size={18} className="opacity-overlay" />
                 </span>
                 <div className="min-w-0">
                   <Link
@@ -139,7 +140,7 @@ export const DraftList = ({ drafts }: DraftListProps) => {
                   <Tooltip content="A cost appears once a manufacturer has quoted this request.">
                     <span
                       aria-label="Why is there no cost?"
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-border text-[10px] text-text-tertiary"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-border text-3xs text-text-tertiary"
                     >
                       i
                     </span>

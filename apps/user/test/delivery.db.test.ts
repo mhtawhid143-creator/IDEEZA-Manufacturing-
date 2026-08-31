@@ -100,24 +100,8 @@ const deliveredOrder = async (quantity: number): Promise<OrderId> => {
     where: { id: accepted.orderId },
     data: { status: 'delivered' },
   });
-  await prisma.payout.create({
-    data: {
-      id: `po_${quantity}`,
-      orderId: accepted.orderId,
-      paymentId: (
-        await prisma.manufacturingOrder.findUniqueOrThrow({
-          where: { id: accepted.orderId },
-          select: { paymentId: true },
-        })
-      ).paymentId as string,
-      manufacturerId: MANUFACTURER,
-      status: 'pending_release',
-      currency: 'USD',
-      orderAmountMinor: BigInt(500 * quantity),
-      platformFeeMinor: 0n,
-      netAmountMinor: BigInt(500 * quantity),
-    },
-  });
+  // No payout is written here: paying the order is what opens it. Confirming
+  // delivery below must find the row payOrder left, not one a test planted.
   await delivery.recordDelivery(accepted.orderId);
 
   return accepted.orderId;
@@ -196,6 +180,23 @@ describe('delivery and the review window', () => {
     await expect(delivery.confirmDelivery(BUYER, orderId, undefined)).rejects.toThrow(
       InvariantViolationError,
     );
+  });
+
+  it('refuses to complete an order whose held money has no payout behind it', async () => {
+    const orderId = await deliveredOrder(215);
+    await prisma.payout.deleteMany({ where: { orderId } });
+
+    await expect(delivery.confirmDelivery(BUYER, orderId, undefined)).rejects.toThrow(
+      /no payout/,
+    );
+
+    // Nothing moved: the order is still delivered and the money is still held.
+    const order = await prisma.manufacturingOrder.findUniqueOrThrow({
+      where: { id: orderId },
+      include: { payment: true },
+    });
+    expect(order.status).toBe('delivered');
+    expect(order.payment?.status).toBe('secured');
   });
 
   it('refuses a confirmation from anyone but the buyer', async () => {

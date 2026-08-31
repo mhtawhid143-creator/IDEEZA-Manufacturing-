@@ -7,8 +7,9 @@
  * system's own components ask for, so a component from either side can be read
  * — and eventually moved — without a vocabulary in between.
  *
- * Spacing is the exception. The system numbers its ladder its own way, and the
- * preset says why where the ladder is defined.
+ * Spacing comes from the system as well, by way of the preset: Tailwind's
+ * numbers stay on the classes, and each resolves to the system's variable for
+ * that distance. The preset says how where the ladder is defined.
  *
  * What is left is the shell. The system describes colour and components; it
  * does not describe how tall this product's navigation bar stands or how wide

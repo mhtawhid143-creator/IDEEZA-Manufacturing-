@@ -35,7 +35,7 @@ const SignInPage = async ({
           >
             ID
           </span>
-          <span className="text-lg font-bold tracking-wide text-text-primary">IDEEZA</span>
+          <span className="text-lg font-bold tracking-caps text-text-primary">IDEEZA</span>
         </div>
 
         <Card>

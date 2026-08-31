@@ -41,19 +41,55 @@ export const directSignInAccounts = async (): Promise<readonly DirectSignInAccou
       displayName: true,
       _count: { select: { rfqs: true, ordersAsBuyer: true } },
     },
+    // Ranked in the database, so the eight taken are the eight busiest rather
+    // than eight arbitrary rows sorted afterwards.
+    orderBy: [{ rfqs: { _count: 'desc' } }, { ordersAsBuyer: { _count: 'desc' } }],
     take: 8,
   });
 
-  return buyers
-    .map((buyer) => ({
-      userId: buyer.id,
-      email: buyer.email,
-      displayName: buyer.displayName,
-      requestCount: buyer._count.rfqs,
-      orderCount: buyer._count.ordersAsBuyer,
-    }))
-    .sort(
-      (left, right) =>
-        right.requestCount + right.orderCount - (left.requestCount + left.orderCount),
-    );
+  return buyers.map((buyer) => ({
+    userId: buyer.id,
+    email: buyer.email,
+    displayName: buyer.displayName,
+    requestCount: buyer._count.rfqs,
+    orderCount: buyer._count.ordersAsBuyer,
+  }));
+};
+
+/**
+ * Whether this request may use the password-less entry.
+ *
+ * On the machine running the review environment (`localhost`) the variable is
+ * enough. Anywhere else — a hosted review deployment — the variable alone is
+ * not: `REVIEW_DIRECT_SIGN_IN_TOKEN` must also be set, and the request must
+ * carry it, either as `?token=` on the first visit or as the cookie that visit
+ * sets. A hosted panel with the variable on and no token stays closed, so
+ * turning review mode on can never by itself hand the panel to whoever finds
+ * the address.
+ */
+export const REVIEW_TOKEN_COOKIE_NAME = 'ideeza_review';
+
+export const directSignInAdmitted = (request: {
+  readonly hostname: string;
+  readonly token: string | null;
+  readonly cookieToken: string | undefined;
+}): { readonly admitted: boolean; readonly setCookie: string | undefined } => {
+  if (!directSignInEnabled()) return { admitted: false, setCookie: undefined };
+
+  const local =
+    request.hostname === 'localhost' ||
+    request.hostname === '127.0.0.1' ||
+    request.hostname === '::1' ||
+    request.hostname === '[::1]';
+  if (local) return { admitted: true, setCookie: undefined };
+
+  const expected = process.env['REVIEW_DIRECT_SIGN_IN_TOKEN'];
+  if (expected === undefined || expected.length < 16) {
+    return { admitted: false, setCookie: undefined };
+  }
+  if (request.token !== null && request.token === expected) {
+    return { admitted: true, setCookie: expected };
+  }
+  if (request.cookieToken === expected) return { admitted: true, setCookie: undefined };
+  return { admitted: false, setCookie: undefined };
 };

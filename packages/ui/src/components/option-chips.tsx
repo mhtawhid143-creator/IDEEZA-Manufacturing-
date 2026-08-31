@@ -28,6 +28,9 @@ export interface OptionChipsProps {
 /**
  * A row of choices, laid out as the specification screens in Figma have them:
  * the label on the left, the options as chips filling the space on the right.
+ * Each chip is the system's A18 Tag — full radius on the raised surface with
+ * the default border, caption text, brand-subtle with a brand border when
+ * selected — packed at the M65 Tag List gap.
  *
  * It is a radio group, not a set of buttons — one answer, arrow keys move
  * between them, and the group carries its own label. The first chip is the open
@@ -65,18 +68,18 @@ export const OptionChips = ({
         )}
       </div>
 
-      <div role="radiogroup" aria-labelledby={groupId} className="flex flex-wrap gap-2">
+      <div role="radiogroup" aria-labelledby={groupId} className="flex flex-wrap gap-1">
         {chips.map((option) => {
           const selected = option.value === value;
           return (
             <label
               key={option.value === '' ? 'open' : option.value}
               className={cn(
-                'inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
+                'inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition-colors duration-fast',
                 selected
                   ? 'border-border-brand bg-bg-brand-subtle text-text-brand'
-                  : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-surface-raised',
-                (option.disabled === true || readOnly) && 'cursor-not-allowed opacity-60',
+                  : 'border-border bg-bg-surface-raised text-text-primary hover:border-border-strong hover:bg-bg-subtle',
+                (option.disabled === true || readOnly) && 'cursor-not-allowed opacity-muted',
               )}
               title={option.hint}
             >
@@ -102,7 +105,7 @@ export const OptionChips = ({
                   selected
                     ? 'border-border-brand bg-bg-brand ring-2 ring-inset ring-bg-surface'
                     : 'border-border bg-bg-surface',
-                  'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
+                  'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus',
                   'disabled:cursor-not-allowed',
                 )}
               />

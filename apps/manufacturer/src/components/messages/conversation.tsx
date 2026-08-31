@@ -140,7 +140,7 @@ export const Conversation = ({
                 >
                   <span
                     aria-hidden
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-white"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-text-on-brand"
                   >
                     {thread.counterpartName.slice(0, 2).toUpperCase()}
                   </span>
@@ -161,7 +161,7 @@ export const Conversation = ({
                     )}
                   </span>
                   {thread.unreadCount > 0 && (
-                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand px-1.5 text-[11px] font-semibold text-white">
+                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand px-1.5 text-2xs font-semibold text-text-on-brand">
                       {thread.unreadCount}
                     </span>
                   )}
@@ -186,7 +186,7 @@ export const Conversation = ({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-white"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-text-on-brand"
                 >
                   {counterpartName.slice(0, 2).toUpperCase()}
                 </span>
@@ -256,7 +256,7 @@ export const Conversation = ({
                         className={cn(
                           'max-w-[80%] rounded-2xl px-3 py-2 text-sm',
                           message.mine
-                            ? 'bg-bg-brand text-white'
+                            ? 'bg-bg-brand text-text-on-brand'
                             : 'bg-bg-surface-raised text-text-secondary',
                         )}
                       >

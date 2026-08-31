@@ -2,8 +2,12 @@
 
 This is the buyer side of the approved business model: a product is kept, a
 request is prepared from it, and the request is sent to manufacturers who quote
-it. Everything past the quotes — comparison, acceptance, secured checkout, the
-order and production — is still unbuilt, and every route for it says so.
+it. This document describes that first stretch — up to the request going out —
+in detail. What follows it is built too: comparison, acceptance, secured
+checkout, the order, production, delivery, refund and dispute, reviews and
+messages, each documented in `docs/USER-SIDE-PLAN.md` under its task. The one
+thing no route can do is decide a refund, dispute or cancellation, because that
+belongs to an operations panel that does not exist yet; those screens say so.
 
 ## 1. The path
 

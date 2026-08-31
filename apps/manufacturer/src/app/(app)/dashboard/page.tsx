@@ -56,7 +56,7 @@ const ACTIVITY_DOT: Readonly<Record<string, string>> = {
   request: 'bg-bg-brand',
   quote: 'bg-bg-success',
   order: 'bg-bg-info',
-  money: 'bg-orange-700',
+  money: 'bg-bg-warning',
   problem: 'bg-bg-error',
 };
 
@@ -203,14 +203,14 @@ const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
       interactive={href !== undefined}
       className={cn(
         'h-full',
-        tone === 'danger' && 'border-red-100',
-        tone === 'warning' && 'border-yellow-100',
+        tone === 'danger' && 'border-border-error',
+        tone === 'warning' && 'border-border-warning',
       )}
     >
       <p className="text-sm font-medium text-text-tertiary">{label}</p>
       <p
         data-numeric
-        className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-text-primary"
+        className="mt-2 text-3xl font-semibold tracking-near text-text-primary"
       >
         {value}
       </p>
@@ -574,7 +574,7 @@ const DashboardPage = async () => {
                       <th
                         key={header}
                         scope="col"
-                        className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
+                        className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-caps text-text-tertiary"
                       >
                         {header}
                       </th>
@@ -711,14 +711,14 @@ const DashboardPage = async () => {
               return (
                 <li
                   key={entry.id}
-                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-3 transition-colors last:border-b-0 hover:bg-bg-surface-raised/60 md:px-6"
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-3 transition-colors last:border-b-0 hover:bg-bg-surface-raised md:px-6"
                 >
                   <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm">
                     <span
                       aria-hidden
                       className={cn(
                         'h-2 w-2 shrink-0 rounded-sm',
-                        ACTIVITY_DOT[tone] ?? 'bg-gray-600',
+                        ACTIVITY_DOT[tone] ?? 'bg-icon',
                       )}
                     />
                     <span className="font-medium text-text-secondary">
@@ -791,7 +791,7 @@ const DashboardPage = async () => {
             <li key={entry.step} className="flex gap-3">
               <span
                 aria-hidden
-                className="mt-px inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-surface text-[11px] font-semibold text-text-brand ring-1 ring-border-brand/30"
+                className="mt-px inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-surface text-2xs font-semibold text-text-brand ring-1 ring-focus"
               >
                 {index + 1}
               </span>

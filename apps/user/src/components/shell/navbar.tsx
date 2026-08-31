@@ -25,7 +25,7 @@ export const Navbar = ({
   notificationCount = 0,
   onOpenNavigation,
 }: NavbarProps) => (
-  <header className="sticky top-0 z-30 flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
+  <header className="sticky top-0 z-sticky flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
     <IconButton
       label="Open navigation"
       icon={<Icon name="menu" />}
@@ -40,18 +40,18 @@ export const Navbar = ({
       >
         ID
       </span>
-      <span className="text-base font-bold tracking-wide text-text-primary">IDEEZA</span>
+      <span className="text-base font-bold tracking-caps text-text-primary">IDEEZA</span>
     </Link>
 
     <div className="ml-2 hidden items-center gap-3 md:flex">
       <Tooltip content="Token rewards are part of the wider IDEEZA product and are not wired up here.">
         <span
           className={cn(
-            'inline-flex items-center gap-2 rounded-full border border-border-brand/30 bg-bg-brand-subtle px-3 py-1.5',
+            'inline-flex items-center gap-2 rounded-full border border-border-brand bg-bg-brand-subtle px-3 py-1.5',
             'text-xs font-semibold text-text-brand',
           )}
         >
-          <span className="inline-block h-4 w-4 rounded-full bg-bg-brand/20" aria-hidden />
+          <span className="inline-block h-4 w-4 rounded-full bg-bg-brand" aria-hidden />
           Earn IDZ Tokens
         </span>
       </Tooltip>

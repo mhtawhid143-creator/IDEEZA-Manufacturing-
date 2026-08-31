@@ -776,7 +776,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   onClick={() => toggle(services, option.value, setServices)}
                   className={
                     services.includes(option.value)
-                      ? 'rounded-full bg-bg-brand px-3 py-1.5 text-xs font-semibold text-white'
+                      ? 'rounded-full bg-bg-brand px-3 py-1.5 text-xs font-semibold text-text-on-brand'
                       : 'rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-surface-raised'
                   }
                 >
@@ -796,7 +796,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   onClick={() => toggle(regions, region, setRegions)}
                   className={
                     regions.includes(region)
-                      ? 'rounded-full bg-bg-brand px-3 py-1.5 text-xs font-semibold text-white'
+                      ? 'rounded-full bg-bg-brand px-3 py-1.5 text-xs font-semibold text-text-on-brand'
                       : 'rounded-full border border-border-subtle px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-surface-raised'
                   }
                 >

@@ -122,9 +122,18 @@ component and then read its variant node.
   in `tailwind-preset.cjs` and note it in `docs/DESIGN-SYSTEM.md` §11. If the
   Figma file uses a token the package does not ship, that is a gap for the
   design team — record it, use the nearest shipped token, never invent one.
-- A component the system does not publish yet (Card, DataTable, Tabs, Modal …)
-  is built here in `packages/ui` from the system's tokens and the panel Figma
-  frames, and moves to the system when it arrives there.
+- The whole `packages/ui` layer was read against the file and aligned
+  (2026-08-31): A01/A02/A04–A08/A10/A17–A21, M01/M02/M07/M08/M14/M18/M19/M21/
+  M27/M33/M48/M49/M51/M60–M62/M65 — each component's colours, measures and
+  states now express that spec in preset classes. Known gaps, for whoever picks
+  them up: **M11 Confirm Dialog** has a Figma spec but no component here yet;
+  **M64 Pagination Bar** spec is extracted (see the align report in git
+  history) but the repo's `Pagination` lives in `layout.tsx` and is not yet
+  restyled; A08's 24px MD size and Text Input prefix/suffix variants have no
+  props here yet.
+- A component the system does not publish yet is built here in `packages/ui`
+  from the system's tokens and the panel Figma frames, and moves to the system
+  when it arrives there.
 
 ## 4. Design tokens — 100% from the design system
 

@@ -31,6 +31,9 @@ const identifier = (prefix: string): string =>
  */
 export const REVIEW_WINDOW_DAYS = 7;
 
+/** A refund in any other status is still waiting on operations. */
+const DECIDED_REFUND_STATUSES: ReadonlySet<string> = new Set(['approved', 'partial', 'rejected']);
+
 export interface DeliveryView {
   readonly orderId: OrderId;
   readonly status: OrderStatus;
@@ -181,9 +184,22 @@ export const confirmDelivery = async (
 
   assertDeliveryConfirmable(order.id, order.status, order.deliveredAt);
 
+  // A refund is open until operations has decided it, whatever stage of the
+  // conversation it is at; a dispute is open until it is resolved.
   const hasOpenIssue =
     order.disputes.some((dispute) => dispute.status !== 'resolved') ||
-    order.refunds.some((refund) => refund.status === 'requested');
+    order.refunds.some((refund) => !DECIDED_REFUND_STATUSES.has(refund.status));
+
+  // Money held by the platform always has a payout row behind it — payOrder
+  // opens it in the same transaction that secures the funds. An order that
+  // reaches this point with the money held and no payout is a ledger fault, and
+  // completing it would release the payment with nowhere for it to go.
+  const payout = order.payouts[0];
+  if (order.payment?.status === 'secured' && payout === undefined) {
+    throw new Error(
+      `Order ${order.id} holds a secured payment but has no payout to release it against.`,
+    );
+  }
 
   const completedStatus = applyTransition(orderMachine, order.status, 'completed', {
     paymentStatus: order.payment?.status,
@@ -226,7 +242,6 @@ export const confirmDelivery = async (
 
     // The payout moves only against the event that was just recorded, and only
     // when nothing is being contested.
-    const payout = order.payouts[0];
     if (payout !== undefined && payout.status === 'pending_release' && !hasOpenIssue) {
       await transaction.payout.update({
         where: { id: payout.id },

@@ -146,7 +146,7 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
           {SECTIONS.map((group) => (
             <div key={group.group} className="mb-2">
               {group.group !== '' && (
-                <p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-text-tertiary">
+                <p className="px-3 py-2 text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
                   {group.group}
                 </p>
               )}

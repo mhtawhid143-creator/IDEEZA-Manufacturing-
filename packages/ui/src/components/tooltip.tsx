@@ -36,7 +36,7 @@ export const Tooltip = ({ content, children, side = 'top', className }: TooltipP
         role="tooltip"
         id={id}
         className={cn(
-          'pointer-events-none absolute left-1/2 z-40 w-max max-w-64 -translate-x-1/2 rounded-md bg-bg-inverse px-2.5 py-1.5 text-xs text-white shadow-3 transition-opacity',
+          'pointer-events-none absolute left-1/2 z-popover w-max max-w-64 -translate-x-1/2 rounded-lg bg-bg-inverse px-3 py-2 text-xs font-medium text-text-inverse shadow-2 transition-opacity',
           side === 'top' ? 'bottom-full mb-2' : 'top-full mt-2',
           open ? 'opacity-100' : 'opacity-0',
         )}

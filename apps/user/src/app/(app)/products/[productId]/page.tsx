@@ -267,7 +267,7 @@ const ProductPage = async ({
                 'Compare the quotes that come back, then pay to confirm the order.',
               ].map((step, index) => (
                 <li key={step} className="max-w-measure flex gap-2 text-sm text-text-secondary">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-2xs font-semibold text-text-brand">
                     {index + 1}
                   </span>
                   {step}

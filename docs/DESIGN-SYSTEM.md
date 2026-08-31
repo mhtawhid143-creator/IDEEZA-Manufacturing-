@@ -261,6 +261,68 @@ The type ramp is the system's too. `tailwind-preset.cjs` names the system's
 variables rather than pixels, so the sizes follow it — including the smaller
 values it swaps in below 768px, which the old hard-coded ramp could not do.
 
+### Everything the preset now takes from the system
+
+After the audit of what still slipped past the tokens, the preset carries every
+family the system publishes, under the system's own names, and a lint rule
+(`ideeza/design-tokens`, `packages/config/eslint/design-tokens.mjs`) refuses
+anything that is not one of them in `packages/ui/src` and both apps:
+
+| Family | Preset name | Notes |
+| --- | --- | --- |
+| type size | `text-3xs` … `text-7xl` | Tailwind's names sit one step above the system's (`text-xs` = system `sm`, 12px). `text-2xs` (11) and `text-3xs` (10) reach the system's two smallest steps, which used to be written as `text-[11px]`. Each size carries the line height the system pairs with that very step. |
+| line height | `leading-3xs` … `leading-xl` | the same pairing, on its own |
+| weight | `font-normal` … `font-extrabold` | all five |
+| tracking | `tracking-tighter` … `tracking-caps` | `tracking-caps` is the uppercase label; the negative steps tighten headings |
+| spacing | Tailwind's numbers | every step resolves to the system's variable for that distance (`p-4` → `--spacing-8`, 16px); 28px and 36px have no rung and are the only pixels left |
+| radius | `rounded` … `rounded-full` | a bare `rounded` is the system's `sm`, not Tailwind's |
+| elevation | `shadow-1` … `shadow-6` | Tailwind's `shadow-md` and friends are refused |
+| layer | `z-sticky`, `z-dropdown`, `z-popover`, `z-modal`, `z-toast` … | named for what sits there; numbers are refused |
+| opacity | `opacity-disabled/muted/overlay/hover/pressed` | |
+| border width | `border`, `border-1.5`, `border-2`, `border-3` | |
+| motion | `duration-fast/normal/slow`, `ease-standard/decelerate/…` | |
+| icon colour | `text-icon`, `text-icon-secondary`, `text-icon-on-brand` … | an icon is not text; the system colours it a step apart |
+| button | `bg-button-primary-bg`, `text-button-tonal-text`, `hover:bg-button-danger-bg-hover` … | `button-appearance.ts` is written entirely in these |
+| input | `bg-input-bg`, `border-input-border-error`, `text-input-placeholder` … | `fieldControlClasses` and the field's label, hint and error |
+
+### The Figma file is the component authority
+
+The full published inventory — 177 components across atoms A01–A30, molecules
+M01–M135 and organisms O01–O38 — is catalogued with variant counts and
+one-line descriptions in `FIGMA-DS-CATALOG.md`, regenerated from the library
+via `search_design_system` (the file's page-list API serves a stale five-page
+view; the search index and node reads see the live file).
+
+The system's Figma file —
+`figma.com/design/V3uizmZLHo5Xhy65Dp3F0O/IDEEZA-—-Design-System` — publishes
+the atoms (A01 Button … A30 Delta Chip) with full variant matrices, and every
+component here follows its spec, read through the Figma MCP rather than eyed
+from a screenshot. Encoded so far: the A01 size ramp (32/36/40/44/48 with
+radius lg/lg/xl/xl/2xl, its paddings, gaps and 12→16 type), its 1.5px secondary
+border, 3px focus halo and flat fills; A17 Badge Subtle (px 8 · py 4 · gap 4 ·
+12/16 regular · full radius · `--color-badge-*` pairs); A18 Tag (raised
+surface, default border, caption regular). `@ideeza/tokens` was moved to the
+system's HEAD for this, which brought the component token families —
+`--color-badge/tag/toast/card/modal/ai-*` and the `--chart-*` ramps — all
+exposed in the preset and all carrying dark values.
+
+**Colour is semantic only.** The preset no longer exposes the system's
+primitives (`violet-*`, `gray-*`, `blue-*`, `green-*`, `red-*`, `yellow-*`,
+`orange-*`), and the lint rule refuses them. A primitive is a swatch: it does
+not know whether it is a surface, a word or a border, so it cannot follow the
+theme — the status chips built on `bg-green-100` stayed pale green on the dark
+surface. Every tone now reads the semantic pair (`bg-bg-success-subtle` with
+`text-text-success`, `bg-bg-error-subtle` with `text-text-error`, and so on),
+neutral dots read `bg-icon`, thumbnails fade `from-bg-brand-subtle
+to-bg-info-subtle`, and opacity modifiers on tokens (`/40`), which Tailwind
+drops on a variable, are refused too.
+
+The exceptions are listed in the code, each with an `eslint-disable` that says
+why: the solder-mask swatches in `board-spec-form.tsx` are the colour a board
+is physically made in, and the placeholder artwork in `model-preview.tsx`,
+`draft-list.tsx` and `request-quote-form.tsx` is generated from the product's
+own hue. Neither is a colour of the interface.
+
 Measured after the change, on the surfaces each is drawn on: heading 18.8:1,
 body 10.4:1, muted 7.6:1, danger 6.5:1, success 7.1:1, brand 7.2:1, white on
 brand 7.2:1 — every one above AA. The system's disabled text is 1.5:1, which is

@@ -183,10 +183,10 @@ export const ProductionTimeline = ({
                 <span
                   className={
                     stage.status === 'completed'
-                      ? 'inline-flex h-5 w-5 items-center justify-center rounded-full bg-bg-brand text-[11px] font-bold text-white'
+                      ? 'inline-flex h-5 w-5 items-center justify-center rounded-full bg-bg-brand text-2xs font-bold text-text-on-brand'
                       : stage.status === 'in_progress'
-                        ? 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-border-brand text-[11px] font-bold text-text-brand'
-                        : 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-border-subtle text-[11px] text-text-tertiary'
+                        ? 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-border-brand text-2xs font-bold text-text-brand'
+                        : 'inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-border-subtle text-2xs text-text-tertiary'
                   }
                 >
                   {stage.status === 'completed' ? '✓' : ''}

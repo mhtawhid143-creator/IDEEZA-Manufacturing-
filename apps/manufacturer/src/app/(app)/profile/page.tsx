@@ -30,7 +30,7 @@ const ProfilePage = async () => {
             <div className="flex items-center gap-4">
               <span
                 aria-hidden
-                className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-bg-brand text-lg font-bold text-white"
+                className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-bg-brand text-lg font-bold text-text-on-brand"
               >
                 {shop.displayName.slice(0, 2).toUpperCase()}
               </span>

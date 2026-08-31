@@ -93,7 +93,7 @@ export const statusPresentation = (
   STATUS_PRESENTATION[status] ?? { label: status.replace(/_/g, ' '), tone: 'neutral' };
 
 const DOT: Record<Tone, string> = {
-  neutral: 'bg-gray-600',
+  neutral: 'bg-icon',
   brand: 'bg-bg-brand',
   success: 'bg-bg-success',
   warning: 'bg-bg-warning',
@@ -101,13 +101,16 @@ const DOT: Record<Tone, string> = {
   info: 'bg-bg-info',
 };
 
+// The system's badge colours (A17, Subtle): each tone is the badge's own
+// bg/text token pair; neutral, which has no badge token, is the subtle
+// surface with secondary text — exactly what the Figma variant binds.
 const CHIP: Record<Tone, string> = {
-  neutral: 'bg-gray-100 text-gray-600',
-  brand: 'bg-bg-brand-subtle text-text-brand',
-  success: 'bg-green-100 text-text-success',
-  warning: 'bg-yellow-100 text-text-warning',
-  danger: 'bg-red-100 text-red-700',
-  info: 'bg-blue-100 text-text-link',
+  neutral: 'bg-bg-subtle text-text-secondary',
+  brand: 'bg-badge-brand-bg text-badge-brand-text',
+  success: 'bg-badge-success-bg text-badge-success-text',
+  warning: 'bg-badge-warning-bg text-badge-warning-text',
+  danger: 'bg-badge-error-bg text-badge-error-text',
+  info: 'bg-badge-blue-bg text-badge-blue-text',
 };
 
 export interface StatusChipProps extends HTMLAttributes<HTMLSpanElement> {
@@ -128,7 +131,8 @@ export const StatusChip = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+        // A17 Badge, Subtle, MD: px 8 · py 4 · gap 4 · 12/16 regular · full radius.
+        'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-normal',
         CHIP[presentation.tone],
         className,
       )}

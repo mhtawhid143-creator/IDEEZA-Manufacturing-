@@ -4,8 +4,8 @@ import { cn } from '../lib/cn.js';
 export type HeadingLevel = 1 | 2 | 3 | 4;
 
 const HEADING_SIZE: Record<HeadingLevel, string> = {
-  1: 'text-3xl font-semibold tracking-[-0.02em]',
-  2: 'text-xl font-semibold tracking-[-0.01em]',
+  1: 'text-3xl font-semibold tracking-near',
+  2: 'text-xl font-semibold tracking-slight',
   3: 'text-base font-semibold',
   4: 'text-sm font-semibold',
 };
@@ -83,7 +83,7 @@ export const Text = ({
 /** Small uppercase label used above values in the Figma cards. */
 export const FieldLabel = ({ className, children, ...rest }: HTMLAttributes<HTMLSpanElement>) => (
   <span
-    className={cn('text-xs font-medium uppercase tracking-wide text-text-tertiary', className)}
+    className={cn('text-xs font-medium uppercase tracking-caps text-text-tertiary', className)}
     {...rest}
   >
     {children}

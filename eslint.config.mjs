@@ -1,10 +1,12 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import legacyVocabulary from './packages/config/eslint/legacy-vocabulary.mjs';
+import designTokens from './packages/config/eslint/design-tokens.mjs';
 
 const ideezaPlugin = {
   rules: {
     'legacy-vocabulary': legacyVocabulary,
+    'design-tokens': designTokens,
   },
 };
 
@@ -83,6 +85,15 @@ export default tseslint.config(
     files: ['**/*.test.ts', '**/test/**/*.ts'],
     rules: {
       'ideeza/legacy-vocabulary': 'off',
+    },
+  },
+  {
+    // What the panels draw: every colour and measure of appearance in the
+    // design-system package and both apps comes from the system's tokens.
+    files: ['packages/ui/src/**/*.{ts,tsx}', 'apps/*/src/**/*.{ts,tsx}'],
+    plugins: { ideeza: ideezaPlugin },
+    rules: {
+      'ideeza/design-tokens': 'error',
     },
   },
   {

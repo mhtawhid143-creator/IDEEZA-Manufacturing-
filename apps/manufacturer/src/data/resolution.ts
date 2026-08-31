@@ -1,6 +1,9 @@
 import {
+  applyTransition,
   asId,
   assertAcceptableRefundAmount,
+  disputeMachine,
+  refundMachine,
   type ManufacturerId,
   type OrderId,
   type UserId,
@@ -258,7 +261,9 @@ export const approveRefund = async (
     await transaction.refund.update({
       where: { id: refundId },
       data: {
-        status: 'mfr_responded',
+        status: applyTransition(refundMachine, refund.status, 'mfr_responded', {
+          actorRole: 'manufacturer',
+        }),
         manufacturerRespondedAt: now,
         // What the shop agreed to, which is what operations decides against.
         approvedAmountMinor: BigInt(accepted),
@@ -359,7 +364,12 @@ export const challengeRefund = async (
   await database().$transaction(async (transaction) => {
     await transaction.refund.update({
       where: { id: refundId },
-      data: { status: 'mfr_responded', manufacturerRespondedAt: now },
+      data: {
+        status: applyTransition(refundMachine, refund.status, 'mfr_responded', {
+          actorRole: 'manufacturer',
+        }),
+        manufacturerRespondedAt: now,
+      },
     });
     await transaction.dispute.create({
       data: {
@@ -473,7 +483,11 @@ export const addDisputeStatement = async (
     if (dispute.status === 'open') {
       await transaction.dispute.update({
         where: { id: disputeId },
-        data: { status: 'responded' },
+        data: {
+          status: applyTransition(disputeMachine, dispute.status, 'responded', {
+            actorRole: 'manufacturer',
+          }),
+        },
       });
     }
     await transaction.domainEvent.create({

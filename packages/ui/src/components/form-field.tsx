@@ -56,25 +56,25 @@ export const FormField = ({
         <label
           htmlFor={inputId}
           className={cn(
-            'text-sm font-medium text-text-primary',
+            'text-xs font-semibold text-input-label',
             labelHidden && 'sr-only',
           )}
         >
           {label}
           {required && (
-            <span className="ml-0.5 text-text-error" aria-hidden>
+            <span className="ml-1 text-text-error" aria-hidden>
               *
             </span>
           )}
         </label>
         {children}
         {hint !== undefined && error === undefined && (
-          <p id={hintId} className="max-w-measure text-xs text-text-tertiary">
+          <p id={hintId} className="max-w-measure text-xs text-input-helper">
             {hint}
           </p>
         )}
         {error !== undefined && (
-          <p id={errorId} className="text-xs font-medium text-text-error" role="alert">
+          <p id={errorId} className="text-xs text-input-error-text" role="alert">
             {error}
           </p>
         )}
@@ -83,10 +83,22 @@ export const FormField = ({
   );
 };
 
-export const fieldControlClasses = (invalid: boolean): string =>
+/**
+ * The field surface every control shares, taken from the A04 Text Input spec:
+ * a 12px radius, a 1.5px border, 14px text on the input surface, and the 3px
+ * focus halo the whole system uses. The textarea padding differs because the
+ * A05 Textarea frame pads 14px horizontally and less at the foot than the
+ * single-line field does; `cn` does not resolve Tailwind conflicts, so the
+ * padding is chosen here rather than overridden by a caller.
+ */
+export const fieldControlClasses = (
+  invalid: boolean,
+  padding: 'input' | 'textarea' = 'input',
+): string =>
   cn(
-    'w-full rounded-md border bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-tertiary',
-    'transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-    'disabled:cursor-not-allowed disabled:bg-bg-subtle disabled:text-text-disabled',
-    invalid ? 'border-border-error focus-visible:ring-focus-danger' : 'border-border hover:border-border-strong',
+    'w-full rounded-xl border-1.5 bg-input-bg text-sm text-input-text placeholder:text-input-placeholder',
+    padding === 'textarea' ? 'px-3.5 pb-2 pt-3' : 'px-3',
+    'transition-colors duration-fast focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus',
+    'disabled:cursor-not-allowed disabled:bg-input-bg-disabled disabled:border-input-border-disabled disabled:text-text-disabled',
+    invalid ? 'border-input-border-error focus-visible:ring-focus-danger' : 'border-input-border hover:border-input-border-hover focus-visible:border-input-border-focus',
   );

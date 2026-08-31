@@ -51,7 +51,7 @@ export const ThreadList = ({
             aria-current={thread.threadId === activeId ? 'page' : undefined}
             className={cn(
               'flex items-center gap-3 border-b border-border-subtle px-4 py-3 transition-colors hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-              thread.threadId === activeId && 'bg-bg-brand-subtle/40',
+              thread.threadId === activeId && 'bg-bg-brand-subtle',
             )}
           >
             <Avatar name={thread.counterpartName} />

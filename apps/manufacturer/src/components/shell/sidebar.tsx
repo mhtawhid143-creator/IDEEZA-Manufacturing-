@@ -36,7 +36,7 @@ const NavRow = ({ entry }: { readonly entry: NavEntry }) => {
           <span aria-disabled="true" className={rowClasses(false, true)}>
             <NavIconGlyph name={entry.icon} />
             <span className="truncate">{entry.label}</span>
-            <span className="ml-auto text-[11px] uppercase tracking-wide text-text-tertiary">
+            <span className="ml-auto text-2xs uppercase tracking-caps text-text-tertiary">
               n/a
             </span>
           </span>
@@ -115,7 +115,7 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
       )}
 
       <div>
-        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+        <p className="px-3 text-xs font-semibold uppercase tracking-caps text-text-tertiary">
           For you
         </p>
         <ul className="mt-1 flex flex-col gap-1">

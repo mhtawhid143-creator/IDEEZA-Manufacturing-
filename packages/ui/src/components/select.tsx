@@ -56,8 +56,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       </select>
       <Icon
         name="chevron-down"
-        size={14}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+        size={16}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-icon-secondary"
       />
     </div>
   );

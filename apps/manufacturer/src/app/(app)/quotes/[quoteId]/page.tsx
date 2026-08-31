@@ -147,7 +147,7 @@ const QuoteDetailPage = async ({
                     <th
                       key={header}
                       scope="col"
-                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
+                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-caps text-text-tertiary"
                     >
                       {header}
                     </th>
@@ -185,7 +185,7 @@ const QuoteDetailPage = async ({
           {quote.materialProcessNotes}
         </Text>
         <div className="mt-4 border-t border-border-subtle pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+          <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
             Terms
           </p>
           <Text size="sm" className="mt-1 block whitespace-pre-line">
@@ -194,7 +194,7 @@ const QuoteDetailPage = async ({
         </div>
         {quote.warrantyTerms !== null && (
           <div className="mt-4 border-t border-border-subtle pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+            <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
               Warranty
             </p>
             <Text size="sm" className="mt-1 block whitespace-pre-line">
