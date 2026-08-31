@@ -136,7 +136,7 @@ export const IssuePage = ({
                 <li key={line} className="max-w-measure flex gap-2 text-sm text-text-secondary">
                   <span
                     aria-hidden
-                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand"
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-2xs font-semibold text-text-brand"
                   >
                     {index + 1}
                   </span>

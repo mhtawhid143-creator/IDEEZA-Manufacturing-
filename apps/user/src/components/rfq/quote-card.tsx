@@ -36,11 +36,11 @@ export interface QuoteCardData {
 }
 
 const STATE: Readonly<Record<string, { readonly label: string; readonly tone: string }>> = {
-  submitted: { label: 'Quote received', tone: 'bg-green-100 text-text-success' },
-  revised: { label: 'Revised quote', tone: 'bg-blue-100 text-text-link' },
-  revision_requested: { label: 'Revision requested', tone: 'bg-yellow-100 text-text-warning' },
+  submitted: { label: 'Quote received', tone: 'bg-bg-success-subtle text-text-success' },
+  revised: { label: 'Revised quote', tone: 'bg-bg-info-subtle text-text-link' },
+  revision_requested: { label: 'Revision requested', tone: 'bg-bg-warning-subtle text-text-warning' },
   accepted: { label: 'Accepted', tone: 'bg-bg-brand-subtle text-text-brand' },
-  rejected: { label: 'Declined by you', tone: 'bg-red-100 text-text-error' },
+  rejected: { label: 'Declined by you', tone: 'bg-bg-error-subtle text-text-error' },
   withdrawn: { label: 'Withdrawn', tone: 'bg-bg-surface-raised text-text-tertiary' },
   expired: { label: 'Expired', tone: 'bg-bg-surface-raised text-text-tertiary' },
 };

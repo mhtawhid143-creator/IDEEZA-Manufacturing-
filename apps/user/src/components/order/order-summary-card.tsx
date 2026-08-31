@@ -62,7 +62,7 @@ export const OrderSummaryCard = ({
     )}
 
     {summary.adjustmentMinor !== 0 && (
-      <div className="mt-3 rounded-lg border border-yellow-100 bg-yellow-100/40 p-3">
+      <div className="mt-3 rounded-lg border border-border-warning bg-bg-warning-subtle p-3">
         <div className="flex items-baseline justify-between gap-4">
           <span className="text-sm font-semibold text-text-primary">
             {summary.adjustmentMinor > 0 ? 'Still to settle' : 'Owed back to you'}

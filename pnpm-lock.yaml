@@ -189,7 +189,7 @@ importers:
         version: link:../domain
       '@ideeza/tokens':
         specifier: github:mehediuid/IDEEZA-Design-System#path:/packages/tokens
-        version: https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/e2ccfeeb5a282ccfbedcd986186785c825c3d311#path:/packages/tokens
+        version: https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/4e0ffa5b2297fdaf92c067b23b9ee4b5fbcaf6bd#path:/packages/tokens
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -679,8 +679,8 @@ packages:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
 
-  '@ideeza/tokens@https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/e2ccfeeb5a282ccfbedcd986186785c825c3d311#path:/packages/tokens':
-    resolution: {gitHosted: true, integrity: sha512-l22Aj498TXIRPs5erh99rGE4z9FFx0jKmK0q8D3gDJKi6E8O4PETuOHsGOWdruhtd45In5rr6ogSVCI2dapDdA==, path: /packages/tokens, tarball: https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/e2ccfeeb5a282ccfbedcd986186785c825c3d311}
+  '@ideeza/tokens@https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/4e0ffa5b2297fdaf92c067b23b9ee4b5fbcaf6bd#path:/packages/tokens':
+    resolution: {gitHosted: true, integrity: sha512-l4/XPNpHlMLsEOSDr9A0aKa6EMDUDtbmhkTfrRcuDz1EaWBc2hDMq15D4PVclaYJeff4G1UHzsY/7QfEjuhZYw==, path: /packages/tokens, tarball: https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/4e0ffa5b2297fdaf92c067b23b9ee4b5fbcaf6bd}
     version: 0.1.0
 
   '@img/colour@1.1.0':
@@ -2772,7 +2772,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@ideeza/tokens@https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/e2ccfeeb5a282ccfbedcd986186785c825c3d311#path:/packages/tokens': {}
+  '@ideeza/tokens@https://codeload.github.com/mehediuid/IDEEZA-Design-System/tar.gz/4e0ffa5b2297fdaf92c067b23b9ee4b5fbcaf6bd#path:/packages/tokens': {}
 
   '@img/colour@1.1.0':
     optional: true

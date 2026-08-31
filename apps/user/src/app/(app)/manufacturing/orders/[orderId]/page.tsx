@@ -305,7 +305,7 @@ const OrderPage = async ({
                     <span className="flex items-center gap-2 text-text-secondary">
                       <span
                         aria-hidden
-                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-[11px] font-bold text-text-success"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-bg-success-subtle text-2xs font-bold text-text-success"
                       >
                         ✓
                       </span>
@@ -324,7 +324,7 @@ const OrderPage = async ({
               <li className="flex items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-11 w-11 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
+                  className="h-11 w-11 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-text-primary">

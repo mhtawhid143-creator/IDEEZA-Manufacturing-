@@ -26,7 +26,7 @@ export const Navbar = ({
   notificationCount = 0,
   onOpenNavigation,
 }: NavbarProps) => (
-  <header className="sticky top-0 z-30 flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
+  <header className="sticky top-0 z-sticky flex h-navbar items-center gap-3 border-b border-border-subtle bg-bg-surface px-4 md:px-gutter">
     <IconButton
       label="Open navigation"
       icon={<Icon name="menu" />}
@@ -41,7 +41,7 @@ export const Navbar = ({
       >
         ID
       </span>
-      <span className="text-base font-bold tracking-wide text-text-primary">IDEEZA</span>
+      <span className="text-base font-bold tracking-caps text-text-primary">IDEEZA</span>
     </Link>
 
     <span className="ml-2 hidden truncate text-sm text-text-tertiary md:inline">

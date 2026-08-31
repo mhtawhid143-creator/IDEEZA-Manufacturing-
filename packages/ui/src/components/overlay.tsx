@@ -90,12 +90,14 @@ export const Modal = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onKeyDown={onKeyDown}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4" onKeyDown={onKeyDown}>
       <div
-        className="absolute inset-0 animate-fade-in bg-bg-overlay/40"
+        className="absolute inset-0 animate-fade-in bg-modal-overlay"
         onClick={onClose}
         aria-hidden
       />
+      {/* M07 Modal: the modal border and shadow are its own tokens, one step
+          below the drawer so a dialog over a drawer still reads as two layers. */}
       <div
         ref={panelRef}
         role="dialog"
@@ -104,18 +106,18 @@ export const Modal = ({
         aria-describedby={description === undefined ? undefined : descriptionId}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex max-h-[calc(100dvh-2rem)] w-full flex-col animate-slide-up rounded-xl bg-bg-surface p-6 shadow-5 focus-visible:outline-none',
+          'relative z-sticky flex max-h-[calc(100dvh-2rem)] w-full flex-col animate-slide-up rounded-xl border border-modal-border bg-bg-surface p-6 shadow-3 focus-visible:outline-none',
           MODAL_SIZE[size],
           className,
         )}
       >
         <div className="flex shrink-0 items-start justify-between gap-4">
           <div className="min-w-0">
-            <Heading level={3} id={titleId}>
+            <Heading level={2} as="h2" id={titleId}>
               {title}
             </Heading>
             {description !== undefined && (
-              <Text tone="muted" id={descriptionId} className="mt-1">
+              <Text id={descriptionId} className="mt-1">
                 {description}
               </Text>
             )}
@@ -128,10 +130,10 @@ export const Modal = ({
           not a decision. The header and the footer stay put.
         */}
         {children !== undefined && (
-          <div className="mt-4 min-h-0 flex-1 overflow-y-auto">{children}</div>
+          <div className="mt-6 min-h-0 flex-1 overflow-y-auto">{children}</div>
         )}
         {footer !== undefined && (
-          <div className="mt-6 flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <div className="-mx-6 -mb-6 mt-6 flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-border-subtle px-6 pb-6 pt-4">
             {footer}
           </div>
         )}
@@ -165,8 +167,10 @@ export const Drawer = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50" onKeyDown={onKeyDown}>
-      <div className="absolute inset-0 animate-fade-in bg-bg-overlay/40" onClick={onClose} aria-hidden />
+    <div className="fixed inset-0 z-modal" onKeyDown={onKeyDown}>
+      <div className="absolute inset-0 animate-fade-in bg-modal-overlay" onClick={onClose} aria-hidden />
+      {/* M08 Drawer: the header carries no divider of its own — only the
+          actions row is fenced off, because it is the row that commits. */}
       <div
         ref={panelRef}
         role="dialog"
@@ -174,29 +178,29 @@ export const Drawer = ({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'absolute inset-y-0 flex w-full flex-col bg-bg-surface shadow-6 focus-visible:outline-none',
+          'absolute inset-y-0 flex w-full flex-col bg-bg-surface shadow-3 focus-visible:outline-none',
           'animate-slide-in-right',
-          side === 'right' ? 'right-0' : 'left-0',
+          side === 'right' ? 'right-0 border-l border-modal-border' : 'left-0 border-r border-modal-border',
           DRAWER_WIDTH[width],
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border-subtle p-5">
+        <div className="flex items-start justify-between gap-4 p-6">
           <div className="min-w-0">
-            <Heading level={3} id={titleId}>
+            <Heading level={2} as="h2" id={titleId}>
               {title}
             </Heading>
             {description !== undefined && (
-              <Text tone="muted" className="mt-1">
+              <Text className="mt-1">
                 {description}
               </Text>
             )}
           </div>
           <IconButton label="Close" icon={<Icon name="close" />} onClick={onClose} size="sm" />
         </div>
-        <div className="flex-1 overflow-y-auto p-5">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
         {footer !== undefined && (
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle p-5">
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border-subtle px-6 pb-6 pt-4">
             {footer}
           </div>
         )}

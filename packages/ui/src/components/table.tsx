@@ -27,6 +27,11 @@ const ALIGN = { left: 'text-left', right: 'text-right', center: 'text-center' } 
  * A real table: caption, scope on the headers and one row per record, so screen
  * readers can navigate it. Wide content scrolls inside its own container rather
  * than pushing the page sideways.
+ *
+ * Painted per the system's table molecules: the header row (M60) sits on the
+ * subtle surface in 14 medium secondary with no stroke of its own, and each
+ * body row (M61/M62) carries a subtle bottom border, 16px cell padding and
+ * body text at 16, taking the subtle surface on hover.
  */
 export const DataTable = <TRow,>({
   caption,
@@ -48,14 +53,14 @@ export const DataTable = <TRow,>({
           {caption}
         </caption>
         <thead>
-          <tr className="border-b border-border">
+          <tr>
             {columns.map((column) => (
               <th
                 key={column.id}
                 scope="col"
                 style={column.width === undefined ? undefined : { width: column.width }}
                 className={cn(
-                  'whitespace-nowrap px-3 pb-2.5 pt-1 text-xs font-medium uppercase tracking-[0.06em] text-text-tertiary',
+                  'whitespace-nowrap bg-bg-subtle px-4 py-3 text-sm font-medium text-text-secondary',
                   ALIGN[column.align ?? 'left'],
                   column.hideBelowLg === true && 'hidden lg:table-cell',
                 )}
@@ -69,13 +74,13 @@ export const DataTable = <TRow,>({
           {rows.map((row) => (
             <tr
               key={rowKey(row)}
-              className="border-b border-border-subtle transition-colors last:border-0 hover:bg-bg-surface-raised/60"
+              className="border-b border-border-subtle transition-colors duration-fast last:border-0 hover:bg-bg-subtle"
             >
               {columns.map((column) => (
                 <td
                   key={column.id}
                   className={cn(
-                    'px-3 py-3 align-middle text-sm text-text-secondary',
+                    'px-4 py-4 align-middle text-base text-text-secondary',
                     ALIGN[column.align ?? 'left'],
                     column.hideBelowLg === true && 'hidden lg:table-cell',
                   )}

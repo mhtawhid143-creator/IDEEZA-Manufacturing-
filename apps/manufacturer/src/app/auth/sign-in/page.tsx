@@ -35,7 +35,7 @@ const SignInPage = async ({
           >
             ID
           </span>
-          <span className="text-lg font-bold tracking-wide text-text-primary">IDEEZA</span>
+          <span className="text-lg font-bold tracking-caps text-text-primary">IDEEZA</span>
           <span className="ml-1 rounded-full bg-bg-brand-subtle px-2 py-0.5 text-xs font-semibold text-text-brand">
             Manufacturer
           </span>

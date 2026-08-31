@@ -217,7 +217,7 @@ export const SelectManufacturers = ({
 
       {/* The select bar: what is chosen, and the two ways forward. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border-subtle bg-bg-surface/95 px-4 py-3 backdrop-blur md:px-gutter lg:left-sidebar"
+        className="fixed inset-x-0 bottom-0 z-sticky border-t border-border-subtle bg-bg-surface px-4 py-3 backdrop-blur md:px-gutter lg:left-sidebar"
         role="region"
         aria-label="Selected manufacturers"
       >

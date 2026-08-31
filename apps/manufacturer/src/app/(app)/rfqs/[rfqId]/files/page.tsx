@@ -88,7 +88,7 @@ const FilesPage = async ({
                 </div>
                 <div className="flex items-center gap-2">
                   <Tag tone="neutral">{KIND_LABEL[file.kind]}</Tag>
-                  <code className="rounded bg-bg-surface-raised px-2 py-1 text-[11px] text-text-tertiary">
+                  <code className="rounded bg-bg-surface-raised px-2 py-1 text-2xs text-text-tertiary">
                     {file.contentHash.slice(0, 12)}…
                   </code>
                 </div>

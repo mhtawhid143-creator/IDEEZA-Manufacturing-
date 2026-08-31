@@ -228,7 +228,7 @@ const QuoteDetailPage = async ({
               {quote.materialProcessNotes}
             </Text>
             <div className="mt-4 border-t border-border-subtle pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+              <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
                 Terms
               </p>
               <Text size="sm" className="mt-1 whitespace-pre-line">
@@ -237,7 +237,7 @@ const QuoteDetailPage = async ({
             </div>
             {quote.warrantyTerms !== null && (
               <div className="mt-4 border-t border-border-subtle pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
+                <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
                   Warranty
                 </p>
                 <Text size="sm" className="mt-1 whitespace-pre-line">
@@ -360,7 +360,7 @@ const QuoteDetailPage = async ({
                 'The order is confirmed once the platform holds the funds; production may not start before that.',
               ].map((step, index) => (
                 <li key={step} className="flex gap-2">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-[11px] font-semibold text-text-brand">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-brand-subtle text-2xs font-semibold text-text-brand">
                     {index + 1}
                   </span>
                   {step}

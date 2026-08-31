@@ -203,7 +203,7 @@ export const BlogWorkspace = ({
             <Card key={article.id} padded={false} className="flex flex-col">
               <span
                 aria-hidden
-                className="h-28 w-full rounded-t-xl bg-gradient-to-br from-bg-brand-subtle via-blue-100 to-bg-page"
+                className="h-28 w-full rounded-t-xl bg-gradient-to-br from-bg-brand-subtle via-bg-info-subtle to-bg-page"
               />
               <div className="flex flex-1 flex-col gap-2 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">

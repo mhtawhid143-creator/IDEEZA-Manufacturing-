@@ -87,7 +87,7 @@ const RequestActivityPage = async ({
                   className="mt-1 inline-flex h-4 w-4 shrink-0 rounded-full border-2 border-border-brand bg-bg-surface"
                 />
                 {index < entries.length - 1 && (
-                  <span aria-hidden className="w-px flex-1 bg-bg-brand/40" />
+                  <span aria-hidden className="w-px flex-1 bg-bg-brand" />
                 )}
               </div>
               <div className="min-w-0 pb-6">

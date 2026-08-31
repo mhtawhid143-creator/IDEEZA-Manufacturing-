@@ -38,7 +38,7 @@ export const Timeline = ({ items, label = 'Progress', className }: TimelineProps
             <span
               aria-hidden
               className={cn(
-                'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
+                'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-2xs font-semibold',
                 item.state === 'done' && 'bg-bg-brand text-text-on-brand',
                 item.state === 'current' && 'bg-bg-brand-subtle text-text-brand ring-2 ring-border-brand',
                 item.state === 'upcoming' && 'border border-border bg-bg-surface text-text-tertiary',
@@ -51,7 +51,7 @@ export const Timeline = ({ items, label = 'Progress', className }: TimelineProps
                 aria-hidden
                 className={cn(
                   'w-px flex-1',
-                  item.state === 'done' ? 'bg-bg-brand/40' : 'bg-bg-subtle',
+                  item.state === 'done' ? 'bg-bg-brand' : 'bg-bg-subtle',
                 )}
               />
             )}

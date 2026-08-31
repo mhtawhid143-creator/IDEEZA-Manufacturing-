@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '../lib/cn.js';
 import { Button } from './button.js';
+import { Icon } from './icon.js';
 import { Spinner } from './spinner.js';
 import { Heading, Text } from './typography.js';
 
@@ -19,7 +20,11 @@ export interface EmptyStateProps {
   readonly className?: string;
 }
 
-/** Nothing here yet, and what to do about it. */
+/**
+ * Nothing here yet, and what to do about it. M48 frames the absence in the
+ * plain card surface — a solid subtle border, not an error — with the icon
+ * held in an 80px neutral circle.
+ */
 export const EmptyState = ({
   title,
   description,
@@ -30,20 +35,28 @@ export const EmptyState = ({
 }: EmptyStateProps) => (
   <div
     className={cn(
-      'ui-state flex flex-col items-center justify-center gap-3 px-6 text-center',
+      'ui-state flex flex-col items-center justify-center gap-2.5 px-6 text-center',
       framed
-        ? 'rounded-xl border border-dashed border-border bg-bg-surface py-12'
+        ? 'rounded-md border border-border-subtle bg-bg-surface py-12'
         : 'py-8',
       className,
     )}
   >
-    {icon !== undefined && <div className="text-text-tertiary">{icon}</div>}
-    <Heading level={2}>{title}</Heading>
-    {description !== undefined && (
-      <Text tone="muted" className="max-w-md">
-        {description}
-      </Text>
+    {icon !== undefined && (
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-bg-subtle text-icon">
+        {icon}
+      </div>
     )}
+    <div className="flex flex-col items-center gap-1">
+      <Heading level={2} className="text-2xl">
+        {title}
+      </Heading>
+      {description !== undefined && (
+        <Text className="max-w-md">
+          {description}
+        </Text>
+      )}
+    </div>
     {action !== undefined && <div className="mt-2">{action}</div>}
   </div>
 );
@@ -71,6 +84,11 @@ export interface ErrorStateProps {
   readonly className?: string;
 }
 
+/**
+ * M49 keeps the card itself neutral — the failure lives in the error-subtle
+ * icon badge, not in the frame, so a failed panel does not shout across the
+ * whole page. Retry is the primary action because it is the way forward.
+ */
 export const ErrorState = ({
   title = 'Something went wrong',
   description = 'The page could not be loaded. Try again in a moment.',
@@ -80,16 +98,23 @@ export const ErrorState = ({
   <div
     role="alert"
     className={cn(
-      'ui-state flex flex-col items-center justify-center gap-3 rounded-xl border border-border-error/30 bg-red-100/40 px-6 py-12 text-center',
+      'ui-state flex flex-col items-center justify-center gap-2.5 rounded-md border border-border-subtle bg-bg-surface px-6 py-12 text-center',
       className,
     )}
   >
-    <Heading level={2}>{title}</Heading>
-    <Text tone="muted" className="max-w-md">
-      {description}
-    </Text>
+    <div aria-hidden className="flex h-20 w-20 items-center justify-center rounded-full bg-bg-error-subtle text-icon-error">
+      <Icon name="alert" size={40} />
+    </div>
+    <div className="flex flex-col items-center gap-1">
+      <Heading level={2} className="text-2xl">
+        {title}
+      </Heading>
+      <Text className="max-w-md">
+        {description}
+      </Text>
+    </div>
     {onRetry !== undefined && (
-      <Button variant="secondary" size="sm" onClick={onRetry} className="mt-2">
+      <Button variant="primary" onClick={onRetry} className="mt-2">
         Try again
       </Button>
     )}
@@ -101,12 +126,14 @@ export interface SkeletonProps {
   readonly rounded?: 'sm' | 'md' | 'full';
 }
 
+// A21 Skeleton is the subtle surface in the system's shapes: a text line sits
+// on the small radius, a block on the large one, an avatar on the circle.
 export const Skeleton = ({ className, rounded = 'md' }: SkeletonProps) => (
   <span
     aria-hidden
     className={cn(
-      'block animate-pulse bg-bg-surface-raised',
-      rounded === 'full' ? 'rounded-full' : rounded === 'sm' ? 'rounded-sm' : 'rounded-md',
+      'block animate-pulse bg-bg-subtle',
+      rounded === 'full' ? 'rounded-full' : rounded === 'sm' ? 'rounded' : 'rounded-lg',
       className,
     )}
   />
@@ -117,10 +144,25 @@ export interface SkeletonRowsProps {
   readonly className?: string;
 }
 
+/**
+ * The list-item layout of M51: each row is a bordered surface card holding an
+ * avatar circle, two text lines and a trailing control, so a loading list has
+ * the same rhythm as the list it stands in for.
+ */
 export const SkeletonRows = ({ rows = 3, className }: SkeletonRowsProps) => (
   <div className={cn('flex flex-col gap-3', className)} role="status" aria-label="Loading">
     {Array.from({ length: rows }, (_, index) => (
-      <Skeleton key={index} className="h-14 w-full" />
+      <div
+        key={index}
+        className="flex items-center gap-3 rounded-md border border-border-subtle bg-bg-surface px-4 py-3"
+      >
+        <Skeleton rounded="full" className="h-8 w-8 shrink-0" />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <Skeleton rounded="sm" className="h-3 w-2/5" />
+          <Skeleton rounded="sm" className="h-2 w-1/5" />
+        </div>
+        <Skeleton rounded="full" className="h-6 w-6 shrink-0" />
+      </div>
     ))}
   </div>
 );
@@ -140,11 +182,11 @@ export const NotBuiltYet = ({ title, plannedIn, children, className }: NotBuiltY
   <section
     aria-label={`${title} — not implemented yet`}
     className={cn(
-      'rounded-xl border border-dashed border-border-brand/40 bg-bg-brand-subtle px-6 py-10 text-center',
+      'rounded-xl border border-dashed border-border-brand bg-bg-brand-subtle px-6 py-10 text-center',
       className,
     )}
   >
-    <p className="text-xs font-semibold uppercase tracking-wide text-text-brand">
+    <p className="text-xs font-semibold uppercase tracking-caps text-text-brand">
       Not implemented yet
     </p>
     <Heading level={2} className="mt-2">

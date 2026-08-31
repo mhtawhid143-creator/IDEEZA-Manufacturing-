@@ -72,7 +72,7 @@ export const DesignSystemGallery = () => {
             ['Warning', 'bg-bg-warning'],
             ['Danger', 'bg-bg-error'],
             ['Info', 'bg-bg-info'],
-            ['Neutral', 'bg-gray-600'],
+            ['Neutral', 'bg-icon'],
             ['Raised', 'bg-bg-surface-raised'],
           ].map(([label, className]) => (
             <div key={label} className="flex items-center gap-3">

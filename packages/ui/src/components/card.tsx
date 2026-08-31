@@ -11,12 +11,12 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 const TONE = {
   default: 'border-border-subtle',
-  warning: 'border-border-warning/40 bg-yellow-100/40',
-  danger: 'border-border-error/40 bg-red-100/40',
-  brand: 'border-border-brand/40 bg-bg-brand-subtle',
+  warning: 'border-border-warning bg-bg-warning-subtle',
+  danger: 'border-border-error bg-bg-error-subtle',
+  brand: 'border-border-brand bg-bg-brand-subtle',
 } as const;
 
-/** The white rounded panel every Figma screen is built out of. */
+/** M21 Card: the white rounded panel every Figma screen is built out of. */
 export const Card = ({
   padded = true,
   interactive = false,
@@ -30,10 +30,10 @@ export const Card = ({
     className={cn(
       'ui-card rounded-xl border bg-bg-surface shadow-1',
       TONE[tone],
-      padded && 'p-5 md:p-6',
+      padded && 'p-5 md:px-6',
       interactive &&
-        'transition-shadow duration-150 hover:shadow-3 focus-within:ring-4 focus-within:ring-focus',
-      selected && 'border-border-brand ring-2 ring-border-brand/30',
+        'transition-shadow duration-fast hover:shadow-3 focus-within:ring-3 focus-within:ring-focus',
+      selected && 'border-border-brand ring-2 ring-focus',
       className,
     )}
     {...rest}
@@ -76,14 +76,14 @@ export const CardHeader = ({
 );
 
 export const CardBody = ({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('mt-4', className)} {...rest}>
+  <div className={cn('mt-6', className)} {...rest}>
     {children}
   </div>
 );
 
 export const CardFooter = ({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle pt-4', className)}
+    className={cn('mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-border-subtle pt-4', className)}
     {...rest}
   >
     {children}

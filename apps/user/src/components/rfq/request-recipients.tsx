@@ -52,10 +52,10 @@ export interface RequestRecipientsProps {
 }
 
 const TONE: Readonly<Record<RfqRecipientStatus, string>> = {
-  routed: 'bg-yellow-100 text-text-warning',
-  viewed: 'bg-yellow-100 text-text-warning',
-  quoted: 'bg-green-100 text-text-success',
-  declined: 'bg-red-100 text-text-error',
+  routed: 'bg-bg-warning-subtle text-text-warning',
+  viewed: 'bg-bg-warning-subtle text-text-warning',
+  quoted: 'bg-bg-success-subtle text-text-success',
+  declined: 'bg-bg-error-subtle text-text-error',
   expired: 'bg-bg-surface-raised text-text-tertiary',
 };
 
@@ -236,7 +236,7 @@ export const RequestRecipients = ({
                     picked.includes(manufacturer.id)
                       ? 'border-border-brand bg-bg-brand-subtle'
                       : 'border-border-subtle',
-                    manufacturer.blocked && 'cursor-not-allowed opacity-60',
+                    manufacturer.blocked && 'cursor-not-allowed opacity-muted',
                   )}
                 >
                   <input

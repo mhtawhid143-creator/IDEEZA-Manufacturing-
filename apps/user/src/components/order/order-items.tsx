@@ -76,7 +76,7 @@ export const OrderItems = ({ groups, currency, spec }: OrderItemsProps) => {
               >
                 <span
                   aria-hidden
-                  className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-blue-100"
+                  className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-text-primary">{item.name}</p>

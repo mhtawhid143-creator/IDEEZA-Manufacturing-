@@ -59,7 +59,7 @@ export interface DropdownMenuProps {
 }
 
 /**
- * The row action menu used across the Figma tables.
+ * The row action menu — M18 Dropdown Menu — used across the Figma tables.
  *
  * Keyboard behaviour is the point of hand rolling this: arrows move, Home and
  * End jump, Escape closes and returns focus to the trigger, and a click outside
@@ -178,7 +178,7 @@ export const DropdownMenu = ({
           tabIndex={-1}
           onKeyDown={onKeyDown}
           className={cn(
-            'absolute top-full z-40 mt-1 min-w-48 animate-slide-up rounded-lg border border-border-subtle bg-bg-surface p-1 shadow-3 focus-visible:outline-none',
+            'absolute top-full z-dropdown mt-1 min-w-48 animate-slide-up rounded-lg border border-border-subtle bg-bg-surface p-1 shadow-3 focus-visible:outline-none',
             align === 'end' ? 'right-0' : 'left-0',
           )}
         >
@@ -191,10 +191,13 @@ export const DropdownMenu = ({
             const enabledIndex = enabled.indexOf(item);
             const isActive = enabledIndex === activeIndex;
             const appearance = cn(
-              'flex w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors',
-              item.tone === 'danger' ? 'text-text-error' : 'text-text-primary',
-              isActive && 'bg-bg-surface-raised',
-              item.disabled === true && 'cursor-not-allowed opacity-50',
+              'flex w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-fast',
+              item.disabled === true
+                ? 'cursor-not-allowed text-text-disabled'
+                : item.tone === 'danger'
+                  ? 'text-text-error'
+                  : 'text-text-primary',
+              isActive && item.disabled !== true && 'bg-bg-subtle',
             );
             const hover = (): void => {
               if (enabledIndex >= 0) setActiveIndex(enabledIndex);

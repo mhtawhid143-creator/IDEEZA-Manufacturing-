@@ -34,7 +34,7 @@ const Counter = ({
   readonly note: string;
 }) => (
   <Card>
-    <p data-numeric className="text-3xl font-semibold tracking-[-0.02em] text-text-primary">
+    <p data-numeric className="text-3xl font-semibold tracking-near text-text-primary">
       {value}
     </p>
     <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">

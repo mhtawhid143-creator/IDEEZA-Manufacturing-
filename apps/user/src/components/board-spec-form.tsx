@@ -95,6 +95,7 @@ export interface BoardSpecFormProps {
  * stand for the physical finish the board will be made in, so a buyer choosing
  * green is looking at green. A theme change must not repaint them.
  */
+/* eslint-disable ideeza/design-tokens -- the physical solder-mask colours, not the interface's */
 const SWATCH: Readonly<Record<string, string>> = {
   green: '#0f7b3f',
   black: '#111111',
@@ -104,6 +105,7 @@ const SWATCH: Readonly<Record<string, string>> = {
   yellow: '#f5c518',
   purple: '#7c3aed',
 };
+/* eslint-enable ideeza/design-tokens */
 
 const titleCase = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ');

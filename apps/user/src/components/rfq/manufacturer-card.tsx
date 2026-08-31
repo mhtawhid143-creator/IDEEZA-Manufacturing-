@@ -51,10 +51,10 @@ const SERVICE_LABEL: Readonly<Record<string, string>> = {
 
 const Stat = ({ label, value, tone }: { readonly label: string; readonly value: string; readonly tone?: 'success' }) => (
   <div className="flex flex-col gap-0.5">
-    <span className="text-[10px] font-medium uppercase tracking-wide text-text-tertiary">{label}</span>
+    <span className="text-3xs font-medium uppercase tracking-caps text-text-tertiary">{label}</span>
     <span
       className={cn(
-        'text-[13px] font-semibold',
+        'text-xs font-semibold',
         tone === 'success' ? 'text-text-success' : 'text-text-secondary',
       )}
     >
@@ -138,9 +138,9 @@ export const ManufacturerCard = ({
         <span
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium',
-            fit.tone === 'success' && 'bg-green-100 text-text-success',
-            fit.tone === 'warning' && 'bg-yellow-100 text-text-warning',
-            fit.tone === 'danger' && 'bg-red-100 text-text-error',
+            fit.tone === 'success' && 'bg-bg-success-subtle text-text-success',
+            fit.tone === 'warning' && 'bg-bg-warning-subtle text-text-warning',
+            fit.tone === 'danger' && 'bg-bg-error-subtle text-text-error',
           )}
         >
           <span
@@ -159,10 +159,10 @@ export const ManufacturerCard = ({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium',
               manufacturer.partsInStock.covered === manufacturer.partsInStock.total
-                ? 'bg-green-100 text-text-success'
+                ? 'bg-bg-success-subtle text-text-success'
                 : manufacturer.partsInStock.covered === 0
                   ? 'bg-bg-surface-raised text-text-tertiary'
-                  : 'bg-blue-100 text-text-link',
+                  : 'bg-bg-info-subtle text-text-link',
             )}
             title="Parts of your bill of materials this manufacturer holds in stock. A part it does not hold can still be sourced."
           >
@@ -186,7 +186,7 @@ export const ManufacturerCard = ({
       )}
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">Services</p>
+        <p className="text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Services</p>
         <div className="mt-1.5 flex flex-wrap gap-2">
           {manufacturer.services.length === 0 ? (
             <Text tone="muted" size="xs">

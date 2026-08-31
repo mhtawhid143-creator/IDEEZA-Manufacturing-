@@ -27,15 +27,19 @@ export interface TabsProps {
   readonly label?: string;
 }
 
-const tabClasses = (active: boolean): string =>
+const tabClasses = (active: boolean, disabled = false): string =>
   cn(
-    'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
-    'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus',
-    active ? 'bg-bg-brand-subtle text-text-brand' : 'text-text-secondary hover:bg-bg-surface-raised',
+    'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-fast',
+    'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus',
+    disabled
+      ? 'cursor-not-allowed bg-bg-subtle text-text-disabled'
+      : active
+        ? 'bg-bg-brand text-text-inverse'
+        : 'text-text-tertiary hover:bg-bg-subtle hover:text-text-primary',
   );
 
 /**
- * The pill tab row from the Figma screens.
+ * The pill tab row — M14 Tabs, Fill style at the MD size.
  *
  * When a tab is a route it renders as a link with aria-current, which keeps the
  * browser back button working; otherwise it is a tab list with proper roles.
@@ -56,7 +60,8 @@ export const Tabs = ({
       <>
         {item.label}
         {item.count !== undefined && (
-          <Badge tone={active ? 'brand' : 'neutral'}>
+          // M14 keeps the counter on the subtle surface in every tab state.
+          <Badge tone="neutral">
             {String(item.count).padStart(2, '0')}
           </Badge>
         )}
@@ -86,7 +91,7 @@ export const Tabs = ({
         aria-controls={`panel-${item.id}`}
         disabled={item.disabled}
         onClick={() => onSelect?.(item.id)}
-        className={cn(tabClasses(active), item.disabled === true && 'cursor-not-allowed opacity-50')}
+        className={tabClasses(active, item.disabled === true)}
       >
         {inner}
       </button>
@@ -95,7 +100,7 @@ export const Tabs = ({
 
   if (isRouted) {
     return (
-      <nav aria-label={label} className={cn('flex flex-wrap items-center gap-1', className)}>
+      <nav aria-label={label} className={cn('flex flex-wrap items-center', className)}>
         {content}
       </nav>
     );
@@ -105,7 +110,7 @@ export const Tabs = ({
     <div
       role="tablist"
       aria-label={label}
-      className={cn('flex flex-wrap items-center gap-1', className)}
+      className={cn('flex flex-wrap items-center', className)}
     >
       {content}
     </div>

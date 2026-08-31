@@ -43,8 +43,8 @@ const Counter = ({
   readonly note: string;
   readonly tone?: 'neutral' | 'danger';
 }) => (
-  <Card className={tone === 'danger' ? 'border-red-100' : undefined}>
-    <p data-numeric className="text-3xl font-semibold tracking-[-0.02em] text-text-primary">
+  <Card className={tone === 'danger' ? 'border-border-error' : undefined}>
+    <p data-numeric className="text-3xl font-semibold tracking-near text-text-primary">
       {value}
     </p>
     <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">

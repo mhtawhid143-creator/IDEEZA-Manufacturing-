@@ -29,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         fieldControlClasses(isInvalid),
         'h-10',
         leadingIcon !== undefined && 'pl-9',
-        trailingSlot !== undefined && 'pr-10',
+        trailingSlot !== undefined && 'pr-9',
         className,
       )}
       {...rest}
@@ -42,7 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <div className="relative">
       {leadingIcon !== undefined && (
         <span
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-icon-secondary"
           aria-hidden
         >
           {leadingIcon}
@@ -50,7 +50,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       )}
       {control}
       {trailingSlot !== undefined && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2">{trailingSlot}</span>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2">{trailingSlot}</span>
       )}
     </div>
   );
@@ -74,7 +74,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       aria-invalid={isInvalid || undefined}
       aria-describedby={field?.describedBy}
       required={rest.required ?? field?.required}
-      className={cn(fieldControlClasses(isInvalid), 'resize-y py-2 leading-5', className)}
+      className={cn(fieldControlClasses(isInvalid, 'textarea'), 'resize-y', className)}
       {...rest}
     />
   );
@@ -95,7 +95,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
       type="search"
       aria-label={label}
       placeholder={placeholder}
-      className={cn('rounded-lg', className)}
+      className={className}
       leadingIcon={
         <Icon name="search" size={16} />
       }

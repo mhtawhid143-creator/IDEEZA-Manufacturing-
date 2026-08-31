@@ -37,7 +37,7 @@ export const ClientPanel = ({
       <div className="flex items-center gap-3">
         <span
           aria-hidden
-          className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-blue-100"
+          className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-text-primary">{buyerName}</p>
@@ -51,7 +51,7 @@ export const ClientPanel = ({
         <span
           className={buttonAppearance({
             variant: 'secondary',
-            className: 'pointer-events-none w-full justify-center opacity-60',
+            className: 'pointer-events-none w-full justify-center opacity-muted',
           })}
           aria-disabled="true"
           title="Messaging arrives with the messaging stage."

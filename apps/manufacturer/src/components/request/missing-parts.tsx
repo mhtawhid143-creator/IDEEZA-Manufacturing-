@@ -209,7 +209,7 @@ export const MissingParts = ({
                     <th
                       key={header}
                       scope="col"
-                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-tertiary"
+                      className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-caps text-text-tertiary"
                     >
                       {header}
                     </th>

@@ -39,7 +39,7 @@ const NavRow = ({ entry, depth = 0 }: { readonly entry: NavEntry; readonly depth
           >
             <NavIconGlyph name={entry.icon} />
             <span className="truncate">{entry.label}</span>
-            <span className="ml-auto text-[11px] uppercase tracking-wide text-text-tertiary">
+            <span className="ml-auto text-2xs uppercase tracking-caps text-text-tertiary">
               n/a
             </span>
           </span>
@@ -100,7 +100,7 @@ export const Sidebar = ({ onNavigate, className }: SidebarProps) => (
   >
     <Link
       href="/manufacturing"
-      className="mx-1 flex items-center justify-between gap-2 rounded-lg border border-border-brand/40 px-3 py-2.5 text-sm font-semibold text-text-brand hover:bg-bg-brand-subtle"
+      className="mx-1 flex items-center justify-between gap-2 rounded-lg border border-border-brand px-3 py-2.5 text-sm font-semibold text-text-brand hover:bg-bg-brand-subtle"
     >
       Quick Start
       <span aria-hidden>›</span>
@@ -129,7 +129,7 @@ export const Sidebar = ({ onNavigate, className }: SidebarProps) => (
       </div>
 
       <div>
-        <p className="px-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">For you</p>
+        <p className="px-3 text-xs font-semibold uppercase tracking-caps text-text-tertiary">For you</p>
         <ul className="mt-1 flex flex-col gap-1">
           {SECONDARY_NAV.map((entry) => (
             <NavRow key={entry.id} entry={entry} />

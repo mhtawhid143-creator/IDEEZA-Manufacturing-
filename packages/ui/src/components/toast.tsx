@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { cn } from '../lib/cn.js';
-import { Icon } from './icon.js';
+import { Icon, type IconName } from './icon.js';
 import { IconButton } from './icon-button.js';
 import type { Tone } from './badge.js';
 
@@ -35,12 +35,23 @@ export const useToast = (): ToastContextValue => {
   return value;
 };
 
-const TONE = {
-  info: 'border-border-blue/30',
-  success: 'border-border-success/40',
-  warning: 'border-border-warning/40',
-  danger: 'border-border-error/40',
+// M02 Toast keeps one neutral raised card for every message; the severity
+// lives in the small leading chip, so a stack of mixed toasts still reads as
+// one surface. The chip fills are the tokens the Figma variants bind — brand
+// for a plain notification, the icon status colours for the rest.
+const TONE_CHIP = {
+  info: 'bg-bg-brand',
+  success: 'bg-icon-success',
+  warning: 'bg-icon-warning',
+  danger: 'bg-icon-error',
 } as const;
+
+const TONE_GLYPH: Record<keyof typeof TONE_CHIP, IconName> = {
+  info: 'info',
+  success: 'check',
+  warning: 'alert',
+  danger: 'close',
+};
 
 let counter = 0;
 
@@ -80,21 +91,27 @@ export const ToastProvider = ({ children }: { readonly children: ReactNode }) =>
       <div
         aria-live="polite"
         aria-atomic="false"
-        className="pointer-events-none fixed left-1/2 top-[calc(var(--layout-navbar-height)+12px)] z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-col gap-2"
+        className="pointer-events-none fixed left-1/2 top-[calc(var(--layout-navbar-height)+12px)] z-toast flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-col gap-2"
       >
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={cn(
-              'pointer-events-auto animate-fade-in rounded-lg border bg-bg-surface p-4 shadow-3',
-              TONE[toast.tone ?? 'info'],
-            )}
+            className="pointer-events-auto animate-fade-in rounded-xl border border-border-subtle bg-bg-surface-raised py-3.5 pl-4 pr-3.5 shadow-2"
           >
             <div className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className={cn(
+                  'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-icon-on-brand',
+                  TONE_CHIP[toast.tone ?? 'info'],
+                )}
+              >
+                <Icon name={TONE_GLYPH[toast.tone ?? 'info']} size={12} />
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-text-primary">{toast.title}</p>
+                <p className="text-base font-medium text-text-primary">{toast.title}</p>
                 {toast.body !== undefined && (
-                  <p className="mt-0.5 text-sm text-text-secondary">{toast.body}</p>
+                  <p className="mt-1 text-sm text-text-secondary">{toast.body}</p>
                 )}
               </div>
               <IconButton

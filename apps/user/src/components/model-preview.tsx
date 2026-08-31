@@ -1,3 +1,4 @@
+/* eslint-disable ideeza/design-tokens -- placeholder artwork generated from the board's own hue, not a colour of the interface */
 import { cn } from '@ideeza/ui';
 
 /** A stable hue per product name, so a card looks the same on every render. */
@@ -53,7 +54,7 @@ export const ModelPreview = ({ name, fileCount, className, tall = false }: Model
           strokeLinejoin="round"
         />
       </svg>
-      <span className="absolute bottom-2 right-2 rounded-full bg-bg-surface/85 px-2 py-0.5 text-[11px] font-semibold text-text-tertiary">
+      <span className="absolute bottom-2 right-2 rounded-full bg-bg-surface px-2 py-0.5 text-2xs font-semibold text-text-tertiary">
         model preview
       </span>
     </div>

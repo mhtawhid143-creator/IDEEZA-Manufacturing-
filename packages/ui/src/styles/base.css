@@ -68,11 +68,19 @@ h6 {
  * an assembled one.
  */
 ::selection {
-  background-color: var(--color-violet-100);
+  background-color: var(--color-bg-brand-subtle);
   color: var(--color-text-primary);
 }
 
 :root {
+  /*
+   * Tell the browser both themes exist, so the controls it paints itself — the
+   * date picker, a native select's list, the scrollbar track, form autofill —
+   * follow the theme the tokens are in rather than staying light on a dark
+   * page. The tokens switch on `data-theme` or, without it, on the system
+   * preference; this declaration makes the browser's own chrome agree.
+   */
+  color-scheme: light dark;
   accent-color: var(--color-bg-brand);
   caret-color: var(--color-bg-brand);
   scrollbar-color: var(--color-border-strong) transparent;
