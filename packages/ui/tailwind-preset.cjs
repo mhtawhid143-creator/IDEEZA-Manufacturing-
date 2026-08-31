@@ -244,6 +244,35 @@ module.exports = {
         '5xl': ['var(--font-size-6xl)', { lineHeight: 'var(--line-height-6xl)' }],
         '6xl': ['var(--font-size-7xl)', { lineHeight: 'var(--line-height-7xl)' }],
         '7xl': ['var(--font-size-8xl)', { lineHeight: 'var(--line-height-8xl)' }],
+
+        // The system's text styles — one class per Figma style (`Label/MD` is
+        // `text-label-md`): size, line height, tracking and weight as one
+        // indivisible choice. The vendored @ideeza/ds components are written
+        // in these; the plain ramp above stays for this repository's screens.
+        'display-xl': ['var(--font-size-8xl)', { lineHeight: 'var(--line-height-9xl)', letterSpacing: 'var(--letter-spacing-tighter)', fontWeight: 'var(--font-weight-bold)' }],
+        'display-lg': ['var(--font-size-7xl)', { lineHeight: 'var(--line-height-8xl)', letterSpacing: 'var(--letter-spacing-tight)', fontWeight: 'var(--font-weight-semibold)' }],
+        'display-md': ['var(--font-size-6xl)', { lineHeight: 'var(--line-height-7xl)', letterSpacing: 'var(--letter-spacing-snug)', fontWeight: 'var(--font-weight-semibold)' }],
+        'heading-h1': ['var(--font-size-5xl)', { lineHeight: 'var(--line-height-6xl)', letterSpacing: 'var(--letter-spacing-close)', fontWeight: 'var(--font-weight-semibold)' }],
+        'heading-h2': ['var(--font-size-4xl)', { lineHeight: 'var(--line-height-5xl)', letterSpacing: 'var(--letter-spacing-near)', fontWeight: 'var(--font-weight-semibold)' }],
+        'heading-h3': ['var(--font-size-3xl)', { lineHeight: 'var(--line-height-4xl)', letterSpacing: 'var(--letter-spacing-slight)', fontWeight: 'var(--font-weight-semibold)' }],
+        'heading-h4': ['var(--font-size-2xl)', { lineHeight: 'var(--line-height-2xl)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-semibold)' }],
+        'heading-h5': ['var(--font-size-xl)', { lineHeight: 'var(--line-height-xl)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-semibold)' }],
+        'body-xs': ['var(--font-size-sm)', { lineHeight: 'var(--line-height-sm)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
+        'body-sm': ['var(--font-size-md)', { lineHeight: 'var(--line-height-md)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
+        'body-md': ['var(--font-size-lg)', { lineHeight: 'var(--line-height-lg)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
+        'body-lg': ['var(--font-size-xl)', { lineHeight: 'var(--line-height-2xl)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
+        'body-xl': ['var(--font-size-2xl)', { lineHeight: 'var(--line-height-3xl)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
+        'body-xs-medium': ['var(--font-size-sm)', { lineHeight: 'var(--line-height-sm)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-medium)' }],
+        'body-sm-medium': ['var(--font-size-md)', { lineHeight: 'var(--line-height-md)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-medium)' }],
+        'body-md-medium': ['var(--font-size-lg)', { lineHeight: 'var(--line-height-lg)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-medium)' }],
+        'body-lg-medium': ['var(--font-size-xl)', { lineHeight: 'var(--line-height-2xl)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-medium)' }],
+        'body-xl-medium': ['var(--font-size-2xl)', { lineHeight: 'var(--line-height-3xl)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-medium)' }],
+        'label-xl': ['var(--font-size-lg)', { lineHeight: 'var(--line-height-lg)', letterSpacing: 'var(--letter-spacing-wide)', fontWeight: 'var(--font-weight-semibold)' }],
+        'label-lg': ['var(--font-size-md)', { lineHeight: 'var(--line-height-md)', letterSpacing: 'var(--letter-spacing-wide)', fontWeight: 'var(--font-weight-semibold)' }],
+        'label-md': ['var(--font-size-sm)', { lineHeight: 'var(--line-height-xs)', letterSpacing: 'var(--letter-spacing-wide)', fontWeight: 'var(--font-weight-semibold)' }],
+        'label-sm': ['var(--font-size-xs)', { lineHeight: 'var(--line-height-xs)', letterSpacing: 'var(--letter-spacing-wider)', fontWeight: 'var(--font-weight-semibold)' }],
+        'caption-md': ['var(--font-size-sm)', { lineHeight: 'var(--line-height-xs)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
+        'caption-sm': ['var(--font-size-xs)', { lineHeight: 'var(--line-height-xs)', letterSpacing: 'var(--letter-spacing-normal)', fontWeight: 'var(--font-weight-regular)' }],
       },
 
       lineHeight: {
@@ -403,6 +432,13 @@ module.exports = {
         lg: '960px',
         xl: '1280px',
         '2xl': '1440px',
+      },
+
+      backgroundImage: {
+        // Figma paint style `Brand/AI gradient` — the AI button hierarchy.
+        ai: 'var(--gradient-ai)',
+        'ai-hover': 'var(--gradient-ai-hover)',
+        'ai-pressed': 'var(--gradient-ai-pressed)',
       },
 
       // The system's focus treatment is a 3px halo (border/width/3).

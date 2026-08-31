@@ -131,9 +131,22 @@ component and then read its variant node.
   history) but the repo's `Pagination` lives in `layout.tsx` and is not yet
   restyled; A08's 24px MD size and Text Input prefix/suffix variants have no
   props here yet.
-- A component the system does not publish yet is built here in `packages/ui`
-  from the system's tokens and the panel Figma frames, and moves to the system
-  when it arrives there.
+- **The system's own React components are consumed directly.** The design
+  repo publishes ten components (Button, IconButton, Badge, Input, Textarea,
+  Select, Checkbox, Radio, Toggle, plus the Field primitives) as source-only
+  TypeScript under the colliding name `@ideeza/ui`, so they are vendored
+  verbatim into `packages/ds-ui` (workspace name **`@ideeza/ds`**) by
+  `node tools/sync-design-system.mjs` — which downloads the repo at main,
+  rewrites the `@ideeza/icons` import to the vendored path and appends the
+  NodeNext `.js` extensions, and stamps the commit in
+  `packages/ds-ui/VENDORED.md`. **Never edit anything under
+  `packages/ds-ui/src` by hand** — it is the design team's code (lint-exempt
+  for that reason); to update, run the sync script. The matching
+  `packages/ui` components are thin adapters over `@ideeza/ds` that keep this
+  repo's public API; a new DS component arrival means: sync, then wrap.
+- A component the system does not publish as code yet is built here in
+  `packages/ui` from the system's tokens and its Figma spec, and becomes a
+  wrapper when the system ships it.
 
 ## 4. Design tokens — 100% from the design system
 

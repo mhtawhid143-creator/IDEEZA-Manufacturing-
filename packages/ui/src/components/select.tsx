@@ -1,8 +1,8 @@
 'use client';
 
 import { forwardRef, type SelectHTMLAttributes } from 'react';
+import { cn as merge } from '@ideeza/ds/cn';
 import { Icon } from './icon.js';
-import { cn } from '../lib/cn.js';
 import { fieldControlClasses, useFieldContext } from './form-field.js';
 
 export interface SelectOption {
@@ -19,7 +19,8 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 /**
  * A native select on purpose: it is keyboard and screen reader correct
- * everywhere, and on a phone it opens the platform picker.
+ * everywhere, and on a phone it opens the platform picker. The chrome is the
+ * design system's field surface (A06 shares A04's), from `@ideeza/ds`.
  */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   { options, placeholder, invalid, className, id, ...rest },
@@ -33,11 +34,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         ref={ref}
         id={id ?? field?.inputId}
         aria-invalid={isInvalid || undefined}
+        data-invalid={isInvalid || undefined}
+        data-disabled={rest.disabled === true || undefined}
         aria-describedby={field?.describedBy}
         required={rest.required ?? field?.required}
-        className={cn(
+        className={merge(
           fieldControlClasses(isInvalid),
-          'h-10 appearance-none pr-9',
+          'appearance-none pr-9',
           rest.value === '' && 'text-text-tertiary',
           className,
         )}

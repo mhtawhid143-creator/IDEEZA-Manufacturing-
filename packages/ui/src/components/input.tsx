@@ -1,8 +1,8 @@
 'use client';
 
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { cn as merge } from '@ideeza/ds/cn';
 import { Icon } from './icon.js';
-import { cn } from '../lib/cn.js';
 import { fieldControlClasses, useFieldContext } from './form-field.js';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -11,6 +11,11 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   readonly invalid?: boolean;
 }
 
+/**
+ * The single-line field, wearing the design system's control chrome (A04 Text
+ * Input at the 40px size, from `@ideeza/ds`). The chrome reads error and
+ * disabled from data attributes, so both are set beside the aria state.
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { leadingIcon, trailingSlot, invalid, className, id, ...rest },
   ref,
@@ -23,11 +28,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       ref={ref}
       id={id ?? field?.inputId}
       aria-invalid={isInvalid || undefined}
+      data-invalid={isInvalid || undefined}
+      data-disabled={rest.disabled === true || undefined}
       aria-describedby={field?.describedBy}
       required={rest.required ?? field?.required}
-      className={cn(
+      className={merge(
         fieldControlClasses(isInvalid),
-        'h-10',
         leadingIcon !== undefined && 'pl-9',
         trailingSlot !== undefined && 'pr-9',
         className,
@@ -72,9 +78,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       id={id ?? field?.inputId}
       rows={rows}
       aria-invalid={isInvalid || undefined}
+      data-invalid={isInvalid || undefined}
+      data-disabled={rest.disabled === true || undefined}
       aria-describedby={field?.describedBy}
       required={rest.required ?? field?.required}
-      className={cn(fieldControlClasses(isInvalid, 'textarea'), 'resize-y', className)}
+      className={merge(fieldControlClasses(isInvalid, 'textarea'), 'resize-y', className)}
       {...rest}
     />
   );

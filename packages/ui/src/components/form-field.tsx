@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useId, type ReactNode } from 'react';
+import { controlChrome, controlClass, valueClass } from '@ideeza/ds/field';
+import { cn as merge } from '@ideeza/ds/cn';
 import { cn } from '../lib/cn.js';
 
 interface FieldContextValue {
@@ -27,7 +29,10 @@ export interface FormFieldProps {
 }
 
 /**
- * Label, control, hint and error as one unit.
+ * Label, control, hint and error as one unit — this repository's M27 Form
+ * Field. The design system builds the label into each control instead; here
+ * the label must stay outside so one wrapper serves every control, so the
+ * words are drawn here and the control chrome comes from the system below.
  *
  * The label is always rendered and always associated with the control; a hidden
  * label is hidden visually only. Errors are announced, and the control is marked
@@ -84,21 +89,28 @@ export const FormField = ({
 };
 
 /**
- * The field surface every control shares, taken from the A04 Text Input spec:
- * a 12px radius, a 1.5px border, 14px text on the input surface, and the 3px
- * focus halo the whole system uses. The textarea padding differs because the
- * A05 Textarea frame pads 14px horizontally and less at the foot than the
- * single-line field does; `cn` does not resolve Tailwind conflicts, so the
- * padding is chosen here rather than overridden by a caller.
+ * The field surface every control shares — literally the design system's:
+ * `controlChrome` (fill, 1.5px border, hover, the 3px focus halo, error and
+ * disabled treatments) with the 40px size's geometry and value type from the
+ * vendored Field primitives (`@ideeza/ds`). The chrome reads its error and
+ * disabled states from `data-invalid` / `data-disabled`, which the controls
+ * set alongside `aria-invalid`; native `disabled:` fallbacks stay so a control
+ * rendered without the attribute still greys out. The textarea trades the
+ * fixed 40px geometry for its own padding, since the A05 frame pads 14px
+ * horizontally and less at the foot; the merge-aware class joiner is the
+ * system's, so a caller's `pl-9` can win over the chrome's padding.
  */
 export const fieldControlClasses = (
   invalid: boolean,
   padding: 'input' | 'textarea' = 'input',
 ): string =>
-  cn(
-    'w-full rounded-xl border-1.5 bg-input-bg text-sm text-input-text placeholder:text-input-placeholder',
-    padding === 'textarea' ? 'px-3.5 pb-2 pt-3' : 'px-3',
-    'transition-colors duration-fast focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus',
-    'disabled:cursor-not-allowed disabled:bg-input-bg-disabled disabled:border-input-border-disabled disabled:text-text-disabled',
-    invalid ? 'border-input-border-error focus-visible:ring-focus-danger' : 'border-input-border hover:border-input-border-hover focus-visible:border-input-border-focus',
+  merge(
+    controlChrome,
+    padding === 'textarea' ? 'rounded-xl px-3.5 pb-2 pt-3' : controlClass[40],
+    valueClass[40],
+    'w-full placeholder:text-input-placeholder',
+    'disabled:pointer-events-none disabled:bg-input-bg-disabled disabled:border-input-border-disabled disabled:text-text-disabled',
+    // The attribute drives the chrome; the flag exists so a caller that knows
+    // its state at class-composition time gets the same border immediately.
+    invalid && 'border-input-border-error hover:border-input-border-error',
   );

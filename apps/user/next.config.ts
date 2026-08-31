@@ -7,7 +7,7 @@ const fromRoot = (relativePath: string): string =>
 const config: NextConfig = {
   reactStrictMode: true,
   // The workspace packages ship TypeScript sources, so Next compiles them.
-  transpilePackages: ['@ideeza/ui', '@ideeza/domain', '@ideeza/types', '@ideeza/auth', '@ideeza/db'],
+  transpilePackages: ['@ideeza/ui', '@ideeza/ds', '@ideeza/domain', '@ideeza/types', '@ideeza/auth', '@ideeza/db'],
   eslint: {
     // Linting runs once for the whole monorepo through the root eslint config.
     ignoreDuringBuilds: true,

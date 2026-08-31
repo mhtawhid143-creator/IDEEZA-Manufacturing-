@@ -8,5 +8,6 @@ module.exports = {
     // The design system components ship as source, so their classes are scanned
     // from here rather than being duplicated into a build step.
     '../../packages/ui/src/**/*.{ts,tsx}',
+    '../../packages/ds-ui/src/**/*.{ts,tsx}',
   ],
 };

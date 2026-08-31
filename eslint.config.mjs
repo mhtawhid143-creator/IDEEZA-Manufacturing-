@@ -41,6 +41,9 @@ export default tseslint.config(
       '**/next-env.d.ts',
       '**/.verify-shots/**',
       'packages/config/eslint/**',
+      // Vendored design-system sources (see packages/ds-ui/VENDORED.md):
+      // the design team's code, synced verbatim, linted by whoever ships it.
+      'packages/ds-ui/src/**',
       // Tooling installed into the repository by an agent-skill installer
       // (impeccable). Third-party sources, linted by whoever ships them.
       '.agent/**',

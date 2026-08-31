@@ -10,6 +10,12 @@ const packages = {
   '@ideeza/db': fromRoot('./packages/db/src/index.ts'),
   '@ideeza/auth': fromRoot('./packages/auth/src/index.ts'),
   '@ideeza/ui': fromRoot('./packages/ui/src/index.ts'),
+  // Subpath entries must sit before the bare name so the prefix match cannot
+  // swallow them.
+  '@ideeza/ds/button': fromRoot('./packages/ds-ui/src/components/Button/index.ts'),
+  '@ideeza/ds/field': fromRoot('./packages/ds-ui/src/components/Field/index.ts'),
+  '@ideeza/ds/cn': fromRoot('./packages/ds-ui/src/lib/cn.ts'),
+  '@ideeza/ds': fromRoot('./packages/ds-ui/src/index.ts'),
 };
 
 /** The buyer app's own path alias, so its data layer can be tested directly. */

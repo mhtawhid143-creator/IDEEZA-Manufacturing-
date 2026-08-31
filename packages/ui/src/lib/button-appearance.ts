@@ -1,4 +1,5 @@
-import { cn } from './cn.js';
+import { buttonVariants } from '@ideeza/ds/button';
+import { cn } from '@ideeza/ds/cn';
 
 export type ButtonVariant =
   | 'primary'
@@ -12,49 +13,18 @@ export type ButtonVariant =
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 /**
- * Every colour here is the design system's button token for that variant and
- * state — `--color-button-*` — rather than a surface or text colour that
- * happens to match today. When the system repaints a pressed danger button,
- * this one follows without anyone noticing a step was missed.
+ * This repository's size names against the system's: they name the same five
+ * Figma heights, one step apart — our `xs` is the system's `SM` (32px), our
+ * `xl` its `2XL` (48px). The names stay because every screen is written in
+ * them; the classes come from the system.
  */
-export const BUTTON_VARIANT: Record<ButtonVariant, string> = {
-  primary:
-    'bg-button-primary-bg text-button-primary-text hover:bg-button-primary-bg-hover active:bg-button-primary-bg-pressed shadow-1',
-  secondary:
-    'bg-button-secondary-bg text-button-secondary-text border-1.5 border-button-secondary-border hover:bg-button-secondary-bg-hover hover:border-button-secondary-border-hover active:bg-button-secondary-bg-pressed',
-  tonal:
-    'bg-button-tonal-bg text-button-tonal-text hover:bg-button-tonal-bg-hover active:bg-button-tonal-bg-pressed',
-  ghost:
-    'bg-transparent text-button-ghost-text hover:bg-button-ghost-bg-hover active:bg-button-secondary-bg-pressed',
-  outline:
-    'bg-transparent text-text-brand border border-border-brand hover:bg-button-outline-bg-hover active:bg-button-outline-bg-pressed',
-  danger:
-    'bg-button-danger-bg text-button-danger-text hover:bg-button-danger-bg-hover active:bg-button-danger-bg-pressed shadow-1',
+const DS_SIZE: Record<ButtonSize, 'sm' | 'md' | 'lg' | 'xl' | '2xl'> = {
+  xs: 'sm',
+  sm: 'md',
+  md: 'lg',
+  lg: 'xl',
+  xl: '2xl',
 };
-
-/**
- * The system's size ramp (A01, corrected 2026-08-02), name for name — this
- * repository's xs…xl are the system's SM…2XL:
- *
- *   SM 32 · radius/lg · px 12 · gap 6 · 12/16   MD 36 · radius/lg · px 14 · gap 6 · 14/20
- *   LG 40 · radius/xl · px 16 · gap 6 · 14/20   XL 44 · radius/xl · px 20 · gap 8 · 16/24
- *   2XL 48 · radius/2xl · px 24 · gap 8 · 16/24
- *
- * The height is the Figma measurement and stays exact; the vertical padding
- * states the space that fixed height already leaves around the line box.
- */
-export const BUTTON_SIZE: Record<ButtonSize, string> = {
-  xs: 'h-8 px-3 py-1.5 text-xs gap-1.5 rounded-lg',
-  sm: 'h-9 px-3.5 py-2 text-sm gap-1.5 rounded-lg',
-  md: 'h-10 px-4 py-2 text-sm gap-1.5 rounded-xl',
-  lg: 'h-11 px-5 py-2.5 text-base gap-2 rounded-xl',
-  xl: 'h-12 px-6 py-3 text-base gap-2 rounded-2xl',
-};
-
-const BASE =
-  'inline-flex select-none items-center justify-center whitespace-nowrap font-semibold tracking-wide transition-colors ' +
-  'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus ' +
-  'disabled:cursor-not-allowed disabled:bg-button-disabled-bg disabled:text-button-disabled-text disabled:border-transparent disabled:shadow-none';
 
 export interface ButtonAppearance {
   readonly variant?: ButtonVariant | undefined;
@@ -63,28 +33,28 @@ export interface ButtonAppearance {
   /**
    * The control is shown but has nothing behind it — a link with no
    * destination, an action this build cannot perform. It replaces the variant
-   * colours rather than being layered over them, because a class layered over
-   * a variant is a coin toss over which one Tailwind emitted last.
+   * colours rather than being layered over them.
    */
   readonly unavailable?: boolean | undefined;
   readonly className?: string | undefined;
 }
 
+/** A control that is shown but cannot be used: readable, and obviously inert. */
+const UNAVAILABLE =
+  'cursor-not-allowed bg-bg-subtle text-text-secondary shadow-none hover:bg-bg-subtle active:bg-bg-subtle';
+
 /**
  * The button's look, without the button.
  *
- * A link that navigates must stay an anchor: an anchor wrapped around a button
- * is two interactive elements for one action, which assistive technology reads
- * as such. This lets a link wear the same appearance instead.
- *
- * It lives outside the button component on purpose. The component is a client
- * component, and a server component may not call into one — but it may render
- * a link with these classes.
+ * The classes are the design system's own — `buttonVariants` from the vendored
+ * `@ideeza/ds` package (A01 Button) — so a link dressed as a button and the
+ * Button component wear literally the same code. It lives outside the
+ * component on purpose: a link that navigates must stay an anchor, and a
+ * server component may not render a client component but may reuse its
+ * classes. The subpath import keeps the server's module graph on the button
+ * alone. `unavailable` is this repository's own state, layered over a ghost
+ * base with the system's own class merger so its colours win.
  */
-/** A control that is shown but cannot be used: readable, and obviously inert. */
-const UNAVAILABLE =
-  'cursor-not-allowed bg-bg-subtle text-text-secondary shadow-none hover:bg-bg-subtle';
-
 export const buttonAppearance = ({
   variant = 'primary',
   size = 'md',
@@ -93,9 +63,8 @@ export const buttonAppearance = ({
   className,
 }: ButtonAppearance = {}): string =>
   cn(
-    BASE,
-    unavailable ? UNAVAILABLE : BUTTON_VARIANT[variant],
-    BUTTON_SIZE[size],
+    buttonVariants({ variant: unavailable ? 'ghost' : variant, size: DS_SIZE[size] }),
+    unavailable && UNAVAILABLE,
     fullWidth && 'w-full',
     className,
   );

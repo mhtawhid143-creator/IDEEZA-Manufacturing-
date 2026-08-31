@@ -2,8 +2,6 @@ export { cn, type ClassValue } from './lib/cn.js';
 // Framework-agnostic, so a server component can style a link like a button.
 export {
   buttonAppearance,
-  BUTTON_SIZE,
-  BUTTON_VARIANT,
   type ButtonAppearance,
   type ButtonSize,
   type ButtonVariant,
