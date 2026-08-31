@@ -19,6 +19,57 @@
  */
 
 /** @type {import('tailwindcss').Config} */
+/**
+ * Expands the system's text-style table into Tailwind `fontSize` tuples.
+ * A row is [size, line height, tracking, weight], in the system's step names.
+ */
+const style = (rows) =>
+  Object.fromEntries(
+    Object.entries(rows).map(([name, [size, line, tracking, weight]]) => [
+      name,
+      [
+        `var(--font-size-${size})`,
+        {
+          lineHeight: `var(--line-height-${line})`,
+          letterSpacing: `var(--letter-spacing-${tracking})`,
+          fontWeight: `var(--font-weight-${weight})`,
+        },
+      ],
+    ]),
+  );
+
+const ideezaTextStyles = style({
+  'display-xl': ['8xl', '9xl', 'tighter', 'bold'],
+  'display-lg': ['7xl', '8xl', 'tight', 'semibold'],
+  'display-md': ['6xl', '7xl', 'snug', 'semibold'],
+  'heading-h1': ['5xl', '6xl', 'close', 'semibold'],
+  'heading-h2': ['4xl', '5xl', 'near', 'semibold'],
+  'heading-h3': ['3xl', '4xl', 'slight', 'semibold'],
+  'heading-h4': ['2xl', '2xl', 'normal', 'semibold'],
+  'heading-h5': ['xl', 'xl', 'normal', 'semibold'],
+  'heading-h6': ['lg', 'lg', 'normal', 'semibold'],
+  'body-xs': ['sm', 'sm', 'normal', 'regular'],
+  'body-sm': ['md', 'md', 'normal', 'regular'],
+  'body-md': ['lg', 'lg', 'normal', 'regular'],
+  'body-lg': ['xl', '2xl', 'normal', 'regular'],
+  'body-xl': ['2xl', '3xl', 'normal', 'regular'],
+  'body-xs-medium': ['sm', 'sm', 'normal', 'medium'],
+  'body-sm-medium': ['md', 'md', 'normal', 'medium'],
+  'body-md-medium': ['lg', 'lg', 'normal', 'medium'],
+  'body-lg-medium': ['xl', '2xl', 'normal', 'medium'],
+  'body-xl-medium': ['2xl', '3xl', 'normal', 'medium'],
+  'label-xl': ['lg', 'lg', 'wide', 'semibold'],
+  'label-lg': ['md', 'md', 'wide', 'semibold'],
+  'label-md': ['sm', 'xs', 'wide', 'semibold'],
+  'label-sm': ['xs', 'xs', 'wider', 'semibold'],
+  'caption-md': ['sm', 'xs', 'normal', 'regular'],
+  'caption-sm': ['xs', 'xs', 'normal', 'regular'],
+  'overline-md': ['xs', 'xs', 'widest', 'semibold'],
+  'overline-sm': ['2xs', '2xs', 'caps', 'semibold'],
+  'code-md': ['md', 'md', 'normal', 'regular'],
+  'code-sm': ['sm', 'sm', 'normal', 'regular'],
+});
+
 module.exports = {
   theme: {
     extend: {
@@ -73,6 +124,7 @@ module.exports = {
           error: 'var(--color-text-error)',
           'error-hover': 'var(--color-text-error-hover)',
           blue: 'var(--color-text-blue)',
+          info: 'var(--color-text-info)',
           ai: 'var(--color-text-ai)',
         },
 
@@ -88,6 +140,7 @@ module.exports = {
           success: 'var(--color-icon-success)',
           warning: 'var(--color-icon-warning)',
           error: 'var(--color-icon-error)',
+          info: 'var(--color-icon-info)',
           ai: 'var(--color-icon-ai)',
         },
 
@@ -195,6 +248,56 @@ module.exports = {
           positive: 'var(--chart-positive)',
           negative: 'var(--chart-negative)',
           neutral: 'var(--chart-neutral)',
+          muted: 'var(--chart-muted)',
+
+          // A change against a previous period: the arrow, its pill and its
+          // words are three tokens, because a green arrow on a green pill
+          // needs a text colour that is neither of them.
+          'delta-up-bg': 'var(--chart-delta-up-bg)',
+          'delta-up-icon': 'var(--chart-delta-up-icon)',
+          'delta-up-text': 'var(--chart-delta-up-text)',
+          'delta-down-bg': 'var(--chart-delta-down-bg)',
+          'delta-down-icon': 'var(--chart-delta-down-icon)',
+          'delta-down-text': 'var(--chart-delta-down-text)',
+          'delta-flat-bg': 'var(--chart-delta-flat-bg)',
+          'delta-flat-icon': 'var(--chart-delta-flat-icon)',
+          'delta-flat-text': 'var(--chart-delta-flat-text)',
+
+          // One hue deepening across seven steps, for a quantity.
+          'sequential-1': 'var(--chart-sequential-01)',
+          'sequential-2': 'var(--chart-sequential-02)',
+          'sequential-3': 'var(--chart-sequential-03)',
+          'sequential-4': 'var(--chart-sequential-04)',
+          'sequential-5': 'var(--chart-sequential-05)',
+          'sequential-6': 'var(--chart-sequential-06)',
+          'sequential-7': 'var(--chart-sequential-07)',
+
+          // Two hues away from a meaningful middle, for a signed quantity.
+          'diverging-1': 'var(--chart-diverging-01)',
+          'diverging-2': 'var(--chart-diverging-02)',
+          'diverging-3': 'var(--chart-diverging-03)',
+          'diverging-4': 'var(--chart-diverging-04)',
+          'diverging-5': 'var(--chart-diverging-05)',
+          'diverging-6': 'var(--chart-diverging-06)',
+          'diverging-7': 'var(--chart-diverging-07)',
+        },
+
+        // The system's glass surfaces: a translucent fill over whatever is
+        // behind it, with its own borders and its own highlight. Used with a
+        // backdrop blur; on its own it is just a wash.
+        glass: {
+          'fill-xs': 'var(--color-glass-fill-xs)',
+          'fill-sm': 'var(--color-glass-fill-sm)',
+          'fill-md': 'var(--color-glass-fill-md)',
+          'fill-lg': 'var(--color-glass-fill-lg)',
+          'fill-xl': 'var(--color-glass-fill-xl)',
+          'fill-brand': 'var(--color-glass-fill-brand)',
+          'fill-ai': 'var(--color-glass-fill-ai)',
+          'border-subtle': 'var(--color-glass-border-subtle)',
+          'border-default': 'var(--color-glass-border-default)',
+          'border-strong': 'var(--color-glass-border-strong)',
+          highlight: 'var(--color-glass-highlight)',
+          shadow: 'var(--color-glass-shadow)',
         },
 
         // Semantic — borders
@@ -212,7 +315,14 @@ module.exports = {
           'focus-danger': 'var(--color-border-focus-danger)',
           'focus-inverse': 'var(--color-border-focus-inverse)',
           'focus-on-fill': 'var(--color-border-focus-on-fill)',
+          info: 'var(--color-border-info)',
         },
+
+        // Ink and paper themselves. Present so a component that genuinely
+        // means "the colour of paper" can say so; not a substitute for a
+        // surface token, which knows which paper it is.
+        white: 'var(--color-white)',
+        black: 'var(--color-black)',
       },
 
       fontFamily: {
@@ -230,7 +340,17 @@ module.exports = {
       // pairs with that very step, never a neighbour's. The two steps below
       // Tailwind's scale — the system's xs (11) and 2xs (10) — are reachable as
       // 2xs and 3xs, so a caption never needs a pixel written by hand.
+
+      /**
+       * The system's text styles, one class per Figma style.
+       *
+       * `style()` below expands the table: each row is [size, line height,
+       * tracking, weight] in the system's own step names, and every value
+       * stays a variable, so the mobile scale is a media query in tokens.css
+       * and nothing here has to know about it.
+       */
       fontSize: {
+        ...ideezaTextStyles,
         '3xs': ['var(--font-size-2xs)', { lineHeight: 'var(--line-height-2xs)' }],
         '2xs': ['var(--font-size-xs)', { lineHeight: 'var(--line-height-xs)' }],
         xs: ['var(--font-size-sm)', { lineHeight: 'var(--line-height-sm)' }],
@@ -309,6 +429,7 @@ module.exports = {
         1.5: 'var(--border-width-1-5)',
         2: 'var(--border-width-2)',
         3: 'var(--border-width-3)',
+        4: 'var(--border-width-4)',
       },
 
       transitionDuration: {
@@ -386,6 +507,23 @@ module.exports = {
         navbar: 'var(--layout-navbar-height)',
         sidebar: 'var(--layout-sidebar-width)',
         gutter: 'var(--layout-gutter)',
+
+        // The smallest a thing may be and still be reliably hit by a thumb.
+        // Use as a floor — `min-h-touch-min` — not as a height.
+        'touch-min': 'var(--touch-min)',
+        'touch-comfortable': 'var(--touch-comfortable)',
+        'touch-large': 'var(--touch-large)',
+
+        // What the phone itself occupies: the notch, the home indicator, the
+        // rounded corners. A bar pinned to an edge pads by these or the
+        // hardware sits on top of it.
+        'safe-top': 'var(--safe-top)',
+        'safe-bottom': 'var(--safe-bottom)',
+        'safe-left': 'var(--safe-left)',
+        'safe-right': 'var(--safe-right)',
+        'inset-status-bar': 'var(--inset-status-bar)',
+        'inset-nav-bar': 'var(--inset-nav-bar)',
+        'inset-keyboard': 'var(--inset-keyboard)',
       },
 
       maxWidth: {
@@ -410,10 +548,19 @@ module.exports = {
         3: 'var(--border-width-3)',
       },
 
+      // Figma paint style Brand/AI gradient — the AI hierarchy's fill.
+      backgroundImage: {
+        ai: 'var(--gradient-ai)',
+        'ai-hover': 'var(--gradient-ai-hover)',
+        'ai-pressed': 'var(--gradient-ai-pressed)',
+      },
+
       ringColor: {
         focus: 'var(--color-focus-halo)',
         'focus-on-fill': 'var(--color-focus-halo-on-fill)',
         'focus-danger': 'var(--color-focus-halo-danger)',
+        'focus-inverse': 'var(--color-focus-halo-inverse)',
+        'focus-ai': 'var(--color-focus-halo-ai)',
       },
 
       keyframes: {

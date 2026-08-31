@@ -97,6 +97,23 @@ export default tseslint.config(
     },
   },
   {
+    // The design system's own components, copied in by
+    // `tools/sync-design-system.mjs`. The rule above asks code to express the
+    // system rather than invent values; this code *is* the system, so the rule
+    // has nothing to tell it. It reaches for a primitive swatch where the
+    // system's Figma spec names one (an outline badge's border) and for a
+    // one-off shadow where the spec is a focus halo, and those choices belong
+    // to the design team, not to this repository — a disable comment per line
+    // would only be a note that the file was copied, which its README says.
+    //
+    // Nothing here is hand-edited, so nothing here can drift silently:
+    // `node tools/sync-design-system.mjs --check` fails if it has.
+    files: ['packages/ui/src/ds/**/*.{ts,tsx}'],
+    rules: {
+      'ideeza/design-tokens': 'off',
+    },
+  },
+  {
     // Build tooling: commonjs config files.
     files: ['**/*.cjs'],
     languageOptions: {

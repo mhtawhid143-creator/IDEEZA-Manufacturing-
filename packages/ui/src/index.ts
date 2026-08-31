@@ -34,3 +34,7 @@ export * from './components/toast.js';
 export * from './components/table.js';
 export * from './components/states.js';
 export * from './components/layout.js';
+
+// The design system's own components, under `Ds*` names. See ./ds/index.ts for
+// why they are prefixed and ./ds/README.md for where they come from.
+export * from './ds/index.js';

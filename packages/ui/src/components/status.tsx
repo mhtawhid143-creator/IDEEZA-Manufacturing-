@@ -9,7 +9,8 @@ import type {
   RfqStatus,
 } from '@ideeza/domain';
 import { cn } from '../lib/cn.js';
-import type { Tone } from './badge.js';
+import type { BadgeColour, Tone } from './badge.js';
+import { Badge as DsBadge } from '../ds/components/Badge/index.js';
 
 export type DomainStatus =
   | RfqStatus
@@ -104,22 +105,41 @@ const DOT: Record<Tone, string> = {
 // The system's badge colours (A17, Subtle): each tone is the badge's own
 // bg/text token pair; neutral, which has no badge token, is the subtle
 // surface with secondary text — exactly what the Figma variant binds.
-const CHIP: Record<Tone, string> = {
-  neutral: 'bg-bg-subtle text-text-secondary',
-  brand: 'bg-badge-brand-bg text-badge-brand-text',
-  success: 'bg-badge-success-bg text-badge-success-text',
-  warning: 'bg-badge-warning-bg text-badge-warning-text',
-  danger: 'bg-badge-error-bg text-badge-error-text',
-  info: 'bg-badge-blue-bg text-badge-blue-text',
+/**
+ * This repository's tone names in the system's colour names — the same two-word
+ * translation `Badge` makes: `danger` is the system's `error`, `info` its
+ * `blue`. The classes that used to live here are gone; the system's badge paints
+ * itself now, so there is one place that knows what a warning looks like.
+ */
+const BADGE_COLOUR: Record<Tone, BadgeColour> = {
+  neutral: 'neutral',
+  brand: 'brand',
+  success: 'success',
+  warning: 'warning',
+  danger: 'error',
+  info: 'blue',
 };
 
-export interface StatusChipProps extends HTMLAttributes<HTMLSpanElement> {
+// `color` is dropped from the span's own attributes. HTML has a legacy `color`
+// attribute, so leaving it in means the caller's spread lands after the tone
+// this component chose and silently replaces it with a plain string — which is
+// how the system's badge lost its colour the first time.
+export interface StatusChipProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'color'> {
   readonly status: string;
   readonly withDot?: boolean;
   /** Overrides the label while keeping the tone mapping. */
   readonly label?: string;
 }
 
+/**
+ * A status, as the system's A17 Badge in its Subtle style.
+ *
+ * The pill is the system's own component — heights, padding, radius, type face
+ * and the six tones' colours all come from there, including the leading dot,
+ * which the system draws at 6px from the tone's own solid colour. Nothing about
+ * how it looks is decided here; what is decided here is which tone a status
+ * carries, which is the table above and is this repository's business.
+ */
 export const StatusChip = ({
   status,
   withDot = false,
@@ -129,18 +149,16 @@ export const StatusChip = ({
 }: StatusChipProps) => {
   const presentation = statusPresentation(status);
   return (
-    <span
-      className={cn(
-        // A17 Badge, Subtle, MD: px 8 · py 4 · gap 4 · 12/16 regular · full radius.
-        'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-normal',
-        CHIP[presentation.tone],
-        className,
-      )}
+    <DsBadge
+      variant="subtle"
+      color={BADGE_COLOUR[presentation.tone] ?? 'neutral'}
+      size="md"
+      dot={withDot}
+      className={className}
       {...rest}
     >
-      {withDot && <span className={cn('h-1.5 w-1.5 rounded-full', DOT[presentation.tone])} />}
       {label ?? presentation.label}
-    </span>
+    </DsBadge>
   );
 };
 
