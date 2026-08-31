@@ -1895,11 +1895,35 @@ const main = async () => {
     );
     await page.screenshot({ path: join(shotDir, 'mobile-390.png') });
 
-    // No horizontal overflow on a phone.
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    check('the phone layout does not scroll sideways', overflow <= 1, `overflow ${overflow}px`);
+    // Does a phone slide the page sideways onto empty paper?
+    //
+    // Asked as a swipe, not as a measurement. `scrollWidth` counts boxes that
+    // are clipped out of sight, so it complains about pages that are fine and
+    // says nothing about pages that are not — it stayed silent while five shop
+    // screens really did slide. The page is told to move, then asked where it
+    // went, on every screen that carries a table.
+    const slide = async (target) => {
+      await page.goto(`${base}${target}`, { waitUntil: 'networkidle' });
+      return page.evaluate(() => {
+        window.scrollTo(9999, 0);
+        const x = window.scrollX;
+        window.scrollTo(0, 0);
+        return x;
+      });
+    };
+
+    for (const target of [
+      '/manufacturing',
+      '/manufacturing/rfq',
+      '/manufacturing/orders',
+      '/manufacturing/history',
+      '/notifications',
+      '/messages',
+      '/favorites',
+    ]) {
+      const slipped = await slide(target);
+      check(`${target} does not scroll sideways on a phone`, slipped <= 1, `${slipped}px`);
+    }
 
     // The gallery, for the design review.
     await page.setViewportSize({ width: 1440, height: 900 });
