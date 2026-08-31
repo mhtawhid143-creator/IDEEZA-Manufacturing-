@@ -9,6 +9,7 @@ import {
   StatusChip,
   Tag,
   Text,
+  majorAmount as major,
 } from '@ideeza/ui';
 import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
 import { getShopContext } from '@/data/shop.js';
@@ -17,7 +18,6 @@ import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 const percent = (rate: number | null): string =>
   rate === null ? '—' : `${Math.round(rate * 100)}%`;
@@ -454,7 +454,7 @@ const DashboardPage = async () => {
                       <td className="px-4 py-3 md:px-6">
                         <Link
                           href={`/orders/${order.orderId}`}
-                          className="block max-w-[22ch] truncate font-semibold text-text-primary hover:text-text-brand"
+                          className="block max-w-[22ch] truncate py-0.5 font-semibold text-text-primary hover:text-text-brand"
                         >
                           {order.productName}
                         </Link>
@@ -732,7 +732,7 @@ const DashboardPage = async () => {
                     ) : (
                       <Link
                         href={entry.href}
-                        className="font-medium text-text-brand underline decoration-transparent underline-offset-2 transition-colors hover:decoration-current"
+                        className="py-0.5 font-medium text-text-brand underline decoration-transparent underline-offset-2 transition-colors hover:decoration-current"
                       >
                         {entry.reference}
                       </Link>

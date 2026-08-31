@@ -81,6 +81,11 @@ export const DataTable = <TRow,>({
                   key={column.id}
                   className={cn(
                     'px-4 py-4 align-middle text-base text-text-secondary',
+                    // A cell's link measured 20px tall, under the 24px a
+                    // pointer target needs. Padding an inline box grows what
+                    // can be clicked without growing the line it sits on, so
+                    // the hit area reaches 24px and the row keeps its height.
+                    '[&_a]:py-0.5',
                     ALIGN[column.align ?? 'left'],
                     column.hideBelowLg === true && 'hidden lg:table-cell',
                   )}

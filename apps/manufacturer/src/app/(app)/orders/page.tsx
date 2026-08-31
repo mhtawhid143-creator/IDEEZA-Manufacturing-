@@ -1,4 +1,4 @@
-import { Card, PageHeader, Text } from '@ideeza/ui';
+import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
 import { ORDER_STATUSES, type OrderStatus } from '@ideeza/domain';
 import { OrderList } from '@/components/order/order-list.js';
 import { listOrders, orderCounters } from '@/data/orders.js';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 const statusFilter = (
   value: string | undefined,

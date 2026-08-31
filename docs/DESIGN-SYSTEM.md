@@ -344,3 +344,58 @@ package already uses; the system is not published to npm, and its components
 need a build step that installing from git does not run; and its components are
 written against its own Tailwind preset, which would have to be merged with
 this one. The tokens needed none of that, which is why they went first.
+
+### The ten components, adopted
+
+That is now done, and the three obstacles were dealt with rather than removed.
+`tools/sync-design-system.mjs` copies the ten components' sources into
+`packages/ui/src/ds` at the same commit `@ideeza/tokens` is pinned to, so the
+components and the variables they name always come from one version. The name
+collision is answered by exporting them as `DsBadge`, `DsButton`, `DsInput` and
+so on — this repository's own `Badge` and `Button` are spoken at hundreds of
+call sites and could not move. The preset merge turned out not to be needed:
+this preset is a superset of the system's for colour, and the system's 29 named
+text styles were added beside the existing size names rather than replacing
+them, so `text-label-md` and `text-sm` both resolve to the same variables.
+
+Two rewrites the copy applies, both mechanical and both recorded in the script:
+relative imports gain the `.js` extension this package's module resolution
+wants, and optional property declarations gain `| undefined`, because
+`exactOptionalPropertyTypes` is on here and off in the system's build. Nothing
+else is touched, and `node tools/sync-design-system.mjs --check` fails the
+build if anything under `packages/ui/src/ds` has been hand-edited.
+
+The copied sources are exempt from `ideeza/design-tokens` (see
+`eslint.config.mjs`). The rule asks code to express the system instead of
+inventing values; that code *is* the system, so the rule has nothing to tell
+it. It reaches for a primitive swatch where the Figma spec names one — an
+outline badge's border — and for a one-off shadow where the spec is a focus
+halo, and those are the design team's decisions.
+
+### Gaps found by measuring, for the design team
+
+Both were found by computing contrast on the rendered pages rather than by
+looking, and both are recorded here because the fix uses a different shipped
+token rather than a colour invented locally.
+
+**The subtle error badge does not meet AA in dark mode.** The system's A17
+Badge binds `bg-{tone}-subtle` with `text-{tone}`. Five tones clear AA in both
+themes — brand 7.16/6.65, neutral 9.85/9.45, blue 8.15/6.16, success
+5.23/6.81, warning 5.66/6.62 (dark/light). The error tone measures **3.62:1 in
+dark** against the 4.5 a 12px label needs; light is fine at 5.91. The system
+also ships `--color-badge-error-bg` / `--color-badge-error-text` for the same
+role, and that pair measures 6.93 dark and 5.91 light — so the error tone takes
+it, through one table in `badge.tsx`. When the compound variant is corrected
+upstream the table goes away.
+
+**A count on a solid error fill cannot be read.** White on `--color-bg-error`
+measures 2.77:1 in dark and 3.76:1 in light. The notification count on the bell
+used that pair, at 10px. It now uses the badge error pair at 12px in an 18px
+pill. Worth noting for any future badge the system draws in its Solid style:
+`text-on-brand` over `bg-error` fails in both themes.
+
+**One contrast failure is left, and left deliberately.** A disabled pagination
+arrow paints `--color-text-disabled`, which measures 1.48:1 in light and 2.47:1
+in dark. WCAG 1.4.3 exempts inactive controls, and the token is the system's own
+answer for a disabled thing, so nothing here overrides it — but a disabled
+control that cannot be seen at all is worth the design team's attention.

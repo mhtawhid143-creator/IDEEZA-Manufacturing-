@@ -16,6 +16,8 @@ export type BadgeColour = 'neutral' | 'brand' | 'success' | 'warning' | 'error' 
  * table is the whole translation, so a screen keeps saying `tone="danger"` and
  * the system still decides what danger looks like.
  */
+export const badgeToneOverride = (tone: Tone): string | undefined => TONE_OVERRIDE[tone];
+
 const COLOUR: Record<Tone, BadgeColour> = {
   neutral: 'neutral',
   brand: 'brand',
@@ -23,6 +25,24 @@ const COLOUR: Record<Tone, BadgeColour> = {
   warning: 'warning',
   danger: 'error',
   info: 'blue',
+};
+
+/**
+ * One tone the system's badge gets wrong, and the system's own answer for it.
+ *
+ * The subtle badge binds `bg-{tone}-subtle` with `text-{tone}`, and five of the
+ * six tones clear AA comfortably in both themes. The error tone does not: in
+ * dark mode it puts red-400 on red-900, which measures 3.62:1 against the 4.5
+ * a 12px label needs. Light mode is fine at 5.91:1, which is why it survived.
+ *
+ * The system also ships a badge-specific pair for the same role, and that one
+ * measures 6.93:1 in dark and 5.91:1 in light — so the fix is the system's own
+ * token, not a colour invented here. Recorded as a gap in
+ * `docs/DESIGN-SYSTEM.md` §11 for the design team; when the badge's own
+ * compound variant is corrected upstream, this table goes away.
+ */
+const TONE_OVERRIDE: Partial<Record<Tone, string>> = {
+  danger: 'bg-badge-error-bg text-badge-error-text',
 };
 
 export interface BadgeProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'color'> {
@@ -52,7 +72,12 @@ export const Badge = ({
     variant="subtle"
     color={COLOUR[tone] ?? 'neutral'}
     size={size}
-    className={cn('justify-center', size === 'sm' ? 'min-w-5' : 'min-w-6', className)}
+    className={cn(
+      'justify-center',
+      size === 'sm' ? 'min-w-5' : 'min-w-6',
+      TONE_OVERRIDE[tone],
+      className,
+    )}
     {...rest}
   >
     {children}

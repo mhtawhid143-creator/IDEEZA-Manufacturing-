@@ -1,4 +1,4 @@
-import { quoteLandedTotalMinor } from '@ideeza/domain';
+import { quoteLandedTotalMinor, majorAmount } from '@ideeza/domain';
 
 /**
  * Money crosses into the screens as a string in major units.
@@ -7,7 +7,7 @@ import { quoteLandedTotalMinor } from '@ideeza/domain';
  * conversion happens once, here, on the server side of a page.
  */
 export const major = (minor: bigint | null): string =>
-  minor === null ? '—' : (Number(minor) / 100).toFixed(2);
+  minor === null ? '—' : majorAmount(Number(minor));
 
 export const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);

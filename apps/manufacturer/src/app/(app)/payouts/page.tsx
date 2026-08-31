@@ -1,4 +1,4 @@
-import { Card, PageHeader, Text } from '@ideeza/ui';
+import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
 import { PayoutList } from '@/components/payout/payout-list.js';
 import { earningsSummary, listPayouts } from '@/data/payouts.js';
 import { requireManufacturer } from '@/lib/auth.js';
@@ -6,7 +6,6 @@ import { requireManufacturer } from '@/lib/auth.js';
 export const dynamic = 'force-dynamic';
 
 const day = (value: Date): string => value.toISOString().slice(0, 10);
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 const dateOf = (value: string | undefined, endOfDay: boolean): Date | undefined => {
   if (value === undefined || value.trim() === '') return undefined;

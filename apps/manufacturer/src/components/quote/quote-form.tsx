@@ -12,6 +12,7 @@ import {
   Text,
   Textarea,
   useToast,
+  majorAmount,
 } from '@ideeza/ui';
 import { reviseQuoteAction, submitQuoteAction } from '@/app/(app)/quotes/actions.js';
 import { goTo } from '@/lib/navigate.js';
@@ -51,7 +52,7 @@ export interface QuoteFormProps {
   readonly trigger?: string;
 }
 
-const money = (minor: number): string => (minor / 100).toFixed(2);
+const money = (minor: number): string => majorAmount(minor);
 
 const minorOf = (major: string): number | null => {
   const text = major.trim();

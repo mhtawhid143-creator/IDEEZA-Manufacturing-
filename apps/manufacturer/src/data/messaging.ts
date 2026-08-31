@@ -1,4 +1,4 @@
-import { asId, type UserId } from '@ideeza/domain';
+import { asId, type UserId, majorAmount } from '@ideeza/domain';
 import { database } from '@/lib/db.js';
 
 const identifier = (prefix: string): string =>
@@ -165,7 +165,7 @@ export const listThreads = async (
 };
 
 const major = (minor: bigint | null): string =>
-  minor === null ? '—' : (Number(minor) / 100).toFixed(2);
+  minor === null ? '—' : majorAmount(Number(minor));
 
 const PACKAGE_LABEL: Readonly<Record<string, string>> = {
   pcb: 'PCB only',

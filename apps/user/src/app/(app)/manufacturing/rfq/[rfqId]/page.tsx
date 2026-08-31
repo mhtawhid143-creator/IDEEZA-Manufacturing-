@@ -7,6 +7,7 @@ import {
   DefinitionList,
   Text,
   buttonAppearance,
+  majorAmount,
 } from '@ideeza/ui';
 import { RequestRecipients } from '@/components/rfq/request-recipients.js';
 import { RequestShell } from '@/components/rfq/request-shell.js';
@@ -24,7 +25,7 @@ const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
 const money = (minor: bigint | null, currency: string): string =>
-  minor === null ? '—' : `${currency} ${(Number(minor) / 100).toFixed(2)}`;
+  minor === null ? '—' : `${currency} ${majorAmount(Number(minor))}`;
 
 /**
  * A request as it was sent: what went out, to whom, and where each recipient

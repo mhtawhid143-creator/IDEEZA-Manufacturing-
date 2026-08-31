@@ -7,6 +7,7 @@ import {
   type ManufacturerId,
   type OrderId,
   type UserId,
+  majorAmount,
 } from '@ideeza/domain';
 import { toDatabaseEventKind } from '@ideeza/db';
 import { database } from '@/lib/db.js';
@@ -255,7 +256,7 @@ export const approveRefund = async (
 
   const accepted = inFull ? claimedMinor : acceptedAmountMinor;
   const money = (minor: number): string =>
-    `${refund.currency} ${(minor / 100).toFixed(2)}`;
+    `${refund.currency} ${majorAmount(minor)}`;
 
   await database().$transaction(async (transaction) => {
     await transaction.refund.update({
@@ -353,9 +354,9 @@ export const challengeRefund = async (
   ) {
     return {
       ok: false,
-      message: `Offer between nothing and the ${refund.currency} ${(
-        Number(refund.requestedAmountMinor) / 100
-      ).toFixed(2)} claimed.`,
+      message: `Offer between nothing and the ${refund.currency} ${majorAmount(
+        Number(refund.requestedAmountMinor),
+      )} claimed.`,
     };
   }
 

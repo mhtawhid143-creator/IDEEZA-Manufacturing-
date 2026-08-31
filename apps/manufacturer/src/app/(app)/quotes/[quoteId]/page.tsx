@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, DefinitionList, Text } from '@ideeza/ui';
+import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
 import { asId, type QuoteId } from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
 import { getClientProfile } from '@/data/clients.js';
@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /**
  * Quote Details: exactly what the buyer is reading.

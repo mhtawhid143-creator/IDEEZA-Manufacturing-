@@ -34,7 +34,7 @@ const tabClasses = (active: boolean, disabled = false): string =>
     disabled
       ? 'cursor-not-allowed bg-bg-subtle text-text-disabled'
       : active
-        ? 'bg-bg-brand text-text-inverse'
+        ? 'bg-bg-brand text-text-on-brand'
         : 'text-text-tertiary hover:bg-bg-subtle hover:text-text-primary',
   );
 

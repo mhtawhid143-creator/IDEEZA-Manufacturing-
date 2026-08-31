@@ -7,6 +7,7 @@ import {
   EmptyState,
   Tag,
   Text,
+  majorAmount as major,
 } from '@ideeza/ui';
 import type { StockMovement } from '@ideeza/domain';
 import { Crumbs } from '@/components/crumbs.js';
@@ -23,7 +24,6 @@ const day = (value: Date | null): string =>
 const when = (value: Date): string =>
   `${value.toISOString().slice(0, 10)} at ${value.toISOString().slice(11, 16)} UTC`;
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 const MOVEMENT_WORDS: Readonly<Record<StockMovement, string>> = {
   stock_in: 'Stock in',

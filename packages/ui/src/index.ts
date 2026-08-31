@@ -1,4 +1,7 @@
 export { cn, type ClassValue } from './lib/cn.js';
+// Re-exported from the domain, where it lives so a server data module can
+// format a figure without importing a React package.
+export { majorAmount, wholeAmount } from '@ideeza/domain';
 // Framework-agnostic, so a server component can style a link like a button.
 export {
   buttonAppearance,

@@ -9,7 +9,7 @@ import type {
   RfqStatus,
 } from '@ideeza/domain';
 import { cn } from '../lib/cn.js';
-import type { BadgeColour, Tone } from './badge.js';
+import { badgeToneOverride, type BadgeColour, type Tone } from './badge.js';
 import { Badge as DsBadge } from '../ds/components/Badge/index.js';
 
 export type DomainStatus =
@@ -102,9 +102,6 @@ const DOT: Record<Tone, string> = {
   info: 'bg-bg-info',
 };
 
-// The system's badge colours (A17, Subtle): each tone is the badge's own
-// bg/text token pair; neutral, which has no badge token, is the subtle
-// surface with secondary text — exactly what the Figma variant binds.
 /**
  * This repository's tone names in the system's colour names — the same two-word
  * translation `Badge` makes: `danger` is the system's `error`, `info` its
@@ -154,7 +151,7 @@ export const StatusChip = ({
       color={BADGE_COLOUR[presentation.tone] ?? 'neutral'}
       size="md"
       dot={withDot}
-      className={className}
+      className={cn(badgeToneOverride(presentation.tone), className)}
       {...rest}
     >
       {label ?? presentation.label}

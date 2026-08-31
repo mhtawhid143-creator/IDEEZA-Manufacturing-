@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, DefinitionList, Text } from '@ideeza/ui';
+import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
 import { asId, type OrderId } from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
 import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /**
  * Quote Details: the terms this order was opened against.

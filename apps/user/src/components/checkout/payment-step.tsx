@@ -11,6 +11,7 @@ import {
   Tag,
   Text,
   cn,
+  majorAmount,
 } from '@ideeza/ui';
 import { CheckoutSummary } from './checkout-summary.js';
 import {
@@ -355,7 +356,7 @@ export const PaymentStep = ({
               loading={pending || !hydrated}
               disabled={!hydrated || !terms}
             >
-              Pay {currency} {(effectiveTotal / 100).toFixed(2)}
+              Pay {currency} {majorAmount(effectiveTotal)}
             </Button>
           }
         />

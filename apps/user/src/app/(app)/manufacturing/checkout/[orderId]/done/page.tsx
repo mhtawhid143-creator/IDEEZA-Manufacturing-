@@ -11,6 +11,7 @@ import {
   StatusChip,
   Text,
   buttonAppearance,
+  majorAmount,
 } from '@ideeza/ui';
 import { Crumbs } from '@/components/crumbs.js';
 import { getCheckout } from '@/data/checkout.js';
@@ -21,7 +22,7 @@ import { asId, type OrderId } from '@ideeza/domain';
 export const dynamic = 'force-dynamic';
 
 const money = (currency: string, minor: number): string =>
-  `${currency} ${(minor / 100).toFixed(2)}`;
+  `${currency} ${majorAmount(minor)}`;
 
 const METHOD_LABEL: Readonly<Record<string, string>> = {
   card: 'Card',

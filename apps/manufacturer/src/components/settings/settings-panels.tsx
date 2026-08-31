@@ -19,6 +19,7 @@ import {
   buttonAppearance,
   cn,
   useToast,
+  majorAmount as major,
 } from '@ideeza/ui';
 import { saveCompanyAction } from '@/app/(app)/profile/actions.js';
 
@@ -70,7 +71,6 @@ const SECTIONS = [
   },
 ] as const;
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /**
  * Settings, with the same shape the design gives it: a section rail and one pane.

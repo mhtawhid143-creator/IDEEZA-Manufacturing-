@@ -9,6 +9,7 @@ import {
   StatusChip,
   Text,
   buttonAppearance,
+  majorAmount as major,
 } from '@ideeza/ui';
 import {
   asId,
@@ -31,7 +32,6 @@ export const dynamic = 'force-dynamic';
 const when = (value: Date): string =>
   `${value.toISOString().slice(0, 10)} at ${value.toISOString().slice(11, 16)} UTC`;
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /**
  * One dispute, as both sides read it.

@@ -1,4 +1,4 @@
-import { Card, PageHeader, Text } from '@ideeza/ui';
+import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
 import { QUOTE_STATUSES, type QuoteStatus } from '@ideeza/domain';
 import { QuoteList } from '@/components/quote/quote-list.js';
 import { listQuotes, quoteCounters } from '@/data/quotes.js';
@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /** The shop's own word for where its quote stands. */
 const STATUS_LABEL: Readonly<Record<string, string>> = {

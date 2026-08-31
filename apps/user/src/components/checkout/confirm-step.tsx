@@ -12,6 +12,7 @@ import {
   Tag,
   Text,
   buttonAppearance,
+  majorAmount,
 } from '@ideeza/ui';
 import { CheckoutSummary } from './checkout-summary.js';
 import type { ShippingChoice } from '@ideeza/domain';
@@ -49,7 +50,7 @@ export interface ConfirmStepProps {
 }
 
 const money = (currency: string, minor: number): string =>
-  `${currency} ${(minor / 100).toFixed(2)}`;
+  `${currency} ${majorAmount(minor)}`;
 
 /**
  * Step one: what is being bought, where it goes, and what it costs.

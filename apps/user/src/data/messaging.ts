@@ -1,4 +1,4 @@
-import { asId, type OrderId, type RfqId, type UserId } from '@ideeza/domain';
+import { asId, type OrderId, type RfqId, type UserId, majorAmount } from '@ideeza/domain';
 import { toDomainEventKind } from '@ideeza/db';
 import type { SendMessageInput } from '@ideeza/types';
 import { database } from '@/lib/db.js';
@@ -194,7 +194,7 @@ const cardFor = (
   context: { readonly rfqId: string | null; readonly orderId: string | null },
 ): ThreadEventCard | null => {
   const money = (value: unknown): string =>
-    typeof value === 'number' ? (value / 100).toFixed(2) : '—';
+    typeof value === 'number' ? majorAmount(value) : '—';
 
   if (kind === 'quote.submitted') {
     const quoteId = typeof payload['quoteId'] === 'string' ? payload['quoteId'] : null;

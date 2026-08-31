@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Alert, Button, Card, Input, Text, cn } from '@ideeza/ui';
+import { Alert, Button, Card, cn, Input, majorAmount, Text } from '@ideeza/ui';
 import { readPromoAction } from '@/app/(app)/manufacturing/checkout/actions.js';
 
 export interface SummaryLine {
@@ -28,7 +28,7 @@ export interface CheckoutSummaryProps {
 }
 
 const money = (currency: string, minor: number): string =>
-  `${currency} ${(minor / 100).toFixed(2)}`;
+  `${currency} ${majorAmount(minor)}`;
 
 /**
  * The order summary the design puts beside the checkout.

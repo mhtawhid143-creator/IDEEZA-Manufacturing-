@@ -31,7 +31,7 @@ export const Breadcrumbs = ({ items, className, linkComponent }: BreadcrumbsProp
             ? linkComponent({
                 href: crumb.href,
                 className:
-                  'text-text-tertiary transition-colors duration-fast hover:text-text-brand hover:underline',
+                  'py-0.5 text-text-tertiary transition-colors duration-fast hover:text-text-brand hover:underline',
                 children: crumb.label,
               })
             : null;

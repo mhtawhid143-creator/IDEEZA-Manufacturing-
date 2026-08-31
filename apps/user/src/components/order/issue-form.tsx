@@ -12,6 +12,7 @@ import {
   Text,
   Textarea,
   useToast,
+  majorAmount,
 } from '@ideeza/ui';
 import {
   cancelOrderAction,
@@ -77,7 +78,7 @@ export const IssueForm = ({
   const [pending, startTransition] = useTransition();
   const [hydrated, setHydrated] = useState(false);
   const [reason, setReason] = useState('');
-  const [amount, setAmount] = useState((paidMinor / 100).toFixed(2));
+  const [amount, setAmount] = useState(majorAmount(paidMinor));
   const [description, setDescription] = useState('');
   const [picked, setPicked] = useState<readonly string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +114,7 @@ export const IssueForm = ({
     const amountMinor = withAmount ? minorFrom(amount) : 0;
     if (withAmount && (amountMinor <= 0 || amountMinor > paidMinor)) {
       setError(
-        `Enter an amount between ${currency} 0.01 and ${currency} ${(paidMinor / 100).toFixed(2)}.`,
+        `Enter an amount between ${currency} 0.01 and ${currency} ${majorAmount(paidMinor)}.`,
       );
       return;
     }
@@ -191,8 +192,8 @@ export const IssueForm = ({
           required
           hint={
             moneyReleased
-              ? `At most ${currency} ${(paidMinor / 100).toFixed(2)}, which is what you paid. That money has already been released, so IDEEZA would recover it from the manufacturer.`
-              : `At most ${currency} ${(paidMinor / 100).toFixed(2)}, which is what IDEEZA is holding.`
+              ? `At most ${currency} ${majorAmount(paidMinor)}, which is what you paid. That money has already been released, so IDEEZA would recover it from the manufacturer.`
+              : `At most ${currency} ${majorAmount(paidMinor)}, which is what IDEEZA is holding.`
           }
         >
           <Input

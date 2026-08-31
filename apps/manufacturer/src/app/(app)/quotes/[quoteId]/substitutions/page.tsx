@@ -7,6 +7,7 @@ import {
   StatusChip,
   Text,
   buttonAppearance,
+  majorAmount,
 } from '@ideeza/ui';
 import { asId, type QuoteId } from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
@@ -21,7 +22,7 @@ const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
 const major = (minor: number): string =>
-  `${minor < 0 ? '-' : ''}${(Math.abs(minor) / 100).toFixed(2)}`;
+  `${minor < 0 ? '-' : ''}${majorAmount(minor)}`;
 
 const DECISION_LABEL: Readonly<Record<string, string>> = {
   proposed: 'Waiting on the buyer',

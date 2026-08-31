@@ -658,7 +658,7 @@ const main = async () => {
     await quoteModal.getByLabel('Lead time at 1000 units').fill('30');
     check(
       'the total is computed from the unit price and the quantity',
-      await visible(quoteModal.getByText('USD 4960.00').first()),
+      await visible(quoteModal.getByText('USD 4,960.00').first()),
     );
 
     await quoteModal.getByRole('button', { name: 'Submit' }).click();
@@ -672,14 +672,14 @@ const main = async () => {
     check(
       'the quote states what the buyer pays and what is not the shop’s to quote',
       (await visible(page.getByText('Pricing breakdown'))) &&
-        (await visible(page.getByText('USD 5164.00').first())) &&
+        (await visible(page.getByText('USD 5,164.00').first())) &&
         (await visible(page.getByText('not yours to quote', { exact: false }))),
     );
     check(
       'the other volume it priced is on the quote',
       (await visible(page.getByText('The other volumes you priced'))) &&
         (await visible(page.getByText('1000 units').first())) &&
-        (await visible(page.getByText('USD 11200.00').first())),
+        (await visible(page.getByText('USD 11,200.00').first())),
     );
     await page.screenshot({ path: join(shotDir, 'quote-details.png'), fullPage: true });
 

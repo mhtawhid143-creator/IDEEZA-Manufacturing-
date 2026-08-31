@@ -53,7 +53,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {icon}
         {badge !== undefined && badge > 0 && (
           <span
-            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-bg-error px-1 text-3xs font-semibold text-text-on-brand"
+            // White on the solid error fill measures 2.77:1 in dark and
+            // 3.76:1 in light — both short of 4.5 — and 10px is below the
+            // smallest size the system sets text at. The badge's own error
+            // pair clears AA in both themes (6.93:1 / 5.91:1), and the pill
+            // grows to 18px so a 12px numeral still sits centred in it.
+            className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-badge-error-bg px-1 text-xs font-semibold text-badge-error-text"
             aria-hidden
           >
             {badge > 9 ? '9+' : badge}

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Alert, Card, StatusChip, Tag, Text, buttonAppearance } from '@ideeza/ui';
+import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
@@ -21,7 +21,6 @@ export type RequestTabId = (typeof REQUEST_TABS)[number]['id'];
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /** The manufacturer's own word for its routing state, not the buyer's. */
 const INBOX_LABEL: Readonly<Record<string, string>> = {

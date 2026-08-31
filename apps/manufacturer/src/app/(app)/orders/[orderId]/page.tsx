@@ -7,6 +7,7 @@ import {
   StatusChip,
   Text,
   buttonAppearance,
+  majorAmount,
 } from '@ideeza/ui';
 import { asId, caseReference, type OrderId } from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
@@ -27,8 +28,7 @@ const day = (value: Date | null): string =>
 const when = (value: Date): string =>
   `${value.toISOString().slice(0, 10)} at ${value.toISOString().slice(11, 16)} UTC`;
 
-const major = (minor: number): string =>
-  `${minor < 0 ? '-' : ''}${(Math.abs(minor) / 100).toFixed(2)}`;
+const major = majorAmount;
 
 const ALERT_LABEL: Readonly<Record<string, string>> = {
   open: 'Waiting on the buyer',

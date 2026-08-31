@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Alert, Card, StatusChip, Tag, Text, buttonAppearance } from '@ideeza/ui';
+import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
@@ -21,7 +21,6 @@ export type QuoteTabId = (typeof QUOTE_TABS)[number]['id'];
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 /** What the shop's own status word is, which is not the buyer's. */
 const QUOTE_LABEL: Readonly<Record<string, string>> = {

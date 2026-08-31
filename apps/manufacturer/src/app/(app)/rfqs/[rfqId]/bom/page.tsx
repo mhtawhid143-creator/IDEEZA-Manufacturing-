@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, EmptyState, Tag, Text, Tooltip } from '@ideeza/ui';
+import { Card, CardHeader, EmptyState, majorAmount, Tag, Text, Tooltip } from '@ideeza/ui';
 import {
   SUBSTITUTION_POLICY_LABEL,
   asId,
@@ -16,7 +16,7 @@ import { requireManufacturer } from '@/lib/auth.js';
 export const dynamic = 'force-dynamic';
 
 const major = (minor: number): string =>
-  `${minor < 0 ? '-' : ''}${(Math.abs(minor) / 100).toFixed(2)}`;
+  `${minor < 0 ? '-' : ''}${majorAmount(minor)}`;
 
 /**
  * What a substitute does to the price and the date, in words.

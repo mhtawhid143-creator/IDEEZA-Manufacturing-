@@ -1,4 +1,4 @@
-import { Card, PageHeader, Text } from '@ideeza/ui';
+import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
 import { STOCK_STATES, type StockLevel } from '@ideeza/domain';
 import { PartForm } from '@/components/inventory/part-form.js';
 import { PartList } from '@/components/inventory/part-list.js';
@@ -9,7 +9,6 @@ import { requireManufacturer } from '@/lib/auth.js';
 export const dynamic = 'force-dynamic';
 
 const day = (value: Date): string => value.toISOString().slice(0, 10);
-const major = (minor: number): string => (minor / 100).toFixed(2);
 
 const levelFilter = (value: string | undefined): StockLevel | 'all' =>
   value !== undefined && (STOCK_STATES as readonly string[]).includes(value)
