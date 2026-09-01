@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardHeader,
+  ChoiceChips,
   DefinitionList,
   DropdownMenu,
   EmptyState,
@@ -24,12 +25,21 @@ import {
   useToast,
 } from '@ideeza/ui';
 import {
+  addCapabilitySheetAction,
   addMachineAction,
+  removeCapabilitySheetAction,
   removeMachineAction,
   saveCapabilityAction,
   saveCompanyAction,
+  updateCapabilitySheetAction,
   updateMachineAction,
 } from '@/app/(app)/profile/actions.js';
+import {
+  CAPABILITY_KINDS,
+  CAPABILITY_KIND_OPTIONS,
+  findCapabilityKind,
+  type CapabilityKindSpec,
+} from '@/data/capability-fields.js';
 
 /**
  * What the Add Manufacturing Capability form offers.
@@ -111,6 +121,18 @@ const TOLERANCE_OPTIONS = [
 
 /** Four to a page, as the design pages them: two rows of two. */
 const MACHINES_PER_PAGE = 4;
+
+/**
+ * A blank sheet form for one kind of work.
+ *
+ * The answers are keyed by the field's id rather than its label, so renaming
+ * what the card says cannot silently orphan what a shop already chose.
+ */
+const emptySheet = (kind: string) => ({
+  kind,
+  answers: {} as Readonly<Record<string, readonly string[]>>,
+  attachments: [] as readonly string[],
+});
 
 const EMPTY_MACHINE = {
   name: '',
@@ -195,7 +217,10 @@ export interface ProfileData {
   /** What the shop can do, per kind of work — the detail after the match. */
   readonly capabilitySheets: readonly {
     readonly id: string;
+    readonly kind: string;
     readonly title: string;
+    readonly verification: string;
+    readonly attachmentNames: readonly string[];
     readonly parameters: readonly {
       readonly id: string;
       readonly label: string;
@@ -238,7 +263,12 @@ const REGION_OPTIONS = ['Asia', 'Europe', 'North America', 'South America', 'Afr
  */
 export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
   const [tab, setTab] = useState('about');
-  const [editing, setEditing] = useState<'company' | 'capability' | 'machine' | null>(null);
+  const [editing, setEditing] = useState<
+    'company' | 'capability' | 'machine' | 'sheet' | null
+  >(null);
+  /** Null while adding a sheet; the sheet's id while rewriting one. */
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [sheet, setSheet] = useState(() => emptySheet(CAPABILITY_KINDS[0]?.kind ?? 'other'));
   /** Null while adding; the machine's id while editing one already listed. */
   const [machineId, setMachineId] = useState<string | null>(null);
   const [machinePage, setMachinePage] = useState(1);
@@ -311,6 +341,92 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
         body: 'Buyers see this, and orders ship to the address.',
         tone: 'success',
       });
+      router.refresh();
+    });
+  };
+
+  const sheetSpec: CapabilityKindSpec | undefined = findCapabilityKind(sheet.kind);
+
+  /**
+   * Opens the capability form: blank for a new kind, or filled from a sheet
+   * already published.
+   *
+   * Filling it reads the stored rows back by the label the card shows, which is
+   * the same label the spec writes them under — one table, so the round trip
+   * cannot drift.
+   */
+  const openSheetForm = (existing?: ProfileData['capabilitySheets'][number]): void => {
+    setError(undefined);
+    setSheetId(existing?.id ?? null);
+
+    if (existing === undefined) {
+      const taken = new Set(data.capabilitySheets.map((row) => row.kind));
+      const free = CAPABILITY_KINDS.find((entry) => !taken.has(entry.kind));
+      setSheet(emptySheet(free?.kind ?? CAPABILITY_KINDS[0]?.kind ?? 'other'));
+      setEditing('sheet');
+      return;
+    }
+
+    const spec = findCapabilityKind(existing.kind);
+    const answers: Record<string, readonly string[]> = {};
+    for (const field of spec?.fields ?? []) {
+      const row = existing.parameters.find((entry) => entry.label === field.cardLabel);
+      if (row !== undefined) answers[field.id] = row.values;
+    }
+    setSheet({ kind: existing.kind, answers, attachments: existing.attachmentNames });
+    setEditing('sheet');
+  };
+
+  const setAnswer = (fieldId: string, values: readonly string[]): void => {
+    setSheet((current) => ({ ...current, answers: { ...current.answers, [fieldId]: values } }));
+  };
+
+  /** Every required field answered — what the design's Add Now waits for. */
+  const sheetReady =
+    sheetSpec !== undefined &&
+    sheetSpec.fields
+      .filter((field) => field.required)
+      .every((field) => (sheet.answers[field.id] ?? []).some((value) => value.trim() !== ''));
+
+  const saveSheet = (): void => {
+    setError(undefined);
+    if (sheetSpec === undefined) return;
+    const payload = {
+      kind: sheet.kind,
+      title: sheetSpec.label,
+      parameters: sheetSpec.fields.map((field) => ({
+        label: field.cardLabel,
+        values: sheet.answers[field.id] ?? [],
+      })),
+      attachmentNames: sheet.attachments,
+    };
+    startTransition(async () => {
+      const result =
+        sheetId === null
+          ? await addCapabilitySheetAction(payload)
+          : await updateCapabilitySheetAction(sheetId, payload);
+      if (!result.saved) {
+        setError(result.error ?? 'That sheet was not saved.');
+        return;
+      }
+      setEditing(null);
+      setSheetId(null);
+      push({
+        title: sheetId === null ? 'Capability published' : 'Capability updated',
+        body: 'IDEEZA reads it before it says Verified.',
+        tone: 'success',
+      });
+      router.refresh();
+    });
+  };
+
+  const dropSheet = (id: string): void => {
+    startTransition(async () => {
+      const result = await removeCapabilitySheetAction(id);
+      if (!result.saved) {
+        push({ title: result.error ?? 'It was not removed.', tone: 'danger' });
+        return;
+      }
       router.refresh();
     });
   };
@@ -753,133 +869,123 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       {tab === 'capabilities' && (
-        <>
-          <Card>
-            <CardHeader
-              title="What buyers are matched on"
-              description="This part is real: a request only reaches you if these cover it."
-              actions={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setEditing('capability')}
-                >
-                  Edit
-                </Button>
-              }
-            />
-            <div className="mt-4 flex flex-col gap-3">
-              <div>
-                <Text tone="muted" size="xs" className="block">
-                  Services published
-                </Text>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {data.services.length === 0 ? (
-                    <Tag tone="warning">None — no request can reach you</Tag>
-                  ) : (
-                    data.services.map((service) => (
-                      <Tag key={service} tone="brand">
-                        {SERVICE_OPTIONS.find((option) => option.value === service)
-                          ?.label ?? service.replace(/_/g, ' ')}
-                      </Tag>
-                    ))
-                  )}
-                </div>
-              </div>
-              <div>
-                <Text tone="muted" size="xs" className="block">
-                  Regions served
-                </Text>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {data.servedRegions.length === 0 ? (
-                    <Tag tone="warning">None published</Tag>
-                  ) : (
-                    data.servedRegions.map((region) => <Tag key={region}>{region}</Tag>)
-                  )}
-                </div>
-              </div>
-              <DefinitionList
-                columns={2}
-                items={[
-                  {
-                    label: 'Minimum order quantity',
-                    value:
-                      data.minimumOrderQuantity === ''
-                        ? 'Not set'
-                        : `${data.minimumOrderQuantity} units`,
-                  },
-                  {
-                    label: 'Standard lead time',
-                    value:
-                      data.standardLeadTimeDays === ''
-                        ? 'Not set'
-                        : `${data.standardLeadTimeDays} days`,
-                  },
-                ]}
-              />
-            </div>
-          </Card>
-
-          {data.capabilitySheets.length === 0 && (
-            <EmptyState
-              title="No capability sheets yet"
-              description="The panel above is what a request is matched on. A sheet is the detail a buyer reads once it has reached you — layer counts, tolerances, finishes."
-            />
-          )}
-
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            {data.capabilitySheets.map((sheet) => (
-              <Card key={sheet.id} padded={false}>
-                <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">{sheet.title}</p>
-                    <Text tone="muted" size="xs">
-                      {sheet.parameters.length}{' '}
-                      {sheet.parameters.length === 1 ? 'parameter' : 'parameters'}
-                    </Text>
-                  </div>
-                  <DropdownMenu
-                    label={`Actions for ${sheet.title}`}
-                    items={[{ id: 'soon', label: 'Editing arrives with the logic pass', disabled: true }]}
-                    trigger={({ ref, onClick, ...aria }) => (
-                      <button
-                        ref={ref}
-                        type="button"
-                        onClick={onClick}
-                        aria-label={`Actions for ${sheet.title}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
-                        {...aria}
-                      >
-                        ⋮
-                      </button>
-                    )}
-                  />
-                </div>
-                <ul aria-label={`${sheet.title} parameters`}>
-                  {sheet.parameters.map((row) => (
-                    <li
-                      key={row.id}
-                      className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-2.5 last:border-b-0"
-                    >
-                      <Text tone="muted" size="sm">
-                        {row.label}
-                      </Text>
-                      <span className="flex flex-wrap justify-end gap-1">
-                        {row.values.map((value) => (
-                          <Tag key={value} tone="brand">
-                            {value}
-                          </Tag>
-                        ))}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-text-primary">Capabilities</h2>
+            <Button
+              variant="tonal"
+              size="xs"
+              leadingIcon={<Icon name="plus" size={18} />}
+              disabled={data.capabilitySheets.length >= CAPABILITY_KINDS.length}
+              onClick={() => openSheetForm()}
+            >
+              Add New
+            </Button>
           </div>
 
+          {data.capabilitySheets.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No capability sheets yet"
+                description="A sheet is what a buyer reads once a request has reached you — layer counts, tolerances, finishes, how long a build takes."
+                action={
+                  <Button variant="secondary" size="sm" onClick={() => openSheetForm()}>
+                    Add a capability
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
+            <ul className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
+              {data.capabilitySheets.map((entry) => {
+                const spec = findCapabilityKind(entry.kind);
+                const verified = entry.verification === 'verified';
+                return (
+                  <li
+                    key={entry.id}
+                    className="flex flex-col rounded-xl border border-border-subtle bg-bg-surface"
+                  >
+                    <div className="flex items-start justify-between gap-2 border-b border-border-subtle p-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bg-brand-subtle text-icon-brand">
+                          <Icon name={spec?.icon ?? 'grid'} size={20} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-text-primary">
+                            {entry.title}
+                          </p>
+                          <Text tone="muted" size="xs">
+                            {entry.parameters.length}{' '}
+                            {entry.parameters.length === 1 ? 'Parameter' : 'Parameters'}
+                          </Text>
+                        </div>
+                      </div>
+                      <DropdownMenu
+                        label={`Actions for ${entry.title}`}
+                        items={[
+                          { id: 'edit', label: 'Edit', onSelect: () => openSheetForm(entry) },
+                          {
+                            id: 'delete',
+                            label: 'Delete',
+                            tone: 'danger',
+                            onSelect: () => dropSheet(entry.id),
+                          },
+                        ]}
+                        trigger={({ ref, onClick, ...aria }) => (
+                          <button
+                            ref={ref}
+                            type="button"
+                            onClick={onClick}
+                            disabled={pending}
+                            aria-label={`Actions for ${entry.title}`}
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                            {...aria}
+                          >
+                            <Icon name="more" size={20} />
+                          </button>
+                        )}
+                      />
+                    </div>
 
-        </>
+                    <ul aria-label={`${entry.title} parameters`} className="flex flex-col gap-2.5 p-4">
+                      {entry.parameters.map((row) => (
+                        <li key={row.id} className="flex items-start justify-between gap-3">
+                          <Text tone="muted" size="sm" className="shrink-0">
+                            {row.label}
+                          </Text>
+                          <span className="flex flex-wrap justify-end gap-1.5">
+                            {row.values.map((value) => (
+                              <Badge key={value} tone="brand">
+                                {value}
+                              </Badge>
+                            ))}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/*
+                      Whether IDEEZA has read the evidence, in the platform's own
+                      voice. Nothing a shop does sets this to Verified — that is
+                      the point of showing it.
+                    */}
+                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-border-subtle p-4">
+                      <Text tone="muted" size="sm">
+                        Verification Status
+                      </Text>
+                      <Badge tone={verified ? 'success' : 'warning'}>
+                        <span className="inline-flex items-center gap-1">
+                          <Icon name={verified ? 'check-circle' : 'clock'} size={14} />
+                          {verified ? 'Verified' : 'Pending'}
+                        </span>
+                      </Badge>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
       )}
 
       {tab === 'blog' && (
@@ -951,6 +1057,72 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
         <>
           <Card>
             <CardHeader
+              title="What buyers are matched on"
+              description="This part is real: a request only reaches you if these cover it."
+              actions={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEditing('capability')}
+                >
+                  Edit
+                </Button>
+              }
+            />
+            <div className="mt-4 flex flex-col gap-3">
+              <div>
+                <Text tone="muted" size="xs" className="block">
+                  Services published
+                </Text>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {data.services.length === 0 ? (
+                    <Tag tone="warning">None — no request can reach you</Tag>
+                  ) : (
+                    data.services.map((service) => (
+                      <Tag key={service} tone="brand">
+                        {SERVICE_OPTIONS.find((option) => option.value === service)
+                          ?.label ?? service.replace(/_/g, ' ')}
+                      </Tag>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div>
+                <Text tone="muted" size="xs" className="block">
+                  Regions served
+                </Text>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {data.servedRegions.length === 0 ? (
+                    <Tag tone="warning">None published</Tag>
+                  ) : (
+                    data.servedRegions.map((region) => <Tag key={region}>{region}</Tag>)
+                  )}
+                </div>
+              </div>
+              <DefinitionList
+                columns={2}
+                items={[
+                  {
+                    label: 'Minimum order quantity',
+                    value:
+                      data.minimumOrderQuantity === ''
+                        ? 'Not set'
+                        : `${data.minimumOrderQuantity} units`,
+                  },
+                  {
+                    label: 'Standard lead time',
+                    value:
+                      data.standardLeadTimeDays === ''
+                        ? 'Not set'
+                        : `${data.standardLeadTimeDays} days`,
+                  },
+                ]}
+              />
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader
               title="Certifications"
               description="What you hold. Buyers filter on these."
               actions={
@@ -994,17 +1166,6 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
             </Text>
           </Card>
 
-          <Card>
-            <CardHeader title="Services" description="What you are matched on." />
-            <div className="mt-3 flex flex-wrap gap-2">
-              {data.services.map((service) => (
-                <Tag key={service} tone="brand">
-                  {SERVICE_OPTIONS.find((option) => option.value === service)?.label ??
-                    service.replace(/_/g, ' ')}
-                </Tag>
-              ))}
-            </div>
-          </Card>
         </>
       )}
 
@@ -1021,6 +1182,143 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
           </Text>
         </Card>
       )}
+
+      <Modal
+        open={editing === 'sheet'}
+        onClose={() => setEditing(null)}
+        title={sheetId === null ? 'Add New Capability' : 'Edit Capability'}
+        description="What a buyer reads once a request has reached you."
+        size="sm"
+        footer={
+          <div className="w-full">
+            <Button
+              variant="primary"
+              fullWidth
+              loading={pending || !hydrated}
+              disabled={!hydrated || !sheetReady}
+              onClick={saveSheet}
+            >
+              {sheetId === null ? 'Add Now' : 'Save changes'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <FormField
+            label="Select Capability type"
+            hint={
+              sheetId === null
+                ? 'One sheet for each kind of work. Changing this starts the answers again.'
+                : 'A published sheet keeps its kind; add another for different work.'
+            }
+          >
+            <Select
+              options={CAPABILITY_KIND_OPTIONS.map((option) => ({
+                ...option,
+                // One sheet per kind: a shop with two PCB sheets would show a
+                // buyer two answers to the same question.
+                disabled:
+                  sheetId === null &&
+                  data.capabilitySheets.some((row) => row.kind === option.value),
+              }))}
+              value={sheet.kind}
+              disabled={sheetId !== null}
+              onChange={(event) => setSheet(emptySheet(event.target.value))}
+            />
+          </FormField>
+
+          {(sheetSpec?.fields ?? []).map((field) => {
+            const chosen = sheet.answers[field.id] ?? [];
+            if (field.control === 'chips') {
+              return (
+                <ChoiceChips
+                  key={field.id}
+                  label={field.formLabel}
+                  required={field.required}
+                  single={field.single ?? false}
+                  options={field.options ?? []}
+                  value={chosen}
+                  onChange={(next) => setAnswer(field.id, next)}
+                />
+              );
+            }
+            if (field.control === 'select') {
+              return (
+                <FormField key={field.id} label={field.formLabel} required={field.required}>
+                  <Select
+                    options={(field.options ?? []).map((option) => ({
+                      value: option,
+                      label: option,
+                    }))}
+                    placeholder={field.placeholder ?? `Select ${field.formLabel}`}
+                    value={chosen[0] ?? ''}
+                    onChange={(event) => setAnswer(field.id, [event.target.value])}
+                  />
+                </FormField>
+              );
+            }
+            return (
+              <FormField key={field.id} label={field.formLabel} required={field.required}>
+                <Input
+                  value={chosen[0] ?? ''}
+                  maxLength={80}
+                  placeholder={field.placeholder ?? ''}
+                  onChange={(event) => setAnswer(field.id, [event.target.value])}
+                />
+              </FormField>
+            );
+          })}
+
+          {/*
+            The design's dropzone. The file itself goes nowhere in this build —
+            there is no store behind it — so the sheet records the names offered
+            and the hint says exactly that. A required field that silently threw
+            the file away would be worse than an honest optional one.
+          */}
+          <FormField
+            label="Attachments"
+            hint="The names are kept with the sheet; the files themselves are not uploaded in this build."
+          >
+            <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed border-border px-6 py-8 text-center transition-colors hover:bg-bg-subtle focus-within:ring-3 focus-within:ring-focus">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-brand-subtle text-icon-brand">
+                <Icon name="send" size={18} />
+              </span>
+              <span className="mt-1 text-sm font-medium text-text-primary">
+                Click or drag a file to upload
+              </span>
+              <span className="text-xs text-text-tertiary">
+                PNG, JPG, PDF, DOC, GIF, Video or DOCX
+              </span>
+              <input
+                type="file"
+                multiple
+                className="sr-only"
+                onChange={(event) =>
+                  setSheet((current) => ({
+                    ...current,
+                    attachments: Array.from(event.target.files ?? []).map((file) => file.name),
+                  }))
+                }
+              />
+            </label>
+          </FormField>
+          {sheet.attachments.length > 0 && (
+            <ul className="-mt-2 flex flex-wrap gap-2">
+              {sheet.attachments.map((name) => (
+                <li key={name}>
+                  <Tag>{name}</Tag>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {error !== undefined && (
+            <Alert tone="danger" title="Not saved">
+              {error}
+            </Alert>
+          )}
+        </div>
+      </Modal>
 
       <Modal
         open={editing === 'machine'}

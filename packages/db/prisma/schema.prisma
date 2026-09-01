@@ -1717,6 +1717,18 @@ model ShopMachine {
   @@index([manufacturerId, position])
 }
 
+/// Whether IDEEZA has checked a capability sheet, or has not yet.
+///
+/// Two states, because there are only two truths to tell: somebody at IDEEZA
+/// has looked at the evidence, or nobody has yet. A sheet a shop has just
+/// written is `pending` and says so on the card — a buyer reading "Verified"
+/// on something nobody read would be the platform lending its name to a claim
+/// it never checked.
+enum CapabilityVerification {
+  pending
+  verified
+}
+
 /// One sheet of what a shop can actually do, per kind of work.
 ///
 /// The platform matches requests on `ManufacturerCapability` — services,
@@ -1724,12 +1736,17 @@ model ShopMachine {
 /// reads after the match: layer counts, tolerances, finishes. They do not gate
 /// anything, which is why they are separate from the record that does.
 model ShopCapabilitySheet {
-  id             String         @id
-  manufacturerId String
-  kind           CapabilityKind
-  title          String
-  position       Int            @default(0)
-  updatedAt      DateTime       @updatedAt
+  id              String                 @id
+  manufacturerId  String
+  kind            CapabilityKind
+  title           String
+  verification    CapabilityVerification @default(pending)
+  /// The names of the files the shop attached as evidence. The files
+  /// themselves are not stored anywhere yet, so the sheet records what was
+  /// offered rather than pretending to hold it.
+  attachmentNames String[]               @default([])
+  position        Int                    @default(0)
+  updatedAt       DateTime               @updatedAt
 
   manufacturer ManufacturerProfile       @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
   parameters   ShopCapabilityParameter[]

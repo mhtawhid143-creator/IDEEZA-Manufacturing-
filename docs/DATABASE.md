@@ -89,8 +89,14 @@ Four tables carry the profile beyond the address, all hanging off
   earlier `ShopEquipment` of name-and-quantity, which could not carry any of
   what the design's card actually shows a buyer.
 - `ShopCapabilitySheet` and `ShopCapabilityParameter` — the per-process
-  parameter sheets (PCB, PCBA, 3D printing), a sheet to a kind of work and a
-  row per parameter, each holding its values as a list.
+  parameter sheets, a sheet to a kind of work and a row per parameter, each
+  holding its values as a list. One sheet per kind is a unique constraint: a
+  shop with two PCB sheets would show a buyer two answers to one question.
+  `verification` is IDEEZA's, not the shop's — a sheet starts `pending` and
+  goes back to `pending` whenever it is rewritten, because the answers somebody
+  read are no longer the answers on the card. `attachmentNames` records what
+  was offered as evidence; the files themselves are not stored anywhere yet,
+  and the form says so rather than swallowing them.
 - `ShopArticle` — what the shop has written, with the category, the status and,
   when it was sent back, the reason.
 
@@ -249,9 +255,9 @@ Rules for future changes:
   schema change with no migration fails the suite. Two more tests in the same
   file pin the migration list and count the tables and enums, so a new table
   cannot arrive unnoticed — update them in the same commit that adds it.
-- The most recent is `20260901113001_shop_machines`, which replaces
-  `ShopEquipment` with `ShopMachine` so the profile's machine card can carry a
-  process, its sub-processes, a tolerance and a turnaround.
+- The most recent is `20260901125643_capability_verification`, which adds
+  `CapabilityVerification` and the sheet's `verification` and
+  `attachmentNames` columns.
 
 Commands:
 

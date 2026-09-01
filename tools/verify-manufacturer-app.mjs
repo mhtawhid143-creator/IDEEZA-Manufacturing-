@@ -1463,6 +1463,152 @@ const main = async () => {
       }
     }
 
+    // ------------------------ the capability sheets: publish, rewrite, take down
+    //
+    // The tab used to be one card of matching rules and a list nobody could
+    // change. The design's tab is a sheet per kind of work — the answers a
+    // buyer reads after a request has reached the shop — with a form that asks
+    // a different set of questions for each kind. Three things are worth
+    // checking: the form follows the kind, publishing lands on the card, and
+    // rewriting a verified sheet stops it claiming to be verified.
+    await page.goto(`${base}/profile`, { waitUntil: 'networkidle' });
+    await page.getByRole('tab', { name: 'Capabilities' }).first().click();
+    await page.waitForTimeout(400);
+
+    const sheetCards = page.locator('main ul > li');
+    check(
+      'the capability tab lists a sheet per kind of work',
+      (await sheetCards.count()) > 0,
+      `${await sheetCards.count()} sheets`,
+    );
+    const firstSheet = (await sheetCards.first().innerText()).replace(/\s+/g, ' ');
+    check(
+      'each sheet shows its parameters and whether IDEEZA has read it',
+      /Parameters/.test(firstSheet) && /Verification Status/.test(firstSheet),
+      firstSheet.slice(0, 90),
+    );
+
+    await page.getByRole('button', { name: 'Add New' }).click();
+    const sheetForm = page.getByRole('dialog', { name: 'Add New Capability' });
+    check('Add New opens the capability form', await visible(sheetForm));
+
+    if (await visible(sheetForm)) {
+      // Add Now stays out of reach until the required answers are there — the
+      // design draws it grey, and a form that accepts a half-answered sheet
+      // publishes a card with holes in it.
+      check(
+        'Add Now waits for the required answers',
+        await sheetForm.getByRole('button', { name: 'Add Now' }).isDisabled(),
+      );
+
+      await sheetForm.getByLabel('Select Capability type').selectOption('cnc_machining');
+      await page.waitForTimeout(300);
+      // The questions follow the kind: CNC asks about axes, not layer counts.
+      const asked = (await sheetForm.innerText()).replace(/\s+/g, ' ');
+      check(
+        'the questions follow the kind of work',
+        /Axis Support/.test(asked) && !/Supported Layers/.test(asked),
+        asked.slice(0, 90),
+      );
+
+      await sheetForm.getByRole('button', { name: '3-Axis' }).click();
+      await sheetForm.getByRole('button', { name: '5-Axis' }).click();
+      await sheetForm.getByLabel('Tolerance').selectOption('plus or minus 0.05mm');
+      await sheetForm.getByLabel('Max work Area').selectOption('800 x 500 x 400 mm');
+      await sheetForm.getByLabel('Build Time').fill('7-10 business days');
+
+      check(
+        'and Add Now is reachable once they are answered',
+        !(await sheetForm.getByRole('button', { name: 'Add Now' }).isDisabled()),
+      );
+      await sheetForm.getByRole('button', { name: 'Add Now' }).click();
+      await sheetForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+
+      const published = page.locator('main ul > li').filter({ hasText: 'CNC Machining' }).first();
+      const arrived = await visible(published, 20_000);
+      check('the sheet is published', arrived);
+
+      if (arrived) {
+        const card = (await published.innerText()).replace(/\s+/g, ' ');
+        check(
+          'the card carries every answer, and only the answered ones',
+          /3-Axis/.test(card) &&
+            /5-Axis/.test(card) &&
+            /plus or minus 0.05mm/.test(card) &&
+            /7-10 business days/.test(card) &&
+            !/Finish/.test(card),
+          card.slice(0, 130),
+        );
+        // Nobody at IDEEZA has read it, and the card says so rather than
+        // wearing a badge the platform cannot stand behind.
+        check('a new sheet is pending, not verified', /Pending/.test(card));
+
+        // Rewriting a verified sheet must take its badge off.
+        const verified = page
+          .locator('main ul > li')
+          .filter({ hasText: 'PCB Manufacturing' })
+          .first();
+        if ((await verified.count()) > 0) {
+          check(
+            'the seeded sheet starts verified',
+            /Verified/.test(await verified.innerText()),
+          );
+          await verified.getByRole('button', { name: /Actions for/ }).click();
+          await page.getByRole('menuitem', { name: 'Edit' }).click();
+          const editForm = page.getByRole('dialog', { name: 'Edit Capability' });
+          const editing = await visible(editForm);
+          check('Edit opens the sheet already answered', editing);
+          if (editing) {
+            check(
+              'and its kind is fixed, because a sheet cannot change what it is for',
+              await editForm.getByLabel('Select Capability type').isDisabled(),
+            );
+            await editForm.getByLabel('Build Time').fill('12-24 Hours');
+            await editForm.getByRole('button', { name: 'Save changes' }).click();
+            await editForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+
+            let pendingNow = false;
+            for (let attempt = 0; attempt < 30 && !pendingNow; attempt += 1) {
+              await page.waitForTimeout(500);
+              const again = page
+                .locator('main ul > li')
+                .filter({ hasText: 'PCB Manufacturing' })
+                .first();
+              pendingNow =
+                (await again.count()) > 0 &&
+                (await again.innerText()).includes('12-24 Hours') &&
+                (await again.innerText()).includes('Pending');
+            }
+            check('rewriting it lands, and stops it claiming to be verified', pendingNow);
+          }
+        }
+
+        await page
+          .locator('main ul > li')
+          .filter({ hasText: 'CNC Machining' })
+          .first()
+          .getByRole('button', { name: /Actions for/ })
+          .click();
+        await page.getByRole('menuitem', { name: 'Delete' }).click();
+        let left = 1;
+        for (let attempt = 0; attempt < 30 && left > 0; attempt += 1) {
+          await page.waitForTimeout(500);
+          left = await page.locator('main ul > li').filter({ hasText: 'CNC Machining' }).count();
+        }
+        check('and Delete takes the sheet down', left === 0);
+      }
+    }
+
+    // What actually decides whether a request reaches this shop moved to the
+    // tab its neighbours are on. It is load-bearing, so its absence would be a
+    // regression rather than a tidy-up.
+    await page.getByRole('tab', { name: 'Service & certification' }).first().click();
+    await page.waitForTimeout(400);
+    check(
+      'the matching record is still reachable, beside the certifications',
+      await visible(page.getByText('What buyers are matched on')),
+    );
+
     // ------------------------------------------ reporting a problem, end to end
     //
     // The rail's last row used to read "Help and Feedback — n/a". It opens the

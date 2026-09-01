@@ -683,11 +683,19 @@ const main = async () => {
     );
 
     // The comparison step. Once two are chosen these become real links.
-    await page.getByRole('link', { name: 'Compare' }).click();
-    const onCompare = await page
-      .waitForURL(/\/manufacturing\/rfq\/new\/compare\?draft=/, { timeout: 20_000 })
-      .then(() => true)
-      .catch(() => false);
+    //
+    // Clicked more than once on purpose: a click that lands between the markup
+    // arriving and React attaching is taken by neither the router nor the
+    // browser, and the page simply stays where it was. A person whose click did
+    // nothing clicks again, and so does this.
+    let onCompare = false;
+    for (let attempt = 0; attempt < 3 && !onCompare; attempt += 1) {
+      await page.getByRole('link', { name: 'Compare' }).click();
+      onCompare = await page
+        .waitForURL(/\/manufacturing\/rfq\/new\/compare\?draft=/, { timeout: 8_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
     check('Compare opens the comparison', onCompare, page.url());
     check(
       'the comparison puts the manufacturers side by side',

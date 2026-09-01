@@ -7,6 +7,7 @@ import {
   Cancel01Icon,
   Building06Icon,
   Cash01Icon,
+  Clock01Icon,
   CheckmarkCircle02Icon,
   ChipIcon,
   Compass01Icon,
@@ -18,6 +19,7 @@ import {
   Flag02Icon,
   Folder01Icon,
   Invoice01Icon,
+  Layers01Icon,
   HelpCircleIcon,
   InformationCircleIcon,
   ListViewIcon,
@@ -67,6 +69,7 @@ export type IconName =
   | 'check-circle'
   | 'chevron-down'
   | 'chevron-right'
+  | 'clock'
   | 'close'
   | 'compass'
   | 'cube'
@@ -80,6 +83,7 @@ export type IconName =
   | 'help'
   | 'info'
   | 'invoice'
+  | 'layers'
   | 'list'
   | 'map'
   | 'menu'
@@ -110,6 +114,7 @@ const GLYPH = {
   'check-circle': CheckmarkCircle02Icon,
   'chevron-down': ArrowDown01Icon,
   'chevron-right': ArrowRight01Icon,
+  clock: Clock01Icon,
   close: Cancel01Icon,
   compass: Compass01Icon,
   cube: CubeIcon,
@@ -123,6 +128,7 @@ const GLYPH = {
   help: HelpCircleIcon,
   info: InformationCircleIcon,
   invoice: Invoice01Icon,
+  layers: Layers01Icon,
   map: Navigation03Icon,
   list: ListViewIcon,
   menu: Menu01Icon,

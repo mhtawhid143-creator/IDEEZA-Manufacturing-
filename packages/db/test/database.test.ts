@@ -49,6 +49,7 @@ describe('migrations apply to a clean database', () => {
       '20260901102118_profile_contact_and_social',
       '20260901103556_profile_equipment_sheets_articles',
       '20260901113001_shop_machines',
+      '20260901125643_capability_verification',
     ]);
   });
 
@@ -85,8 +86,10 @@ describe('migrations apply to a clean database', () => {
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with
     // the Report a Problem dialog. CapabilityKind and ArticleStatus arrived
-    // with the profile alignment.
-    expect(enums).toBe(50);
+    // with the profile alignment. CapabilityVerification arrived with the
+    // capability tab: a sheet a shop just wrote has not been read by anyone at
+    // IDEEZA, and the card has to be able to say so.
+    expect(enums).toBe(51);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

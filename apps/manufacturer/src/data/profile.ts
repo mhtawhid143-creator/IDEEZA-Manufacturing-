@@ -24,6 +24,9 @@ export interface ShopCapabilitySheetRow {
   readonly id: string;
   readonly kind: string;
   readonly title: string;
+  /** Whether anyone at IDEEZA has read the evidence behind it yet. */
+  readonly verification: string;
+  readonly attachmentNames: readonly string[];
   readonly parameters: readonly {
     readonly id: string;
     readonly label: string;
@@ -186,6 +189,8 @@ export const getShopProfile = async (
       id: sheet.id,
       kind: sheet.kind,
       title: sheet.title,
+      verification: sheet.verification,
+      attachmentNames: sheet.attachmentNames,
       parameters: sheet.parameters.map((parameter) => ({
         id: parameter.id,
         label: parameter.label,
@@ -439,6 +444,172 @@ export const removeMachine = async (
   });
   return count === 0
     ? { ok: false, message: 'That machine is not on your floor list.' }
+    : { ok: true };
+};
+
+export interface CapabilitySheetEdit {
+  readonly kind: string;
+  readonly title: string;
+  /** Label and values per row, in the order the card will list them. */
+  readonly parameters: readonly { readonly label: string; readonly values: readonly string[] }[];
+  readonly attachmentNames: readonly string[];
+}
+
+const cleanSheet = (
+  edit: CapabilitySheetEdit,
+): { readonly title: string; readonly rows: readonly { label: string; values: string[] }[] } | string => {
+  const title = edit.title.trim();
+  if (title === '') return 'Which kind of work is this sheet for?';
+
+  const rows = edit.parameters
+    .map((row) => ({
+      label: row.label.trim(),
+      values: row.values.map((value) => value.trim()).filter((value) => value !== ''),
+    }))
+    // A row with nothing in it is left out rather than published as an empty
+    // line: the card would show a label and a blank, which reads as a gap in
+    // the shop's answer rather than a question it chose not to answer.
+    .filter((row) => row.label !== '' && row.values.length > 0);
+
+  if (rows.length === 0) return 'A sheet with no answers tells a buyer nothing. Fill in at least one.';
+  return { title, rows };
+};
+
+/**
+ * Writes a sheet and its rows in one transaction.
+ *
+ * The rows are replaced rather than merged: the form sends the whole sheet, so
+ * a row the shop cleared has to disappear, and a diff would leave the one it
+ * forgot to mention behind.
+ */
+const writeSheet = async (
+  sheetId: string,
+  manufacturerId: ManufacturerId,
+  kind: string,
+  title: string,
+  rows: readonly { label: string; values: string[] }[],
+  attachmentNames: readonly string[],
+  position: number,
+): Promise<void> => {
+  const names = attachmentNames.map((name) => name.trim()).filter((name) => name !== '');
+  await database().$transaction(async (tx) => {
+    await tx.shopCapabilitySheet.upsert({
+      where: { id: sheetId },
+      update: { title, attachmentNames: names },
+      create: {
+        id: sheetId,
+        manufacturerId,
+        kind: kind as never,
+        title,
+        attachmentNames: names,
+        position,
+      },
+    });
+    await tx.shopCapabilityParameter.deleteMany({ where: { sheetId } });
+    await tx.shopCapabilityParameter.createMany({
+      data: rows.map((row, index) => ({
+        id: `${sheetId}_p${String(index)}`,
+        sheetId,
+        label: row.label,
+        values: row.values,
+        position: index,
+      })),
+    });
+  });
+};
+
+/**
+ * Adds a sheet for a kind of work this shop has not published one for.
+ *
+ * One sheet per kind is a database constraint, and the refusal says so rather
+ * than letting the constraint surface as an error: a shop with two PCB sheets
+ * would show a buyer two different answers to the same question.
+ */
+export const addCapabilitySheet = async (
+  manufacturerId: ManufacturerId,
+  edit: CapabilitySheetEdit,
+): Promise<ProfileOutcome> => {
+  const clean = cleanSheet(edit);
+  if (typeof clean === 'string') return { ok: false, message: clean };
+
+  const already = await database().shopCapabilitySheet.findFirst({
+    where: { manufacturerId, kind: edit.kind as never },
+    select: { id: true },
+  });
+  if (already !== null) {
+    return {
+      ok: false,
+      message: `You already publish a ${clean.title} sheet. Edit that one instead.`,
+    };
+  }
+
+  const last = await database().shopCapabilitySheet.findFirst({
+    where: { manufacturerId },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+
+  await writeSheet(
+    `sheet_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+    manufacturerId,
+    edit.kind,
+    clean.title,
+    clean.rows,
+    edit.attachmentNames,
+    (last?.position ?? -1) + 1,
+  );
+
+  return { ok: true };
+};
+
+/**
+ * Rewrites one, scoped by shop.
+ *
+ * Editing a sheet takes it back to pending: the answers IDEEZA read are not
+ * the answers on the card any more, and leaving the Verified chip on would
+ * make the platform vouch for something nobody checked.
+ */
+export const updateCapabilitySheet = async (
+  manufacturerId: ManufacturerId,
+  sheetId: string,
+  edit: CapabilitySheetEdit,
+): Promise<ProfileOutcome> => {
+  const clean = cleanSheet(edit);
+  if (typeof clean === 'string') return { ok: false, message: clean };
+
+  const mine = await database().shopCapabilitySheet.findFirst({
+    where: { id: sheetId, manufacturerId },
+    select: { id: true, kind: true, position: true },
+  });
+  if (mine === null) return { ok: false, message: 'That sheet is not one of yours.' };
+
+  await writeSheet(
+    mine.id,
+    manufacturerId,
+    mine.kind,
+    clean.title,
+    clean.rows,
+    edit.attachmentNames,
+    mine.position,
+  );
+  await database().shopCapabilitySheet.update({
+    where: { id: mine.id },
+    data: { verification: 'pending' },
+  });
+
+  return { ok: true };
+};
+
+/** Takes one down, scoped so a member can only remove their own shop's. */
+export const removeCapabilitySheet = async (
+  manufacturerId: ManufacturerId,
+  sheetId: string,
+): Promise<ProfileOutcome> => {
+  const { count } = await database().shopCapabilitySheet.deleteMany({
+    where: { id: sheetId, manufacturerId },
+  });
+  return count === 0
+    ? { ok: false, message: 'That sheet is not one of yours.' }
     : { ok: true };
 };
 

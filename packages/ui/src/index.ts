@@ -22,6 +22,7 @@ export * from './components/form-field.js';
 export * from './components/input.js';
 export * from './components/select.js';
 export * from './components/choice.js';
+export * from './components/choice-chips.js';
 export * from './components/option-chips.js';
 export * from './components/stepper.js';
 export * from './components/timeline.js';

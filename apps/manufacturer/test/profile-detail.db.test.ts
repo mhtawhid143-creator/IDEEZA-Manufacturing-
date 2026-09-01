@@ -20,6 +20,8 @@ let profile: typeof Profile;
 
 const SHOP = asId<ManufacturerId>('seed_mfr_a');
 const OTHER = asId<ManufacturerId>('seed_mfr_b');
+/** Shop B has no capability sheet of its own; the print shop does. */
+const OTHER_SHEET_SHOP = asId<ManufacturerId>('seed_mfr_c');
 
 /** What the settings screen sends: the address, and nothing else. */
 const addressOnly = {
@@ -59,6 +61,8 @@ describe('the profile a buyer reads', () => {
     expect(shop.machines.length).toBeGreaterThan(0);
     expect(shop.capabilitySheets.length).toBeGreaterThan(0);
     expect(shop.capabilitySheets[0]?.parameters.length).toBeGreaterThan(0);
+    expect(shop.capabilitySheets[0]?.kind).toBeTruthy();
+    expect(shop.capabilitySheets[0]?.verification).toBe('verified');
     expect(shop.articles.length).toBeGreaterThan(0);
     // A rejected article carries the reason it was sent back, or a shop is told
     // no and left to guess.
@@ -181,5 +185,124 @@ describe('the floor list', () => {
 
     expect((await profile.removeMachine(SHOP, mine.id)).ok).toBe(true);
     expect(await prisma.shopMachine.findUnique({ where: { id: mine.id } })).toBeNull();
+  });
+});
+
+describe('the capability sheets', () => {
+  const cnc = {
+    kind: 'cnc_machining',
+    title: 'CNC Machining',
+    parameters: [
+      { label: 'Axis', values: ['3-Axis', '5-Axis'] },
+      { label: 'Material', values: ['Aluminium 6061'] },
+      { label: 'Tolerance', values: ['plus or minus 0.05mm'] },
+      // An answered-nothing row: the form always sends every field, and a row
+      // the shop left blank must not become an empty line on the card.
+      { label: 'Finish', values: ['  '] },
+      { label: 'Build time', values: ['7-10 business days'] },
+    ],
+    attachmentNames: ['cnc-capability.pdf', '  '],
+  };
+
+  it('publishes a sheet, keeps its order, and drops the rows left blank', async () => {
+    const before = await profile.getShopProfile(SHOP);
+    expect((await profile.addCapabilitySheet(SHOP, cnc)).ok).toBe(true);
+
+    const after = await profile.getShopProfile(SHOP);
+    expect(after?.capabilitySheets.length).toBe((before?.capabilitySheets.length ?? 0) + 1);
+
+    const added = after?.capabilitySheets.find((entry) => entry.kind === 'cnc_machining');
+    expect(added?.title).toBe('CNC Machining');
+    expect(added?.parameters.map((row) => row.label)).toEqual([
+      'Axis',
+      'Material',
+      'Tolerance',
+      'Build time',
+    ]);
+    expect(added?.parameters[0]?.values).toEqual(['3-Axis', '5-Axis']);
+    expect(added?.attachmentNames).toEqual(['cnc-capability.pdf']);
+    // Nobody at IDEEZA has read it, so it does not claim they have.
+    expect(added?.verification).toBe('pending');
+  });
+
+  it('refuses a second sheet for the same kind of work', async () => {
+    const result = await profile.addCapabilitySheet(SHOP, cnc);
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.message).toContain('CNC Machining');
+    expect(
+      await prisma.shopCapabilitySheet.count({
+        where: { manufacturerId: SHOP, kind: 'cnc_machining' },
+      }),
+    ).toBe(1);
+  });
+
+  it('refuses a sheet with nothing answered, and writes nothing', async () => {
+    const before = await prisma.shopCapabilitySheet.count();
+    const result = await profile.addCapabilitySheet(SHOP, {
+      kind: 'injection_moulding',
+      title: 'Injection Molding',
+      parameters: [{ label: 'Material', values: ['   '] }],
+      attachmentNames: [],
+    });
+    expect(result.ok).toBe(false);
+    expect(await prisma.shopCapabilitySheet.count()).toBe(before);
+  });
+
+  it('rewrites one, replacing its rows and taking it back to pending', async () => {
+    const verified = await prisma.shopCapabilitySheet.findFirst({
+      where: { manufacturerId: SHOP, kind: 'pcb_fabrication' },
+    });
+    expect(verified?.verification).toBe('verified');
+    if (verified === null) return;
+
+    const result = await profile.updateCapabilitySheet(SHOP, verified.id, {
+      kind: 'pcb_fabrication',
+      title: 'PCB Manufacturing',
+      parameters: [
+        { label: 'Layer support', values: ['20+ layers'] },
+        { label: 'Build time', values: ['12-24 Hours'] },
+      ],
+      attachmentNames: [],
+    });
+    expect(result.ok).toBe(true);
+
+    const after = (await profile.getShopProfile(SHOP))?.capabilitySheets.find(
+      (entry) => entry.kind === 'pcb_fabrication',
+    );
+    expect(after?.parameters.map((row) => row.label)).toEqual(['Layer support', 'Build time']);
+    // The answers IDEEZA read are not the answers on the card any more.
+    expect(after?.verification).toBe('pending');
+  });
+
+  it('will not let one shop rewrite or remove another shop’s sheet', async () => {
+    const theirs = await prisma.shopCapabilitySheet.findFirst({
+      where: { manufacturerId: OTHER_SHEET_SHOP },
+    });
+    expect(theirs).not.toBeNull();
+    if (theirs === null) return;
+
+    const rewrite = await profile.updateCapabilitySheet(SHOP, theirs.id, {
+      kind: theirs.kind,
+      title: 'Mine now',
+      parameters: [{ label: 'Build time', values: ['1 hour'] }],
+      attachmentNames: [],
+    });
+    expect(rewrite.ok).toBe(false);
+    expect((await profile.removeCapabilitySheet(SHOP, theirs.id)).ok).toBe(false);
+    expect(
+      (await prisma.shopCapabilitySheet.findUnique({ where: { id: theirs.id } }))?.title,
+    ).toBe(theirs.title);
+  });
+
+  it('takes its own down, and the rows with it', async () => {
+    const mine = await prisma.shopCapabilitySheet.findFirst({
+      where: { manufacturerId: SHOP, kind: 'cnc_machining' },
+    });
+    expect(mine).not.toBeNull();
+    if (mine === null) return;
+
+    expect((await profile.removeCapabilitySheet(SHOP, mine.id)).ok).toBe(true);
+    expect(await prisma.shopCapabilitySheet.findUnique({ where: { id: mine.id } })).toBeNull();
+    expect(await prisma.shopCapabilityParameter.count({ where: { sheetId: mine.id } })).toBe(0);
   });
 });

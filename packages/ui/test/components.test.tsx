@@ -30,6 +30,7 @@ import {
   Tooltip,
   statusPresentation,
   buttonAppearance,
+  ChoiceChips,
 } from '../src/index.js';
 
 describe('Button', () => {
@@ -488,5 +489,62 @@ describe('buttonAppearance', () => {
     const classes = buttonAppearance();
     expect(classes).toContain('focus-visible:shadow-[0_0_0_3px_var(--color-focus-halo)]');
     expect(classes).toContain('disabled:bg-button-disabled-bg');
+  });
+});
+
+describe('ChoiceChips', () => {
+  it('adds and removes answers, because a shop runs several materials', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ChoiceChips
+        label="Material Support"
+        options={['FR-4', 'Polyimide', 'Copper Core']}
+        value={['FR-4']}
+        onChange={onChange}
+      />,
+    );
+
+    const group = screen.getByRole('group', { name: 'Material Support' });
+    expect(within(group).getByRole('button', { name: 'FR-4' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+
+    await user.click(within(group).getByRole('button', { name: 'Polyimide' }));
+    expect(onChange).toHaveBeenCalledWith(['FR-4', 'Polyimide']);
+
+    await user.click(within(group).getByRole('button', { name: 'FR-4' }));
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it('swaps rather than adds when only one answer is true', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ChoiceChips
+        label="Batch Production support"
+        single
+        options={['Yes', 'Limited', 'No']}
+        value={['Yes']}
+        onChange={onChange}
+      />,
+    );
+
+    // Saying both Yes and No would publish a contradiction.
+    await user.click(screen.getByRole('button', { name: 'No' }));
+    expect(onChange).toHaveBeenCalledWith(['No']);
+  });
+
+  it('announces its error instead of only colouring the chips', () => {
+    render(
+      <ChoiceChips
+        label="Technology Type"
+        options={['FDM', 'SLA']}
+        value={[]}
+        onChange={() => undefined}
+        error="Pick at least one."
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Pick at least one.');
   });
 });

@@ -1,12 +1,16 @@
 'use server';
 
 import {
+  addCapabilitySheet,
   addMachine,
+  removeCapabilitySheet,
   removeMachine,
+  updateCapabilitySheet,
   updateMachine,
   saveCapability,
   saveCompany,
   type CompanyEdit,
+  type CapabilitySheetEdit,
   type MachineEdit,
 } from '@/data/profile.js';
 import { requireManufacturer } from '@/lib/auth.js';
@@ -49,6 +53,32 @@ export const updateMachineAction = async (
 export const removeMachineAction = async (machineId: string): Promise<ProfileState> => {
   const actor = await requireManufacturer('/profile');
   const result = await removeMachine(actor.manufacturerId, machineId);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Publishes a new capability sheet for a kind of work. */
+export const addCapabilitySheetAction = async (
+  edit: CapabilitySheetEdit,
+): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await addCapabilitySheet(actor.manufacturerId, edit);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Rewrites one. It goes back to pending, because the answers changed. */
+export const updateCapabilitySheetAction = async (
+  sheetId: string,
+  edit: CapabilitySheetEdit,
+): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await updateCapabilitySheet(actor.manufacturerId, sheetId, edit);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Takes one down. */
+export const removeCapabilitySheetAction = async (sheetId: string): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await removeCapabilitySheet(actor.manufacturerId, sheetId);
   return result.ok ? { saved: true } : { saved: false, error: result.message };
 };
 
