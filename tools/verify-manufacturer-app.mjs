@@ -1319,6 +1319,23 @@ const main = async () => {
         .getByLabel('Describe the problem in detail')
         .fill('The header said one figure and the six listed rows said another.');
 
+      // Nothing from the page may paint over the dialog. This is not
+      // hypothetical: the dialog first lived inside the rail, the rail sits in
+      // a `sticky` wrapper, and a sticky element is a stacking context — so a
+      // table cell on the dashboard painted straight over the Submit button and
+      // the click landed on the page behind. The check asks the browser what is
+      // actually on top of the button.
+      const covered = await page.evaluate(() => {
+        const submit = [...document.querySelectorAll('button')].find(
+          (element) => element.textContent?.trim() === 'Submit',
+        );
+        if (submit === undefined) return 'no submit button';
+        const box = submit.getBoundingClientRect();
+        const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return top === submit || submit.contains(top) ? null : (top?.tagName ?? 'nothing');
+      });
+      check('nothing on the page covers the dialog', covered === null, String(covered));
+
       // The page field is filled from the route, not typed.
       check(
         'the page it happened on is filled in already',

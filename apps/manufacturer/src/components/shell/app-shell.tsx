@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Drawer } from '@ideeza/ui';
 import { Navbar } from './navbar.js';
+import { ReportProblemDialog } from './report-problem-dialog.js';
 import { Sidebar } from './sidebar.js';
 
 export interface AppShellProps {
@@ -30,6 +31,15 @@ export const AppShell = ({
   children,
 }: AppShellProps) => {
   const [navigationOpen, setNavigationOpen] = useState(false);
+  // Owned here rather than in the rail, and for a specific reason: the desktop
+  // rail sits inside a `sticky` wrapper, which is a stacking context, so a
+  // dialog rendered inside it cannot rise above the page however high its
+  // z-index goes. At the shell's root it is in the same context as the content
+  // it covers. Both rails open this one.
+  const [reporting, setReporting] = useState(false);
+  const openFromRail = (what: 'report-problem') => {
+    if (what === 'report-problem') setReporting(true);
+  };
 
   return (
       <div className="min-h-dvh bg-bg-page">
@@ -43,7 +53,10 @@ export const AppShell = ({
 
         <div className="flex">
           <div className="sticky top-navbar hidden h-[calc(100dvh-var(--layout-navbar-height))] lg:block">
-            <Sidebar {...(profileCompleteness === undefined ? {} : { profileCompleteness })} />
+            <Sidebar
+              onOpen={openFromRail}
+              {...(profileCompleteness === undefined ? {} : { profileCompleteness })}
+            />
           </div>
 
           <main className="min-w-0 flex-1 px-4 py-4 md:px-gutter md:py-gutter">
@@ -61,9 +74,15 @@ export const AppShell = ({
           <Sidebar
             className="w-full border-r-0 px-0 py-0"
             onNavigate={() => setNavigationOpen(false)}
+            onOpen={(what) => {
+              setNavigationOpen(false);
+              openFromRail(what);
+            }}
             {...(profileCompleteness === undefined ? {} : { profileCompleteness })}
           />
         </Drawer>
+
+        <ReportProblemDialog open={reporting} onClose={() => setReporting(false)} />
       </div>
   );
 };

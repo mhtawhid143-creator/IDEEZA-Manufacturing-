@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Text, Tooltip, cn } from '@ideeza/ui';
@@ -11,7 +10,6 @@ import {
   type NavEntry,
 } from '@/lib/navigation.js';
 import { NavIconGlyph } from './nav-icon.js';
-import { ReportProblemDialog } from './report-problem-dialog.js';
 
 const rowClasses = (active: boolean, disabled: boolean): string =>
   cn(
@@ -86,6 +84,15 @@ const NavRow = ({
 
 export interface SidebarProps {
   readonly onNavigate?: () => void;
+  /**
+   * Raise what the last row opens.
+   *
+   * The rail cannot render the dialog itself: on desktop it sits inside a
+   * `sticky` wrapper, and a sticky element is a stacking context, so anything
+   * fixed inside it is trapped beneath the page. The shell owns it instead, and
+   * both rails — the desktop one and the drawer — ask the same shell.
+   */
+  readonly onOpen?: (what: NonNullable<NavEntry['opens']>) => void;
   readonly className?: string;
   /** How complete the shop's profile is, which is what gates being quoted. */
   readonly profileCompleteness?: number;
@@ -98,11 +105,7 @@ export interface SidebarProps {
  * actually needs prompting about: an incomplete profile, because capabilities are
  * what decide whether a buyer's request ever reaches this inbox.
  */
-export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarProps) => {
-  const [reporting, setReporting] = useState(false);
-
-  return (
-    <>
+export const Sidebar = ({ onNavigate, onOpen, className, profileCompleteness }: SidebarProps) => (
   <nav
     aria-label="Main"
     className={cn(
@@ -149,19 +152,10 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
         </p>
         <ul className="mt-1 flex flex-col gap-1">
           {SECONDARY_NAV.map((entry) => (
-            <NavRow
-              key={entry.id}
-              entry={entry}
-              onOpen={(what) => {
-                if (what === 'report-problem') setReporting(true);
-              }}
-            />
+            <NavRow key={entry.id} entry={entry} {...(onOpen === undefined ? {} : { onOpen })} />
           ))}
         </ul>
       </div>
     </div>
   </nav>
-      <ReportProblemDialog open={reporting} onClose={() => setReporting(false)} />
-    </>
-  );
-};
+);
