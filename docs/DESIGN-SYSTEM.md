@@ -330,6 +330,17 @@ its own decision and is what WCAG exempts inactive controls for. The three
 chart hues were re-checked against the colour-blindness separation floor after
 the change and pass on every axis.
 
+### The system's components, adopted
+
+The three blockers below were cleared by vendoring: the system's ten published
+components are copied verbatim into `packages/ds-ui` (workspace name
+`@ideeza/ds`) by `tools/sync-design-system.mjs`, which records the source
+commit in `packages/ds-ui/VENDORED.md`. The matching components in this
+package are adapters over `@ideeza/ds` that keep this repository's public
+API, so screens did not change. The preset gained the system's text styles
+(`text-label-md`, `text-body-sm`, `text-caption-md` …) and the AI gradient
+paints (`bg-ai`), which the vendored components are written in.
+
 ### What is not adopted yet
 
 The system publishes ten components — Badge, Button, Checkbox, Field,

@@ -1,0 +1,49 @@
+{
+  "name": "@ideeza/ds",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./button": {
+      "types": "./dist/components/Button/index.d.ts",
+      "default": "./dist/components/Button/index.js"
+    },
+    "./field": {
+      "types": "./dist/components/Field/index.d.ts",
+      "default": "./dist/components/Field/index.js"
+    },
+    "./cn": {
+      "types": "./dist/lib/cn.d.ts",
+      "default": "./dist/lib/cn.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "sync": "node ../../tools/sync-design-system.mjs",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-switch": "^1.1.1",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
+  }
+}

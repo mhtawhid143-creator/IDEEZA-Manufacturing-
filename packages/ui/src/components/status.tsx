@@ -9,8 +9,8 @@ import type {
   RfqStatus,
 } from '@ideeza/domain';
 import { cn } from '../lib/cn.js';
-import { badgeToneOverride, type BadgeColour, type Tone } from './badge.js';
-import { Badge as DsBadge } from '../ds/components/Badge/index.js';
+import { badgeToneOverride, type Tone } from './badge.js';
+import { Badge as DsBadge } from '@ideeza/ds';
 
 export type DomainStatus =
   | RfqStatus
@@ -108,7 +108,7 @@ const DOT: Record<Tone, string> = {
  * `blue`. The classes that used to live here are gone; the system's badge paints
  * itself now, so there is one place that knows what a warning looks like.
  */
-const BADGE_COLOUR: Record<Tone, BadgeColour> = {
+const BADGE_COLOUR: Record<Tone, 'neutral' | 'brand' | 'blue' | 'success' | 'warning' | 'error'> = {
   neutral: 'neutral',
   brand: 'brand',
   success: 'success',

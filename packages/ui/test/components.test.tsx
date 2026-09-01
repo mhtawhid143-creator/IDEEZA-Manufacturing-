@@ -148,9 +148,11 @@ describe('FormField and controls', () => {
     const group = screen.getByRole('group', { name: 'Substitution policy' });
     expect(within(group).getAllByRole('radio')).toHaveLength(2);
 
+    // The switch is the system's A10 Toggle (Radix): a button with the switch
+    // role that carries its state in aria-checked rather than a checked field.
     const toggle = screen.getByRole('switch', { name: 'Allow substitutions' });
     await userEvent.click(toggle);
-    expect((toggle as HTMLInputElement).checked).toBe(true);
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
   });
 
   it('is reachable by keyboard alone', async () => {
@@ -481,9 +483,10 @@ describe('buttonAppearance', () => {
     expect(link.querySelector('button')).toBeNull();
   });
 
-  it('keeps the focus ring and the disabled treatment in the shared base', () => {
+  it('keeps the focus halo and the disabled treatment in the shared base', () => {
+    // The system's focus treatment is a 3px halo drawn as a shadow, not a ring.
     const classes = buttonAppearance();
-    expect(classes).toContain('focus-visible:ring-focus');
+    expect(classes).toContain('focus-visible:shadow-[0_0_0_3px_var(--color-focus-halo)]');
     expect(classes).toContain('disabled:bg-button-disabled-bg');
   });
 });

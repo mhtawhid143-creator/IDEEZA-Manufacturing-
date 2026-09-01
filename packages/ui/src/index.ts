@@ -5,8 +5,6 @@ export { majorAmount, wholeAmount } from '@ideeza/domain';
 // Framework-agnostic, so a server component can style a link like a button.
 export {
   buttonAppearance,
-  BUTTON_SIZE,
-  BUTTON_VARIANT,
   type ButtonAppearance,
   type ButtonSize,
   type ButtonVariant,
@@ -38,6 +36,3 @@ export * from './components/table.js';
 export * from './components/states.js';
 export * from './components/layout.js';
 
-// The design system's own components, under `Ds*` names. See ./ds/index.ts for
-// why they are prefixed and ./ds/README.md for where they come from.
-export * from './ds/index.js';
