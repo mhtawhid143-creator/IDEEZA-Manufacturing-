@@ -11,7 +11,7 @@
 // floating point type is used for money anywhere in this schema.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // The local machine, plus the Linux image Vercel builds and runs on. Without
   // the second the deployed app finds no query engine at runtime.
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -477,6 +477,7 @@ model User {
   evidenceSubmitted Evidence[]
   domainEvents      DomainEvent[]
   inventoryMoves    InventoryMovement[]
+  problemReports    ProblemReport[]
   credential        UserCredential?
   sessions          Session[]
 
@@ -1601,4 +1602,49 @@ model Dispute {
 
   @@index([orderId, status])
   @@index([status, createdAt])
+}
+
+/// What kind of trouble a report is about — the six the Figma dialog offers.
+enum ProblemKind {
+  technical_bug
+  design_issue
+  confusion
+  performance
+  feature_request
+  other
+}
+
+/// How much the trouble is costing the person, in their own words.
+enum ProblemFrustration {
+  informational
+  annoying
+  blocking
+}
+
+/// A problem a panel member reported, from the "Report a Problem" dialog.
+///
+/// It is deliberately not attached to an order, a quote or a shop: the whole
+/// point of the dialog is that it can be opened from anywhere, including a
+/// screen whose data is what went wrong. What ties it to something is
+/// `pageName`, which the dialog fills in from the route the reporter was on.
+///
+/// Nothing in the platform reads these rows yet — no ops panel exists to work
+/// them. They are stored rather than posted somewhere because a report that
+/// vanishes is worse than a form that says it cannot take one.
+model ProblemReport {
+  id           String             @id
+  reportedById String
+  kind         ProblemKind
+  frustration  ProblemFrustration
+  title        String
+  detail       String
+  extra        String?
+  pageName     String
+  attachments  Json               @default("[]")
+  createdAt    DateTime           @default(now())
+
+  reportedBy User @relation(fields: [reportedById], references: [id])
+
+  @@index([reportedById, createdAt])
+  @@index([kind, createdAt])
 }

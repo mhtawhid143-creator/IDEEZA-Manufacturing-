@@ -45,6 +45,7 @@ describe('migrations apply to a clean database', () => {
       '20260826115435_board_specification',
       '20260827062618_quote_volume_prices',
       '20260827065859_inventory_movements',
+      '20260901060900_problem_reports',
     ]);
   });
 
@@ -66,11 +67,14 @@ describe('migrations apply to a clean database', () => {
     // InventoryAlertStatus.
     // QuoteVolumePrice arrived with quoting: a request may ask for alternative
     // volumes, and the answers have to be comparable rather than prose.
-    expect(tables).toBe(49);
+    // ProblemReport arrived with the Report a Problem dialog — a report that is
+    // not stored is a form that lies, so it gets a table of its own.
+    expect(tables).toBe(50);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
-    // specification brought fourteen of its own, and InventoryMovementKind
-    // arrived with inventory management.
-    expect(enums).toBe(46);
+    // specification brought fourteen of its own, InventoryMovementKind arrived
+    // with inventory management, and ProblemKind and ProblemFrustration with
+    // the Report a Problem dialog.
+    expect(enums).toBe(48);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

@@ -149,7 +149,9 @@ describe('navigation', () => {
   it('points only at manufacturer destinations, and marks the rest unavailable', () => {
     for (const entry of [...PRIMARY_NAV, ...SECONDARY_NAV]) {
       if (entry.href === undefined) {
-        expect(entry.unavailableReason).toBeTruthy();
+        // A row with no destination is one of two things and never a third: it
+        // opens something in place, or it says why it cannot be followed.
+        expect(entry.opens ?? entry.unavailableReason).toBeTruthy();
         continue;
       }
       // Every destination is in the route table even before its screen exists,

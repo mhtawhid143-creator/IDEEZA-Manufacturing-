@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Text, Tooltip, cn } from '@ideeza/ui';
@@ -10,6 +11,7 @@ import {
   type NavEntry,
 } from '@/lib/navigation.js';
 import { NavIconGlyph } from './nav-icon.js';
+import { ReportProblemDialog } from './report-problem-dialog.js';
 
 const rowClasses = (active: boolean, disabled: boolean): string =>
   cn(
@@ -25,9 +27,32 @@ const rowClasses = (active: boolean, disabled: boolean): string =>
         : 'text-text-secondary hover:bg-bg-surface-raised hover:text-text-primary',
   );
 
-const NavRow = ({ entry }: { readonly entry: NavEntry }) => {
+const NavRow = ({
+  entry,
+  onOpen,
+}: {
+  readonly entry: NavEntry;
+  readonly onOpen?: (what: NonNullable<NavEntry['opens']>) => void;
+}) => {
   const pathname = usePathname();
   const active = isNavEntryActive(entry, pathname);
+
+  // Not a link: it raises a dialog over the screen the reporter is on, and a
+  // link that goes nowhere would take the back button with it.
+  if (entry.opens !== undefined) {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() => onOpen?.(entry.opens as NonNullable<NavEntry['opens']>)}
+          className={rowClasses(false, false)}
+        >
+          <NavIconGlyph name={entry.icon} />
+          <span className="truncate">{entry.label}</span>
+        </button>
+      </li>
+    );
+  }
 
   if (entry.unavailableReason !== undefined) {
     return (
@@ -73,7 +98,11 @@ export interface SidebarProps {
  * actually needs prompting about: an incomplete profile, because capabilities are
  * what decide whether a buyer's request ever reaches this inbox.
  */
-export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarProps) => (
+export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarProps) => {
+  const [reporting, setReporting] = useState(false);
+
+  return (
+    <>
   <nav
     aria-label="Main"
     className={cn(
@@ -120,10 +149,19 @@ export const Sidebar = ({ onNavigate, className, profileCompleteness }: SidebarP
         </p>
         <ul className="mt-1 flex flex-col gap-1">
           {SECONDARY_NAV.map((entry) => (
-            <NavRow key={entry.id} entry={entry} />
+            <NavRow
+              key={entry.id}
+              entry={entry}
+              onOpen={(what) => {
+                if (what === 'report-problem') setReporting(true);
+              }}
+            />
           ))}
         </ul>
       </div>
     </div>
   </nav>
-);
+      <ReportProblemDialog open={reporting} onClose={() => setReporting(false)} />
+    </>
+  );
+};

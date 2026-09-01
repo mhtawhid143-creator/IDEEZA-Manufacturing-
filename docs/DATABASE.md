@@ -77,6 +77,24 @@ Two further persistence decisions are worth naming:
   lines as sent with the request, which is what every recipient quotes against
   and what a dispute is later read against.
 
+### A table that belongs to nobody's lifecycle
+
+`ProblemReport` holds what the "Report a Problem" dialog collects: a title, the
+kind of trouble, how much it is costing the reporter, the description, an
+optional second note, the page they were on, and the names and sizes of any
+screenshots they attached.
+
+It hangs off `User` and nothing else — deliberately. The dialog opens from any
+screen, including one whose data is what went wrong, so tying a report to an
+order or a quote would be guessing. `pageName` is the tie, and the dialog fills
+it from the route rather than asking, because it is the most useful line in a
+report and the one people most often get wrong.
+
+No status, no state machine, no domain event: a report does not move money or
+oblige anyone, and nothing in the platform reads these rows yet. They are stored
+because a form that thanks you and drops what you wrote is worse than one that
+says it cannot take it.
+
 ## 3. Important relationships
 
 ```
@@ -191,7 +209,7 @@ stages, and tasks have no key at all.
 
 ## 8. Migration strategy
 
-Two migrations, applied in order:
+The history begins with two migrations, applied in order:
 
 1. `20260517090000_init` — generated from the schema with
    `prisma migrate diff --from-empty --to-schema-datamodel`.
@@ -208,7 +226,11 @@ Rules for future changes:
   with `prisma migrate deploy`.
 - A test asserts there is no drift between the migration history and the schema
   (`prisma migrate diff --from-migrations ... --exit-code` must return 0), so a
-  schema change with no migration fails the suite.
+  schema change with no migration fails the suite. Two more tests in the same
+  file pin the migration list and count the tables and enums, so a new table
+  cannot arrive unnoticed — update them in the same commit that adds it.
+- The most recent is `20260901060900_problem_reports`, which adds
+  `ProblemReport` with `ProblemKind` and `ProblemFrustration`.
 
 Commands:
 

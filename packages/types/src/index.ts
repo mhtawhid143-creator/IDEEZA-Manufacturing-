@@ -10,3 +10,4 @@ export * from './payment.js';
 export * from './resolution.js';
 export * from './messaging.js';
 export * from './board-spec.js';
+export * from './problem-report.js';

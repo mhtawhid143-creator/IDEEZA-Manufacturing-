@@ -1285,6 +1285,56 @@ const main = async () => {
       );
     }
 
+    // ------------------------------------------ reporting a problem, end to end
+    //
+    // The rail's last row used to read "Help and Feedback — n/a". It opens the
+    // Figma dialog now, and the only claim worth checking is that a filled-in
+    // report actually leaves: the form clears, the toast appears, and the row
+    // the data layer wrote is the one the reporter typed. The row itself is
+    // asserted in apps/manufacturer/test/problem-report.db.test.ts; here the
+    // question is whether a person can get from the rail to a sent report.
+    await page.goto(`${base}/dashboard`, { waitUntil: 'networkidle' });
+    const reportRow = page.getByRole('button', { name: 'Report a problem' });
+    check('the rail offers a way to report a problem', (await reportRow.count()) > 0);
+
+    if ((await reportRow.count()) > 0) {
+      await reportRow.first().click();
+      const dialog = page.getByRole('dialog', { name: 'Report a Problem' });
+      check('it opens the dialog', await visible(dialog));
+
+      // Submitting nothing must not send: the form says what is missing.
+      await dialog.getByRole('button', { name: 'Submit' }).click();
+      await page.waitForTimeout(300);
+      check(
+        'an empty report is refused with the fields named',
+        await visible(dialog.getByText('A title says what the problem is.')),
+      );
+
+      await dialog.getByLabel('Title').fill('The payout total disagreed with the rows');
+      await dialog
+        .getByLabel('What type of issue are you experiencing?')
+        .selectOption('technical_bug');
+      await dialog.getByLabel('How frustrated are you with this issue?').selectOption('annoying');
+      await dialog
+        .getByLabel('Describe the problem in detail')
+        .fill('The header said one figure and the six listed rows said another.');
+
+      // The page field is filled from the route, not typed.
+      check(
+        'the page it happened on is filled in already',
+        (await dialog.getByLabel('Page name').inputValue()) === '/dashboard',
+      );
+
+      await dialog.getByRole('button', { name: 'Submit' }).click();
+      const sent = await page
+        .getByText('Thank you — the report was sent.')
+        .waitFor({ state: 'visible', timeout: 15_000 })
+        .then(() => true)
+        .catch(() => false);
+      check('a filled-in report is sent, and says so', sent);
+      check('the dialog closes once it is sent', (await dialog.count()) === 0);
+    }
+
     // ------------------------------------------------- M01: the phone layout
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const phonePage = await phone.newPage();

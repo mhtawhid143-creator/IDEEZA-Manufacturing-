@@ -36,6 +36,14 @@ export interface NavEntry {
   readonly unavailableReason?: string;
   readonly children?: readonly NavEntry[];
   readonly icon: NavIcon;
+  /**
+   * The entry opens something in place instead of going somewhere.
+   *
+   * "Report a problem" is the only one: the Figma flow raises a dialog over the
+   * screen the reporter is on, because the screen is usually what they are
+   * reporting. A row with this set carries no href and is rendered as a button.
+   */
+  readonly opens?: 'report-problem';
 }
 
 const OTHER_MODULE =
@@ -44,8 +52,9 @@ const OTHER_MODULE =
 /*
  * Every destination in the rail now has a screen, so the helper that rendered an
  * unbuilt one as a disabled row with its reason has no work left. The
- * other-module reason above stays: Tutorial, Tour Guide and Help belong to the
- * wider IDEEZA product, not to this platform.
+ * other-module reason above stays for Tutorial and Tour Guide, which belong to
+ * the wider IDEEZA product. Reporting a problem does not — it is this
+ * platform's own, and it is built.
  */
 
 /**
@@ -131,12 +140,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
 export const SECONDARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[]>([
   { id: 'tutorial', label: 'Tutorial', icon: 'book', unavailableReason: OTHER_MODULE },
   { id: 'tour', label: 'Tour Guide', icon: 'map', unavailableReason: OTHER_MODULE },
-  {
-    id: 'help',
-    label: 'Help and Feedback',
-    icon: 'flag',
-    unavailableReason: OTHER_MODULE,
-  },
+  { id: 'report', label: 'Report a problem', icon: 'flag', opens: 'report-problem' },
 ]);
 
 export const isNavEntryActive = (entry: NavEntry, pathname: string): boolean => {
