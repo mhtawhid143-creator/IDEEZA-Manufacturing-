@@ -52,9 +52,9 @@ const OTHER_MODULE =
 /*
  * Every destination in the rail now has a screen, so the helper that rendered an
  * unbuilt one as a disabled row with its reason has no work left. The
- * other-module reason above stays for Tutorial and Tour Guide, which belong to
- * the wider IDEEZA product. Reporting a problem does not — it is this
- * platform's own, and it is built.
+ * other-module reason above stays for the Tour Guide, which belongs to the
+ * wider IDEEZA product. Reporting a problem does not, and neither does the
+ * tutorial — both are this platform's own, and both are built.
  */
 
 /**
@@ -138,7 +138,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
 ]);
 
 export const SECONDARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[]>([
-  { id: 'tutorial', label: 'Tutorial', icon: 'book', unavailableReason: OTHER_MODULE },
+  { id: 'tutorial', label: 'Tutorial', href: '/tutorial', icon: 'book' },
   { id: 'tour', label: 'Tour Guide', icon: 'map', unavailableReason: OTHER_MODULE },
   { id: 'report', label: 'Report a problem', icon: 'flag', opens: 'report-problem' },
 ]);

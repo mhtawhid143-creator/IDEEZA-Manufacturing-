@@ -132,6 +132,10 @@ const MANUFACTURER_RULES: readonly RouteRule[] = Object.freeze([
     { pattern: '/profile/**', capability: 'profile.manage' },
     { pattern: '/blog', capability: 'blog.publish' },
     { pattern: '/blog/**', capability: 'blog.publish' },
+    // Reading how the platform works needs no more authority than being on it,
+    // so the capability is the one every member of a shop already has.
+    { pattern: '/tutorial', capability: 'rfq.view' },
+    { pattern: '/tutorial/**', capability: 'rfq.view' },
     { pattern: '/settings', capability: 'settings.manage' },
     { pattern: '/settings/**', capability: 'settings.manage' },
 ]);

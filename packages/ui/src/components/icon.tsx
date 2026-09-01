@@ -20,6 +20,7 @@ import {
   Invoice01Icon,
   HelpCircleIcon,
   InformationCircleIcon,
+  ListViewIcon,
   Menu01Icon,
   Message01Icon,
   MoreVerticalIcon,
@@ -30,6 +31,7 @@ import {
   News01Icon,
   Notification01Icon,
   Package02Icon,
+  PlayIcon,
   Search01Icon,
   ShoppingCart01Icon,
   StarIcon,
@@ -77,6 +79,7 @@ export type IconName =
   | 'help'
   | 'info'
   | 'invoice'
+  | 'list'
   | 'map'
   | 'menu'
   | 'message'
@@ -85,6 +88,7 @@ export type IconName =
   | 'orders'
   | 'payouts'
   | 'people'
+  | 'play'
   | 'shop'
   | 'stock'
   | 'search'
@@ -118,10 +122,12 @@ const GLYPH = {
   info: InformationCircleIcon,
   invoice: Invoice01Icon,
   map: Navigation03Icon,
+  list: ListViewIcon,
   menu: Menu01Icon,
   message: Message01Icon,
   more: MoreVerticalIcon,
   parts: ChipIcon,
+  play: PlayIcon,
   orders: Package02Icon,
   payouts: Cash01Icon,
   people: UserGroupIcon,

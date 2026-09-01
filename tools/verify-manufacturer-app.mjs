@@ -1285,6 +1285,77 @@ const main = async () => {
       );
     }
 
+    // ----------------------------------------------------- the tutorial, read
+    //
+    // The rail's first "for you" row used to be unavailable. It is a screen
+    // now, so the walk is the one a reader takes: the index, a card, the lesson
+    // it opens, and a second lesson from the chapter tree. What is asserted at
+    // each step is that the words arrived, not that a route resolved.
+    await page.goto(`${base}/tutorial`, { waitUntil: 'networkidle' });
+    check(
+      'the tutorial index lists its categories',
+      await visible(page.getByRole('heading', { name: 'Tutorial categories' })),
+    );
+    const writtenCard = page.getByRole('link', { name: /Code \(Tech\)/ });
+    check('a written category is a link', (await writtenCard.count()) > 0);
+
+    // A category with nothing in it must not pretend otherwise.
+    check(
+      'a category with nothing written says so',
+      await visible(page.getByText('Not written yet — nothing to read here.').first()),
+    );
+
+    if ((await writtenCard.count()) > 0) {
+      // Two facts, asserted separately rather than through one click: the card
+      // points at its category, and that address opens the first lesson. A
+      // category has no page of its own — it redirects — and pinning both ends
+      // is steadier than racing a client navigation that has to resolve a
+      // redirect before the heading it is waited on can exist.
+      check(
+        'the card points at its category',
+        (await writtenCard.first().getAttribute('href')) === '/tutorial/code-tech',
+        String(await writtenCard.first().getAttribute('href')),
+      );
+
+      await page.goto(`${base}/tutorial/code-tech`, { waitUntil: 'networkidle' });
+      check(
+        'the lesson is on the page',
+        await visible(page.getByRole('heading', { name: 'Introduction', level: 1 })),
+      );
+      check(
+        'a category opens on its first lesson',
+        /\/tutorial\/code-tech\//.test(page.url()),
+        page.url(),
+      );
+      check(
+        'its headings are there for the contents list to point at',
+        await visible(page.getByRole('heading', { name: 'IDEEZA AI Model' })),
+      );
+
+      // The reward is shown and cannot be taken, because nothing could pay it.
+      const claim = page.getByRole('button', { name: /Claim / }).first();
+      check('the token reward is offered', (await claim.count()) > 0);
+      check('and it is honestly inert', await claim.isDisabled().catch(() => false));
+
+      // The chapter tree moves between lessons.
+      const other = page.getByRole('link', { name: 'Intro to collaboration' });
+      if ((await other.count()) > 0) {
+        await other.first().click();
+        await page
+          .waitForURL(/\/tutorial\/code-tech\/intro-to-collaboration/, { timeout: 20_000 })
+          .catch(() => undefined);
+        check(
+          'the chapter tree moves between lessons',
+          /intro-to-collaboration/.test(page.url()),
+          page.url(),
+        );
+        check(
+          'and the new lesson is the one on the page',
+          await visible(page.getByRole('heading', { name: 'Sharing and permissions' })),
+        );
+      }
+    }
+
     // ------------------------------------------ reporting a problem, end to end
     //
     // The rail's last row used to read "Help and Feedback — n/a". It opens the
