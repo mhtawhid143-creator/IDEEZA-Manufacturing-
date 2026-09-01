@@ -1338,12 +1338,20 @@ const main = async () => {
       check('and it is honestly inert', await claim.isDisabled().catch(() => false));
 
       // The chapter tree moves between lessons.
+      //
+      // Clicked twice on purpose. `networkidle` says the requests are done, not
+      // that React has attached, and a click that lands in that gap is taken by
+      // neither the router nor the browser — the page simply stays. A person
+      // clicking a link that did nothing clicks it again, and so does this.
       const other = page.getByRole('link', { name: 'Intro to collaboration' });
       if ((await other.count()) > 0) {
-        await other.first().click();
-        await page
-          .waitForURL(/\/tutorial\/code-tech\/intro-to-collaboration/, { timeout: 20_000 })
-          .catch(() => undefined);
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          if (/intro-to-collaboration/.test(page.url())) break;
+          await other.first().click();
+          await page
+            .waitForURL(/\/tutorial\/code-tech\/intro-to-collaboration/, { timeout: 8_000 })
+            .catch(() => undefined);
+        }
         check(
           'the chapter tree moves between lessons',
           /intro-to-collaboration/.test(page.url()),
@@ -1353,6 +1361,105 @@ const main = async () => {
           'and the new lesson is the one on the page',
           await visible(page.getByRole('heading', { name: 'Sharing and permissions' })),
         );
+      }
+    }
+
+    // ------------------------------- the machine floor list, add, edit, remove
+    //
+    // The tab was a count and a name per machine, which is not what the design
+    // shows a buyer: a machine card carries the process, its sub-processes, the
+    // tolerance it holds and its turnaround. What is worth checking here is not
+    // the shape — a screenshot shows that — but that the three buttons do what
+    // they say, because the complaint that rebuilt this tab was one where
+    // nothing behind them worked.
+    await page.goto(`${base}/profile`, { waitUntil: 'networkidle' });
+    await page.getByRole('tab', { name: /Machine/ }).first().click();
+    await page.waitForTimeout(400);
+
+    const machineCards = page.locator('main ul > li');
+    const seeded = await machineCards.count();
+    check('the machine tab lists the shop’s floor', seeded > 0, `${seeded} cards`);
+    check(
+      'each card carries what the design shows',
+      /Process/.test(await machineCards.first().innerText()) &&
+        /Tolerance/.test(await machineCards.first().innerText()) &&
+        /TAT/.test(await machineCards.first().innerText()),
+    );
+
+    await page.getByRole('button', { name: 'Add New' }).click();
+    const machineForm = page.getByRole('dialog', { name: 'Add Manufacturing Capability' });
+    check('Add New opens the capability form', await visible(machineForm));
+
+    if (await visible(machineForm)) {
+      await machineForm.getByLabel('Machine').selectOption('Laser Cutter');
+      await machineForm.getByLabel('Select Process').selectOption('Sheet Metal Fabrication');
+      // Sub-processes belong to the chosen process; a second choice adds a
+      // second chip rather than replacing the first.
+      await machineForm.getByLabel('Select Sub-Process').selectOption('Laser cutting');
+      await machineForm.getByLabel('Select Sub-Process').selectOption('Bending');
+      await machineForm.getByLabel('Tolerance').selectOption('plus or minus 0.1 mm');
+      await machineForm.getByLabel('Turnaround time').fill('4-6 Days');
+      await machineForm.getByRole('button', { name: 'Add', exact: true }).click();
+      await machineForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+
+      // Four to a page, so a fifth machine is on page two — the pager working.
+      const pager = page.getByRole('navigation', { name: 'Pagination' });
+      const paged = await visible(pager, 20_000);
+      check('a fifth machine pages the grid', paged);
+      if (paged) {
+        await pager.getByRole('button').nth(-2).click();
+        await page.waitForTimeout(400);
+      }
+
+      const added = page.locator('main ul > li').filter({ hasText: 'Laser Cutter' }).first();
+      const arrived = await visible(added, 20_000);
+      check('the machine is added', arrived);
+
+      if (arrived) {
+        const text = (await added.innerText()).replace(/\s+/g, ' ');
+        check(
+          'the card carries every field the form took',
+          /Sheet Metal Fabrication/.test(text) &&
+            /Laser cutting/.test(text) &&
+            /Bending/.test(text) &&
+            /plus or minus 0.1 mm/.test(text) &&
+            /4-6 Days/.test(text),
+          text.slice(0, 120),
+        );
+
+        await added.getByRole('button', { name: /Actions for/ }).click();
+        await page.getByRole('menuitem', { name: 'Edit' }).click();
+        const editForm = page.getByRole('dialog', { name: 'Edit Manufacturing Capability' });
+        const editing = await visible(editForm);
+        check('the kebab’s Edit opens the form already filled', editing);
+
+        if (editing) {
+          check(
+            'and it is filled with the machine, not blank',
+            (await editForm.getByLabel('Turnaround time').inputValue()) === '4-6 Days',
+          );
+          await editForm.getByLabel('Turnaround time').fill('2-3 Days');
+          await editForm.getByRole('button', { name: 'Save', exact: true }).click();
+          await editForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+
+          const changed = page.locator('main ul > li').filter({ hasText: 'Laser Cutter' }).first();
+          await visible(changed, 20_000);
+          let landed = false;
+          for (let attempt = 0; attempt < 30 && !landed; attempt += 1) {
+            await page.waitForTimeout(500);
+            landed = (await changed.count()) > 0 && (await changed.innerText()).includes('2-3 Days');
+          }
+          check('the edit lands on the card', landed);
+
+          await changed.getByRole('button', { name: /Actions for/ }).click();
+          await page.getByRole('menuitem', { name: 'Delete' }).click();
+          let left = 1;
+          for (let attempt = 0; attempt < 30 && left > 0; attempt += 1) {
+            await page.waitForTimeout(500);
+            left = await page.locator('main ul > li').filter({ hasText: 'Laser Cutter' }).count();
+          }
+          check('and the kebab’s Delete takes it off the floor', left === 0);
+        }
       }
     }
 

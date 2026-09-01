@@ -77,6 +77,26 @@ Two further persistence decisions are worth naming:
   lines as sent with the request, which is what every recipient quotes against
   and what a dispute is later read against.
 
+### What a buyer reads on a shop's profile
+
+Four tables carry the profile beyond the address, all hanging off
+`ManufacturerProfile` and all cascading with it:
+
+- `ShopMachine` — one row per machine on the floor: its name, the process it
+  performs, its sub-processes (a `String[]`, because the design's card shows
+  several chips), the tolerance it holds and its turnaround. `position` is the
+  order the shop put them in; the profile reads them by it. This replaced an
+  earlier `ShopEquipment` of name-and-quantity, which could not carry any of
+  what the design's card actually shows a buyer.
+- `ShopCapabilitySheet` and `ShopCapabilityParameter` — the per-process
+  parameter sheets (PCB, PCBA, 3D printing), a sheet to a kind of work and a
+  row per parameter, each holding its values as a list.
+- `ShopArticle` — what the shop has written, with the category, the status and,
+  when it was sent back, the reason.
+
+None of them is matched on: what decides whether a request reaches a shop is
+still the one capability record. These are what a buyer reads once it has.
+
 ### A table that belongs to nobody's lifecycle
 
 `ProblemReport` holds what the "Report a Problem" dialog collects: a title, the
@@ -229,8 +249,9 @@ Rules for future changes:
   schema change with no migration fails the suite. Two more tests in the same
   file pin the migration list and count the tables and enums, so a new table
   cannot arrive unnoticed — update them in the same commit that adds it.
-- The most recent is `20260901060900_problem_reports`, which adds
-  `ProblemReport` with `ProblemKind` and `ProblemFrustration`.
+- The most recent is `20260901113001_shop_machines`, which replaces
+  `ShopEquipment` with `ShopMachine` so the profile's machine card can carry a
+  process, its sub-processes, a tolerance and a turnaround.
 
 Commands:
 

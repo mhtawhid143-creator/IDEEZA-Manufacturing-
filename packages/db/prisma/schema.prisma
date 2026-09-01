@@ -589,7 +589,7 @@ model ManufacturerProfile {
   linkedinUrl  String?
 
   capability       ManufacturerCapability?
-  equipment        ShopEquipment[]
+  machines         ShopMachine[]
   capabilitySheets ShopCapabilitySheet[]
   articles         ShopArticle[]
   members          ManufacturerMember[]
@@ -1686,16 +1686,29 @@ enum CapabilityKind {
   other
 }
 
-/// A machine on the shop floor, as a buyer would want it listed.
+/// One machine on the shop floor, with what it can do.
 ///
-/// Counted rather than serialised: a buyer choosing a shop wants to know it has
-/// five mills, not which five. What it is called is the shop's own words.
-model ShopEquipment {
+/// The shape is the Figma "Add Manufacturing Capability" form: the machine, the
+/// process it performs, the sub-processes within that, the tolerance it holds
+/// and how long a job on it takes. A buyer comparing two shops reads exactly
+/// these five things, which is why they are five columns rather than a note.
+///
+/// Sub-processes are a list because one machine does several — a mill turns and
+/// drills as well — and a buyer searching for one of them should find the
+/// machine that offers it.
+model ShopMachine {
   id             String   @id
   manufacturerId String
+  /// What the machine is, from the list the form offers.
   name           String
-  quantity       Int      @default(1)
-  note           String?
+  /// The process it performs.
+  process        String
+  /// The operations within that process.
+  subProcesses   String[] @default([])
+  /// The tolerance it holds, in the words the form offers.
+  tolerance      String?
+  /// Turnaround, as the shop writes it: "3-7 days".
+  turnaroundTime String?
   position       Int      @default(0)
   createdAt      DateTime @default(now())
 

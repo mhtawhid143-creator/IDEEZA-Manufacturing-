@@ -1,12 +1,13 @@
 'use server';
 
 import {
-  addEquipment,
-  removeEquipment,
+  addMachine,
+  removeMachine,
+  updateMachine,
   saveCapability,
   saveCompany,
   type CompanyEdit,
-  type EquipmentEdit,
+  type MachineEdit,
 } from '@/data/profile.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
@@ -28,16 +29,26 @@ export const saveCompanyAction = async (edit: CompanyEdit): Promise<ProfileState
 };
 
 /** Adds a machine to the floor list buyers read. */
-export const addEquipmentAction = async (edit: EquipmentEdit): Promise<ProfileState> => {
+export const addMachineAction = async (edit: MachineEdit): Promise<ProfileState> => {
   const actor = await requireManufacturer('/profile');
-  const result = await addEquipment(actor.manufacturerId, edit);
+  const result = await addMachine(actor.manufacturerId, edit);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Changes one already on it. */
+export const updateMachineAction = async (
+  machineId: string,
+  edit: MachineEdit,
+): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await updateMachine(actor.manufacturerId, machineId, edit);
   return result.ok ? { saved: true } : { saved: false, error: result.message };
 };
 
 /** Takes one off it. */
-export const removeEquipmentAction = async (equipmentId: string): Promise<ProfileState> => {
+export const removeMachineAction = async (machineId: string): Promise<ProfileState> => {
   const actor = await requireManufacturer('/profile');
-  const result = await removeEquipment(actor.manufacturerId, equipmentId);
+  const result = await removeMachine(actor.manufacturerId, machineId);
   return result.ok ? { saved: true } : { saved: false, error: result.message };
 };
 

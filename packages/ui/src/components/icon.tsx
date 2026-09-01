@@ -32,6 +32,7 @@ import {
   Notification01Icon,
   Package02Icon,
   PlayIcon,
+  PlusSignIcon,
   Search01Icon,
   ShoppingCart01Icon,
   StarIcon,
@@ -89,6 +90,7 @@ export type IconName =
   | 'payouts'
   | 'people'
   | 'play'
+  | 'plus'
   | 'shop'
   | 'stock'
   | 'search'
@@ -128,6 +130,7 @@ const GLYPH = {
   more: MoreVerticalIcon,
   parts: ChipIcon,
   play: PlayIcon,
+  plus: PlusSignIcon,
   orders: Package02Icon,
   payouts: Cash01Icon,
   people: UserGroupIcon,

@@ -11,11 +11,13 @@ export interface ProfileReview {
   readonly publishedAt: Date;
 }
 
-export interface ShopEquipmentRow {
+export interface ShopMachineRow {
   readonly id: string;
   readonly name: string;
-  readonly quantity: number;
-  readonly note: string | null;
+  readonly process: string;
+  readonly subProcesses: readonly string[];
+  readonly tolerance: string | null;
+  readonly turnaroundTime: string | null;
 }
 
 export interface ShopCapabilitySheetRow {
@@ -80,7 +82,7 @@ export interface ShopProfile {
     readonly owner: boolean;
   }[];
   /** What is on the floor, what it can do, and what the shop has written. */
-  readonly equipment: readonly ShopEquipmentRow[];
+  readonly machines: readonly ShopMachineRow[];
   readonly capabilitySheets: readonly ShopCapabilitySheetRow[];
   readonly articles: readonly ShopArticleRow[];
   /** Live counts, so the header is not a number somebody typed. */
@@ -115,7 +117,7 @@ export const getShopProfile = async (
           },
         },
       },
-      equipment: { orderBy: { position: 'asc' } },
+      machines: { orderBy: { position: 'asc' } },
       capabilitySheets: {
         orderBy: { position: 'asc' },
         include: { parameters: { orderBy: { position: 'asc' } } },
@@ -172,11 +174,13 @@ export const getShopProfile = async (
       productName: review.order.rfq.package.product.name,
       publishedAt: review.createdAt,
     })),
-    equipment: shop.equipment.map((item) => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.quantity,
-      note: item.note,
+    machines: shop.machines.map((machine) => ({
+      id: machine.id,
+      name: machine.name,
+      process: machine.process,
+      subProcesses: machine.subProcesses,
+      tolerance: machine.tolerance,
+      turnaroundTime: machine.turnaroundTime,
     })),
     capabilitySheets: shop.capabilitySheets.map((sheet) => ({
       id: sheet.id,
@@ -329,10 +333,12 @@ export const saveCompany = async (
   return { ok: true };
 };
 
-export interface EquipmentEdit {
+export interface MachineEdit {
   readonly name: string;
-  readonly quantity: number;
-  readonly note: string;
+  readonly process: string;
+  readonly subProcesses: readonly string[];
+  readonly tolerance: string;
+  readonly turnaroundTime: string;
 }
 
 /**
@@ -342,31 +348,55 @@ export interface EquipmentEdit {
  * comes from the session, never from the form, so a member cannot list a
  * machine against somebody else's shop.
  */
-export const addEquipment = async (
-  manufacturerId: ManufacturerId,
-  edit: EquipmentEdit,
-): Promise<ProfileOutcome> => {
-  const name = edit.name.trim();
-  if (name.length < 2) {
-    return { ok: false, message: 'A machine needs a name a buyer would recognise.' };
-  }
-  if (!Number.isInteger(edit.quantity) || edit.quantity < 1 || edit.quantity > 999) {
-    return { ok: false, message: 'How many of them? A whole number, at least one.' };
-  }
+interface MachineFields {
+  readonly name: string;
+  readonly process: string;
+  readonly subProcesses: string[];
+  readonly tolerance: string | null;
+  readonly turnaroundTime: string | null;
+}
 
-  const last = await database().shopEquipment.findFirst({
+/**
+ * The same reading for adding one and for editing one.
+ *
+ * Both writes are the same form, so both must refuse the same things — a
+ * machine with no name, or one with no process. A machine without a process is
+ * a photograph: a buyer deciding between two shops cannot act on it.
+ */
+const readMachine = (edit: MachineEdit): MachineFields | string => {
+  const name = edit.name.trim();
+  const process = edit.process.trim();
+  if (name.length < 2) return 'Which machine? Pick one from the list.';
+  if (process === '') {
+    return 'What does it do? A machine without a process tells a buyer nothing.';
+  }
+  return {
+    name,
+    process,
+    subProcesses: edit.subProcesses.map((entry) => entry.trim()).filter((entry) => entry !== ''),
+    tolerance: blankToNull(edit.tolerance),
+    turnaroundTime: blankToNull(edit.turnaroundTime),
+  };
+};
+
+export const addMachine = async (
+  manufacturerId: ManufacturerId,
+  edit: MachineEdit,
+): Promise<ProfileOutcome> => {
+  const fields = readMachine(edit);
+  if (typeof fields === 'string') return { ok: false, message: fields };
+
+  const last = await database().shopMachine.findFirst({
     where: { manufacturerId },
     orderBy: { position: 'desc' },
     select: { position: true },
   });
 
-  await database().shopEquipment.create({
+  await database().shopMachine.create({
     data: {
-      id: `equip_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+      id: `machine_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
       manufacturerId,
-      name,
-      quantity: edit.quantity,
-      note: edit.note.trim() === '' ? null : edit.note.trim(),
+      ...fields,
       position: (last?.position ?? -1) + 1,
     },
   });
@@ -374,13 +404,38 @@ export const addEquipment = async (
   return { ok: true };
 };
 
-/** Removes one, scoped so a member can only remove their own shop's. */
-export const removeEquipment = async (
+/**
+ * Edits one in place, scoped by shop.
+ *
+ * `updateMany` rather than `update`: the id alone would find another shop's
+ * machine and change it. Scoping the write itself means a wrong id changes
+ * nothing and says so, which is the same rule every other write here follows.
+ */
+export const updateMachine = async (
   manufacturerId: ManufacturerId,
-  equipmentId: string,
+  machineId: string,
+  edit: MachineEdit,
 ): Promise<ProfileOutcome> => {
-  const { count } = await database().shopEquipment.deleteMany({
-    where: { id: equipmentId, manufacturerId },
+  const fields = readMachine(edit);
+  if (typeof fields === 'string') return { ok: false, message: fields };
+
+  const { count } = await database().shopMachine.updateMany({
+    where: { id: machineId, manufacturerId },
+    data: fields,
+  });
+
+  return count === 0
+    ? { ok: false, message: 'That machine is not on your floor list.' }
+    : { ok: true };
+};
+
+/** Removes one, scoped so a member can only remove their own shop's. */
+export const removeMachine = async (
+  manufacturerId: ManufacturerId,
+  machineId: string,
+): Promise<ProfileOutcome> => {
+  const { count } = await database().shopMachine.deleteMany({
+    where: { id: machineId, manufacturerId },
   });
   return count === 0
     ? { ok: false, message: 'That machine is not on your floor list.' }

@@ -56,7 +56,7 @@ describe('the profile a buyer reads', () => {
     expect(shop.phone).toBeTruthy();
     expect(shop.websiteUrl).toBeTruthy();
     expect(shop.shippingMethods.length).toBeGreaterThan(0);
-    expect(shop.equipment.length).toBeGreaterThan(0);
+    expect(shop.machines.length).toBeGreaterThan(0);
     expect(shop.capabilitySheets.length).toBeGreaterThan(0);
     expect(shop.capabilitySheets[0]?.parameters.length).toBeGreaterThan(0);
     expect(shop.articles.length).toBeGreaterThan(0);
@@ -107,50 +107,79 @@ describe('the profile a buyer reads', () => {
 });
 
 describe('the floor list', () => {
-  it('adds a machine and gives it the next place in the order', async () => {
+  const selectiveSolder = {
+    name: 'Selective solder',
+    process: 'PCB Assembly',
+    subProcesses: ['Hand solder', 'Wave solder', '  '],
+    tolerance: 'plus or minus 0.1 mm',
+    turnaroundTime: '3-7 Days',
+  };
+
+  it('adds a machine with everything the card shows', async () => {
     const before = await profile.getShopProfile(SHOP);
-    const result = await profile.addEquipment(SHOP, {
-      name: 'Selective solder',
-      quantity: 2,
-      note: 'Through-hole, lead-free',
-    });
-    expect(result.ok).toBe(true);
+    expect((await profile.addMachine(SHOP, selectiveSolder)).ok).toBe(true);
 
     const after = await profile.getShopProfile(SHOP);
-    expect(after?.equipment.length).toBe((before?.equipment.length ?? 0) + 1);
-    expect(after?.equipment.at(-1)?.name).toBe('Selective solder');
-    expect(after?.equipment.at(-1)?.quantity).toBe(2);
+    expect(after?.machines.length).toBe((before?.machines.length ?? 0) + 1);
+    const added = after?.machines.at(-1);
+    expect(added?.name).toBe('Selective solder');
+    expect(added?.process).toBe('PCB Assembly');
+    // The blank one is dropped rather than stored: an empty chip on the card
+    // is a sub-process a buyer cannot read.
+    expect(added?.subProcesses).toEqual(['Hand solder', 'Wave solder']);
+    expect(added?.tolerance).toBe('plus or minus 0.1 mm');
+    expect(added?.turnaroundTime).toBe('3-7 Days');
   });
 
-  it('refuses a machine nobody could read, and writes nothing', async () => {
-    const before = await prisma.shopEquipment.count();
+  it('refuses a machine a buyer could not act on, and writes nothing', async () => {
+    const before = await prisma.shopMachine.count();
     for (const broken of [
-      { name: ' ', quantity: 1, note: '' },
-      { name: 'Reflow oven', quantity: 0, note: '' },
-      { name: 'Reflow oven', quantity: 1.5, note: '' },
-      { name: 'Reflow oven', quantity: 1000, note: '' },
+      { ...selectiveSolder, name: ' ' },
+      { ...selectiveSolder, process: '' },
     ]) {
-      expect((await profile.addEquipment(SHOP, broken)).ok).toBe(false);
+      expect((await profile.addMachine(SHOP, broken)).ok).toBe(false);
     }
-    expect(await prisma.shopEquipment.count()).toBe(before);
+    expect(await prisma.shopMachine.count()).toBe(before);
   });
 
-  it('will not let one shop remove another shop’s machine', async () => {
-    const theirs = await prisma.shopEquipment.findFirst({ where: { manufacturerId: OTHER } });
-    expect(theirs).not.toBeNull();
-    if (theirs === null) return;
-
-    const result = await profile.removeEquipment(SHOP, theirs.id);
-    expect(result.ok).toBe(false);
-    expect(await prisma.shopEquipment.findUnique({ where: { id: theirs.id } })).not.toBeNull();
-  });
-
-  it('removes its own', async () => {
-    const mine = await prisma.shopEquipment.findFirst({ where: { manufacturerId: SHOP } });
+  it('edits its own in place', async () => {
+    const mine = await prisma.shopMachine.findFirst({
+      where: { manufacturerId: SHOP, name: 'Selective solder' },
+    });
     expect(mine).not.toBeNull();
     if (mine === null) return;
 
-    expect((await profile.removeEquipment(SHOP, mine.id)).ok).toBe(true);
-    expect(await prisma.shopEquipment.findUnique({ where: { id: mine.id } })).toBeNull();
+    const result = await profile.updateMachine(SHOP, mine.id, {
+      ...selectiveSolder,
+      turnaroundTime: '1-2 Days',
+    });
+    expect(result.ok).toBe(true);
+    expect((await prisma.shopMachine.findUnique({ where: { id: mine.id } }))?.turnaroundTime).toBe(
+      '1-2 Days',
+    );
+  });
+
+  it('will not let one shop edit or remove another shop’s machine', async () => {
+    const theirs = await prisma.shopMachine.findFirst({ where: { manufacturerId: OTHER } });
+    expect(theirs).not.toBeNull();
+    if (theirs === null) return;
+
+    expect((await profile.updateMachine(SHOP, theirs.id, selectiveSolder)).ok).toBe(false);
+    expect((await profile.removeMachine(SHOP, theirs.id)).ok).toBe(false);
+
+    const still = await prisma.shopMachine.findUnique({ where: { id: theirs.id } });
+    expect(still?.name).toBe(theirs.name);
+    expect(still?.process).toBe(theirs.process);
+  });
+
+  it('removes its own', async () => {
+    const mine = await prisma.shopMachine.findFirst({
+      where: { manufacturerId: SHOP, name: 'Selective solder' },
+    });
+    expect(mine).not.toBeNull();
+    if (mine === null) return;
+
+    expect((await profile.removeMachine(SHOP, mine.id)).ok).toBe(true);
+    expect(await prisma.shopMachine.findUnique({ where: { id: mine.id } })).toBeNull();
   });
 });

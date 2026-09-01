@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Alert,
+  Badge,
   Button,
   Card,
   CardHeader,
@@ -11,8 +12,11 @@ import {
   DropdownMenu,
   EmptyState,
   FormField,
+  Icon,
   Input,
   Modal,
+  Pagination,
+  Select,
   Tabs,
   Textarea,
   Tag,
@@ -20,11 +24,101 @@ import {
   useToast,
 } from '@ideeza/ui';
 import {
-  addEquipmentAction,
-  removeEquipmentAction,
+  addMachineAction,
+  removeMachineAction,
   saveCapabilityAction,
   saveCompanyAction,
+  updateMachineAction,
 } from '@/app/(app)/profile/actions.js';
+
+/**
+ * What the Add Manufacturing Capability form offers.
+ *
+ * The design draws four selects and one text box, so the four are lists rather
+ * than free text: two shops that both mill should say "CNC Machining" in the
+ * same words, or a buyer filtering on a process finds one of them. The
+ * sub-processes hang off the process for the same reason — "Reflow" under CNC
+ * machining would be a shop describing a line it does not have.
+ */
+const MACHINE_OPTIONS = [
+  'CNC Machine',
+  'CNC Lathe',
+  'Surface Grinder',
+  'FDM 3D Printer',
+  'SLA / Resin Printer',
+  'SLS Printer',
+  'Injection Moulding Machine',
+  'Laser Cutter',
+  'Sheet Metal Press Brake',
+  'SMT Placement Line',
+  'Reflow Oven',
+  'Wave Solder',
+  'AOI Station',
+  'X-Ray Inspection',
+  'Stencil Cutter',
+  'CMM',
+].map((name) => ({ value: name, label: name }));
+
+const SUB_PROCESSES: Record<string, readonly string[]> = {
+  'CNC Machining': ['Milling', 'Turning', 'Drilling', 'Tapping', 'Boring', 'Reaming'],
+  'Additive Manufacturing': [
+    'FDM',
+    'SLA',
+    'SLS',
+    'Post-cure',
+    'Depowdering',
+    'Bead blasting',
+  ],
+  'Injection Moulding': ['Tool making', 'Moulding', 'Overmoulding', 'Insert moulding'],
+  'Sheet Metal Fabrication': ['Laser cutting', 'Punching', 'Bending', 'Welding', 'Riveting'],
+  'PCB Fabrication': ['Etching', 'Drilling', 'Lamination', 'Solder mask', 'Silkscreen'],
+  'PCB Assembly': [
+    'Paste printing',
+    'Placement',
+    'Reflow',
+    'Wave solder',
+    'Hand solder',
+    'Conformal coating',
+  ],
+  Inspection: [
+    'Solder joint',
+    'Polarity',
+    'Presence',
+    'BGA voiding',
+    'QFN wetting',
+    'Dimensional',
+    'Functional test',
+  ],
+  Tooling: ['Laser cut', 'Electropolish', 'Jig making', 'Fixture making'],
+  Finishing: ['Anodising', 'Powder coating', 'Painting', 'Polishing', 'Plating'],
+};
+
+const PROCESS_OPTIONS = Object.keys(SUB_PROCESSES).map((name) => ({
+  value: name,
+  label: name,
+}));
+
+const TOLERANCE_OPTIONS = [
+  '0.1% with a 0.1 mm min',
+  '0.1% with a 0.025 mm min',
+  'plus or minus 0.05 mm',
+  'plus or minus 0.1 mm',
+  'plus or minus 0.2 mm',
+  'plus or minus 0.3%, 0.3 mm min',
+  'ISO 2768-f (fine)',
+  'ISO 2768-m (medium)',
+].map((name) => ({ value: name, label: name }));
+
+/** Four to a page, as the design pages them: two rows of two. */
+const MACHINES_PER_PAGE = 4;
+
+const EMPTY_MACHINE = {
+  name: '',
+  process: '',
+  subProcesses: [] as readonly string[],
+  tolerance: '',
+  turnaroundTime: '',
+};
 
 /**
  * The four networks the design lists, in its order.
@@ -90,11 +184,13 @@ export interface ProfileData {
     readonly owner: boolean;
   }[];
   /** What is on the floor, as the shop lists it. */
-  readonly equipment: readonly {
+  readonly machines: readonly {
     readonly id: string;
     readonly name: string;
-    readonly quantity: number;
-    readonly note: string | null;
+    readonly process: string;
+    readonly subProcesses: readonly string[];
+    readonly tolerance: string | null;
+    readonly turnaroundTime: string | null;
   }[];
   /** What the shop can do, per kind of work — the detail after the match. */
   readonly capabilitySheets: readonly {
@@ -142,7 +238,10 @@ const REGION_OPTIONS = ['Asia', 'Europe', 'North America', 'South America', 'Afr
  */
 export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
   const [tab, setTab] = useState('about');
-  const [editing, setEditing] = useState<'company' | 'capability' | 'equipment' | null>(null);
+  const [editing, setEditing] = useState<'company' | 'capability' | 'machine' | null>(null);
+  /** Null while adding; the machine's id while editing one already listed. */
+  const [machineId, setMachineId] = useState<string | null>(null);
+  const [machinePage, setMachinePage] = useState(1);
   const [hydrated, setHydrated] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>(undefined);
@@ -177,11 +276,20 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
     data.certifications,
   );
   const [newCertification, setNewCertification] = useState('');
-  const [machine, setMachine] = useState({ name: '', quantity: '1', note: '' });
+  const [machine, setMachine] = useState(EMPTY_MACHINE);
   const [moq, setMoq] = useState(data.minimumOrderQuantity);
   const [lead, setLead] = useState(data.standardLeadTimeDays);
 
   useEffect(() => setHydrated(true), []);
+
+  const machinePageCount = Math.max(1, Math.ceil(data.machines.length / MACHINES_PER_PAGE));
+  // Removing the last machine on the last page would otherwise leave the pager
+  // pointing past the end and the grid empty with no way back.
+  const currentMachinePage = Math.min(machinePage, machinePageCount);
+  const machinesOnPage = data.machines.slice(
+    (currentMachinePage - 1) * MACHINES_PER_PAGE,
+    currentMachinePage * MACHINES_PER_PAGE,
+  );
 
   const saveCompany = (): void => {
     setError(undefined);
@@ -207,34 +315,72 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
     });
   };
 
+  /** Opens the form empty to add, or filled to change one already listed. */
+  const openMachineForm = (existing?: ProfileData['machines'][number]): void => {
+    setError(undefined);
+    setMachineId(existing?.id ?? null);
+    setMachine(
+      existing === undefined
+        ? EMPTY_MACHINE
+        : {
+            name: existing.name,
+            process: existing.process,
+            subProcesses: existing.subProcesses,
+            tolerance: existing.tolerance ?? '',
+            turnaroundTime: existing.turnaroundTime ?? '',
+          },
+    );
+    setEditing('machine');
+  };
+
   const saveMachine = (): void => {
     setError(undefined);
     startTransition(async () => {
-      const result = await addEquipmentAction({
+      const edit = {
         name: machine.name,
-        quantity: Number(machine.quantity),
-        note: machine.note,
-      });
+        process: machine.process,
+        subProcesses: machine.subProcesses,
+        tolerance: machine.tolerance,
+        turnaroundTime: machine.turnaroundTime,
+      };
+      const result =
+        machineId === null
+          ? await addMachineAction(edit)
+          : await updateMachineAction(machineId, edit);
       if (!result.saved) {
-        setError(result.error ?? 'That machine was not added.');
+        setError(result.error ?? 'That machine was not saved.');
         return;
       }
       setEditing(null);
-      setMachine({ name: '', quantity: '1', note: '' });
-      push({ title: 'Added to your floor list', tone: 'success' });
+      setMachine(EMPTY_MACHINE);
+      push({
+        title: machineId === null ? 'Added to your floor list' : 'Machine updated',
+        tone: 'success',
+      });
+      setMachineId(null);
       router.refresh();
     });
   };
 
-  const dropMachine = (equipmentId: string): void => {
+  const dropMachine = (id: string): void => {
     startTransition(async () => {
-      const result = await removeEquipmentAction(equipmentId);
+      const result = await removeMachineAction(id);
       if (!result.saved) {
         push({ title: result.error ?? 'It was not removed.', tone: 'danger' });
         return;
       }
       router.refresh();
     });
+  };
+
+  /**
+   * A sub-process is chosen one at a time and shown as a chip, because a
+   * machine has several and the design draws one select. Choosing the same one
+   * twice is a no-op rather than a duplicate chip.
+   */
+  const addSubProcess = (value: string): void => {
+    if (value === '' || machine.subProcesses.includes(value)) return;
+    setMachine({ ...machine, subProcesses: [...machine.subProcesses, value] });
   };
 
   const saveCapability = (): void => {
@@ -487,52 +633,123 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       {tab === 'machines' && (
-        <>
-          <Card>
-            <CardHeader
-              title="Equipment"
-              description="What is on the floor, as a buyer would want to know it."
-              actions={
-                <Button variant="secondary" size="sm" onClick={() => setEditing('equipment')}>
-                  Add new
-                </Button>
-              }
-            />
-            {data.equipment.length === 0 ? (
-              <div className="mt-4">
-                <EmptyState
-                  title="No equipment listed"
-                  description="A buyer deciding between two shops reads this before the quote. What is on your floor?"
-                />
-              </div>
-            ) : (
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {data.equipment.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-border-subtle p-3">
-                    <p className="text-xl font-bold text-text-primary" data-numeric>
-                      {item.quantity}
-                    </p>
-                    <p className="mt-0.5 text-sm font-medium text-text-primary">{item.name}</p>
-                    {item.note !== null && (
-                      <Text tone="muted" size="xs" className="mt-0.5 block">
-                        {item.note}
-                      </Text>
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-text-primary">Machines &amp; Processes</h2>
+            <Button
+              variant="tonal"
+              size="xs"
+              leadingIcon={<Icon name="plus" size={18} />}
+              onClick={() => openMachineForm()}
+            >
+              Add New
+            </Button>
+          </div>
+
+          {data.machines.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No machines listed"
+                description="A buyer deciding between two shops reads this before the quote. What is on your floor, and what can it hold?"
+                action={
+                  <Button variant="secondary" size="sm" onClick={() => openMachineForm()}>
+                    Add a machine
+                  </Button>
+                }
+              />
+            </div>
+          ) : (
+            <>
+              <ul className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                {machinesOnPage.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex flex-col rounded-xl border border-border-subtle bg-bg-surface p-4"
+                  >
+                    {/*
+                      The design photographs each machine. Nothing here uploads a
+                      photo yet, so the frame keeps its place and says what it is
+                      rather than showing a stock picture of somebody else's shop.
+                    */}
+                    <div className="flex h-48 items-center justify-center rounded-lg border border-border-subtle bg-bg-subtle">
+                      <Icon name="factory" size={40} className="text-icon-disabled" />
+                    </div>
+
+                    <div className="mt-4 flex items-start justify-between gap-2">
+                      <p className="text-base font-medium text-text-primary">{item.name}</p>
+                      <DropdownMenu
+                        label={`Actions for ${item.name}`}
+                        items={[
+                          { id: 'edit', label: 'Edit', onSelect: () => openMachineForm(item) },
+                          {
+                            id: 'delete',
+                            label: 'Delete',
+                            tone: 'danger',
+                            onSelect: () => dropMachine(item.id),
+                          },
+                        ]}
+                        trigger={({ ref, onClick, ...aria }) => (
+                          <button
+                            ref={ref}
+                            type="button"
+                            onClick={onClick}
+                            disabled={pending}
+                            aria-label={`Actions for ${item.name}`}
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                            {...aria}
+                          >
+                            <Icon name="more" size={20} />
+                          </button>
+                        )}
+                      />
+                    </div>
+
+                    <p className="mt-2 text-xs text-text-tertiary">Process</p>
+                    <div className="mt-1">
+                      <Badge tone="brand">{item.process}</Badge>
+                    </div>
+
+                    {item.subProcesses.length > 0 && (
+                      <>
+                        <p className="mt-3 text-xs text-text-tertiary">Sub Process</p>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {item.subProcesses.map((sub) => (
+                            <Badge key={sub} tone="brand">
+                              {sub}
+                            </Badge>
+                          ))}
+                        </div>
+                      </>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      className="mt-2"
-                      disabled={pending}
-                      onClick={() => dropMachine(item.id)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
+
+                    <div className="mt-auto pt-4">
+                      <div className="flex items-start justify-between gap-4 border-t border-border-subtle pt-3">
+                        <div>
+                          <p className="text-xs text-text-tertiary">Tolerance</p>
+                          <p className="mt-0.5 text-sm text-text-primary">
+                            {item.tolerance ?? 'Not stated'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-text-tertiary">TAT</p>
+                          <p className="mt-0.5 text-sm text-text-primary">
+                            {item.turnaroundTime ?? 'Not stated'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
                 ))}
-              </div>
-            )}
-          </Card>
-        </>
+              </ul>
+              <Pagination
+                page={currentMachinePage}
+                pageCount={machinePageCount}
+                onChange={setMachinePage}
+                className="mt-5"
+              />
+            </>
+          )}
+        </Card>
       )}
 
       {tab === 'capabilities' && (
@@ -806,53 +1023,109 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       <Modal
-        open={editing === 'equipment'}
+        open={editing === 'machine'}
         onClose={() => setEditing(null)}
-        title="Add equipment"
-        description="What is on your floor. Buyers read this before they choose."
+        title={machineId === null ? 'Add Manufacturing Capability' : 'Edit Manufacturing Capability'}
+        description="What is on your floor, and what it can hold. Buyers read this before they choose."
         size="sm"
         footer={
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={() => setEditing(null)}>
+          <div className="grid w-full grid-cols-2 gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setEditing(null)}>
               Cancel
             </Button>
             <Button
               variant="primary"
+              fullWidth
               loading={pending || !hydrated}
               disabled={!hydrated}
               onClick={saveMachine}
             >
-              Add
+              {machineId === null ? 'Add' : 'Save'}
             </Button>
           </div>
         }
       >
         <div className="flex flex-col gap-4">
-          <FormField label="What is it" required hint="As a buyer would name it.">
-            <Input
+          <FormField label="Machine" required>
+            <Select
+              options={MACHINE_OPTIONS}
+              placeholder="Select machine"
               value={machine.name}
-              maxLength={120}
               onChange={(event) => setMachine({ ...machine, name: event.target.value })}
             />
           </FormField>
-          <FormField label="How many" required>
-            <Input
-              type="number"
-              min={1}
-              max={999}
-              value={machine.quantity}
-              onChange={(event) => setMachine({ ...machine, quantity: event.target.value })}
+          <FormField label="Select Process" required>
+            <Select
+              options={PROCESS_OPTIONS}
+              placeholder="Select Process"
+              value={machine.process}
+              // Changing the process drops the sub-processes with it: they
+              // belong to the process, and keeping "Reflow" under CNC machining
+              // would publish a line this shop does not have.
+              onChange={(event) =>
+                setMachine({ ...machine, process: event.target.value, subProcesses: [] })
+              }
             />
           </FormField>
-          <FormField label="Note" hint="The model, or what it is good for.">
+          <FormField
+            label="Select Sub-Process"
+            hint={
+              machine.process === ''
+                ? 'Choose a process first.'
+                : 'Choose them one at a time; a machine usually does several.'
+            }
+          >
+            <Select
+              options={(SUB_PROCESSES[machine.process] ?? []).map((name) => ({
+                value: name,
+                label: name,
+              }))}
+              placeholder="Select sub-process"
+              disabled={machine.process === ''}
+              value=""
+              onChange={(event) => addSubProcess(event.target.value)}
+            />
+          </FormField>
+          {machine.subProcesses.length > 0 && (
+            <div className="-mt-2 flex flex-wrap gap-2">
+              {machine.subProcesses.map((sub) => (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() =>
+                    setMachine({
+                      ...machine,
+                      subProcesses: machine.subProcesses.filter((entry) => entry !== sub),
+                    })
+                  }
+                  aria-label={`Remove ${sub}`}
+                  className="rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                >
+                  <Badge tone="brand">{sub} ✕</Badge>
+                </button>
+              ))}
+            </div>
+          )}
+          <FormField label="Tolerance">
+            <Select
+              options={TOLERANCE_OPTIONS}
+              placeholder="Select Tolerance"
+              value={machine.tolerance}
+              onChange={(event) => setMachine({ ...machine, tolerance: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Turnaround time">
             <Input
-              value={machine.note}
-              maxLength={200}
-              onChange={(event) => setMachine({ ...machine, note: event.target.value })}
+              value={machine.turnaroundTime}
+              maxLength={60}
+              placeholder="eg: 3-7 Days"
+              onChange={(event) =>
+                setMachine({ ...machine, turnaroundTime: event.target.value })
+              }
             />
           </FormField>
           {error !== undefined && (
-            <Alert tone="danger" title="Not added">
+            <Alert tone="danger" title="Not saved">
               {error}
             </Alert>
           )}

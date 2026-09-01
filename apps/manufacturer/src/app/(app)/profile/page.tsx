@@ -151,7 +151,7 @@ const ProfilePage = async () => {
           orderCount: shop.orderCount,
           partCount: shop.partCount,
           members: shop.members,
-          equipment: shop.equipment,
+          machines: shop.machines,
           capabilitySheets: shop.capabilitySheets,
           articles: shop.articles.map((article) => ({
             id: article.id,

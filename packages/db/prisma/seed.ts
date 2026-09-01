@@ -274,23 +274,93 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
   // ManufacturerCapability above is what decides that — so they live apart from
   // it, and they are seeded here so the screens draw something true rather than
   // a placeholder with a warning under it.
-  const equipment = [
-    { id: 'seed_equip_a1', manufacturerId: ID.manufacturerA, name: 'SMT placement lines', quantity: 4, note: 'Yamaha YSM20, 0201 capable', position: 0 },
-    { id: 'seed_equip_a2', manufacturerId: ID.manufacturerA, name: 'Reflow ovens', quantity: 2, note: '10-zone, nitrogen', position: 1 },
-    { id: 'seed_equip_a3', manufacturerId: ID.manufacturerA, name: 'AOI stations', quantity: 3, note: 'Post-reflow, both sides', position: 2 },
-    { id: 'seed_equip_a4', manufacturerId: ID.manufacturerA, name: 'X-ray inspection', quantity: 1, note: 'BGA and QFN voiding', position: 3 },
-    { id: 'seed_equip_a5', manufacturerId: ID.manufacturerA, name: 'Stencil cutter', quantity: 1, note: 'In-house, same day', position: 4 },
-    { id: 'seed_equip_b1', manufacturerId: ID.manufacturerB, name: 'SMT placement lines', quantity: 1, note: null, position: 0 },
-    { id: 'seed_equip_b2', manufacturerId: ID.manufacturerB, name: 'Reflow ovens', quantity: 1, note: null, position: 1 },
-    { id: 'seed_equip_c1', manufacturerId: ID.manufacturerC, name: 'SLS printers', quantity: 3, note: 'EOS P396', position: 0 },
-    { id: 'seed_equip_c2', manufacturerId: ID.manufacturerC, name: 'Resin printers', quantity: 2, note: 'For fit checks', position: 1 },
-    { id: 'seed_equip_c3', manufacturerId: ID.manufacturerC, name: 'Bead blasting cabinet', quantity: 1, note: null, position: 2 },
+  const machines = [
+    {
+      id: 'seed_machine_a1',
+      manufacturerId: ID.manufacturerA,
+      name: 'SMT placement line',
+      process: 'PCB assembly',
+      subProcesses: ['Paste printing', 'Placement', 'Reflow'],
+      tolerance: '0201 components, plus or minus 0.05 mm placement',
+      turnaroundTime: '1-2 days',
+      position: 0,
+    },
+    {
+      id: 'seed_machine_a2',
+      manufacturerId: ID.manufacturerA,
+      name: 'AOI station',
+      process: 'Inspection',
+      subProcesses: ['Solder joint', 'Polarity', 'Presence'],
+      tolerance: 'Detects down to 0201',
+      turnaroundTime: 'Same day',
+      position: 1,
+    },
+    {
+      id: 'seed_machine_a3',
+      manufacturerId: ID.manufacturerA,
+      name: 'X-ray inspection',
+      process: 'Inspection',
+      subProcesses: ['BGA voiding', 'QFN wetting'],
+      tolerance: 'Voiding measured to 1%',
+      turnaroundTime: 'Same day',
+      position: 2,
+    },
+    {
+      id: 'seed_machine_a4',
+      manufacturerId: ID.manufacturerA,
+      name: 'Stencil cutter',
+      process: 'Tooling',
+      subProcesses: ['Laser cut', 'Electropolish'],
+      tolerance: 'Aperture plus or minus 0.01 mm',
+      turnaroundTime: 'Same day',
+      position: 3,
+    },
+    {
+      id: 'seed_machine_b1',
+      manufacturerId: ID.manufacturerB,
+      name: 'SMT placement line',
+      process: 'PCB assembly',
+      subProcesses: ['Placement', 'Reflow'],
+      tolerance: '0402 components',
+      turnaroundTime: '3-5 days',
+      position: 0,
+    },
+    {
+      id: 'seed_machine_c1',
+      manufacturerId: ID.manufacturerC,
+      name: 'SLS printer',
+      process: 'Additive manufacturing',
+      subProcesses: ['Nylon sintering', 'Depowdering', 'Bead blasting'],
+      tolerance: 'plus or minus 0.3%, 0.3 mm minimum',
+      turnaroundTime: '2-3 days',
+      position: 0,
+    },
+    {
+      id: 'seed_machine_c2',
+      manufacturerId: ID.manufacturerC,
+      name: 'Resin printer',
+      process: 'Additive manufacturing',
+      subProcesses: ['SLA', 'Post-cure'],
+      tolerance: 'plus or minus 0.1 mm',
+      turnaroundTime: '1-2 days',
+      position: 1,
+    },
+    {
+      id: 'seed_machine_c3',
+      manufacturerId: ID.manufacturerC,
+      name: '5-axis CNC mill',
+      process: 'CNC machining',
+      subProcesses: ['Milling', 'Turning', 'Drilling', 'Tapping'],
+      tolerance: '0.1% with a 0.025 mm minimum',
+      turnaroundTime: '7-10 days',
+      position: 2,
+    },
   ];
-  for (const item of equipment) {
-    await prisma.shopEquipment.upsert({
-      where: { id: item.id },
-      update: item,
-      create: { ...item, createdAt: T.requirementsLocked },
+  for (const machine of machines) {
+    await prisma.shopMachine.upsert({
+      where: { id: machine.id },
+      update: machine,
+      create: { ...machine, createdAt: T.requirementsLocked },
     });
   }
 
