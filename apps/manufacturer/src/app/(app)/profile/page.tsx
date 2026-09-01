@@ -38,7 +38,12 @@ const ProfilePage = async () => {
                 <h1 className="truncate text-xl font-bold text-text-primary">
                   {shop.displayName}
                 </h1>
-                <Text tone="muted" size="sm">
+                {shop.tagline !== null && (
+                  <Text size="sm" className="mt-0.5 block max-w-measure text-text-secondary">
+                    {shop.tagline}
+                  </Text>
+                )}
+                <Text tone="muted" size="xs" className="mt-1 block">
                   {shop.city}, {shop.countryCode} · on IDEEZA since{' '}
                   {day(shop.memberSince)}
                 </Text>
@@ -119,6 +124,16 @@ const ProfilePage = async () => {
           region: shop.region ?? '',
           postalCode: shop.postalCode ?? '',
           countryCode: shop.countryCode,
+          tagline: shop.tagline ?? '',
+          about: shop.about ?? '',
+          phone: shop.phone ?? '',
+          websiteUrl: shop.websiteUrl ?? '',
+          employeeBand: shop.employeeBand ?? '',
+          shippingMethods: shop.shippingMethods,
+          facebookUrl: shop.facebookUrl ?? '',
+          twitterUrl: shop.twitterUrl ?? '',
+          instagramUrl: shop.instagramUrl ?? '',
+          linkedinUrl: shop.linkedinUrl ?? '',
           verified: shop.verified,
           rating: shop.rating,
           onTimeDeliveryRate: shop.onTimeDeliveryRate,
@@ -136,7 +151,16 @@ const ProfilePage = async () => {
           orderCount: shop.orderCount,
           partCount: shop.partCount,
           members: shop.members,
-          articles: [],
+          equipment: shop.equipment,
+          capabilitySheets: shop.capabilitySheets,
+          articles: shop.articles.map((article) => ({
+            id: article.id,
+            title: article.title,
+            category: article.category,
+            status: article.status,
+            rejectReason: article.rejectReason,
+            on: day(article.on),
+          })),
           reviews: shop.reviews.map((review) => ({
             id: review.id,
             rating: review.rating,

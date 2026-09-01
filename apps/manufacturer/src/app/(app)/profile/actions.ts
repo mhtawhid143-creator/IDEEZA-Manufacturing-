@@ -1,9 +1,12 @@
 'use server';
 
 import {
+  addEquipment,
+  removeEquipment,
   saveCapability,
   saveCompany,
   type CompanyEdit,
+  type EquipmentEdit,
 } from '@/data/profile.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
@@ -22,6 +25,20 @@ export const saveCompanyAction = async (edit: CompanyEdit): Promise<ProfileState
     if (error instanceof Error) return { saved: false, error: error.message };
     throw error;
   }
+};
+
+/** Adds a machine to the floor list buyers read. */
+export const addEquipmentAction = async (edit: EquipmentEdit): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await addEquipment(actor.manufacturerId, edit);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Takes one off it. */
+export const removeEquipmentAction = async (equipmentId: string): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await removeEquipment(actor.manufacturerId, equipmentId);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
 };
 
 export interface CapabilityPayload {

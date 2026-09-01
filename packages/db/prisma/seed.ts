@@ -176,6 +176,17 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       rating: '4.90',
       onTimeDeliveryRate: '0.9800',
       completedOrderCount: 128,
+      tagline: 'Boards built right the first time, from prototype to production.',
+      about:
+        'PrecisionCircuit has been fabricating and assembling boards in Shenzhen since 2009. We run four SMT lines, keep our own stencil shop, and inspect every panel with AOI before it leaves the floor. Most of what we build is low to mid volume for people who need the first article to be right rather than early — instrumentation, robotics, medical sub-assemblies. We would rather ask a question on day one than send a surprise on day ten.',
+      phone: '+86 755 8100 4412',
+      websiteUrl: 'https://precisioncircuit.example',
+      employeeBand: '50-200',
+      shippingMethods: ['DHL', 'FedEx', 'UPS', 'Sea freight'],
+      facebookUrl: 'https://facebook.com/precisioncircuit',
+      twitterUrl: 'https://x.com/precisioncircuit',
+      instagramUrl: 'https://instagram.com/precisioncircuit',
+      linkedinUrl: 'https://linkedin.com/company/precisioncircuit',
       capability: {
         services: ['fabrication', 'assembly', 'parts_sourcing', 'testing', '3d_enclosure'],
         certifications: ['ISO 9001', 'UL', 'IPC-A-600 Class 3'],
@@ -194,6 +205,14 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       rating: '4.60',
       onTimeDeliveryRate: '0.9400',
       completedOrderCount: 74,
+      tagline: 'High volume fabrication and assembly, quoted the same day.',
+      about:
+        'Shenzhen Boards runs two fabrication lines and one assembly line, and takes work from fifty pieces upwards. We are at our best on repeat builds where the design has settled and the question is cost and consistency.',
+      phone: '+86 755 8399 2210',
+      websiteUrl: 'https://shenzhenboards.example',
+      employeeBand: '200-500',
+      shippingMethods: ['DHL', 'Sea freight'],
+      linkedinUrl: 'https://linkedin.com/company/shenzhenboards',
       capability: {
         services: ['fabrication', 'assembly'],
         certifications: ['ISO 9001'],
@@ -214,6 +233,15 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       rating: '4.80',
       onTimeDeliveryRate: '0.9600',
       completedOrderCount: 41,
+      tagline: 'Enclosures and functional prototypes, printed in the Netherlands.',
+      about:
+        'AdditiveWorks is a print shop: SLS, MJF and resin, with finishing and assembly in house. We take one-offs and short runs, and we will tell you when a part wants to be machined instead.',
+      phone: '+31 40 213 8890',
+      websiteUrl: 'https://additiveworks.example',
+      employeeBand: '10-50',
+      shippingMethods: ['DHL', 'DPD'],
+      instagramUrl: 'https://instagram.com/additiveworks',
+      linkedinUrl: 'https://linkedin.com/company/additiveworks',
       capability: {
         services: ['3d_enclosure', 'testing'],
         certifications: ['ISO 9001'],
@@ -236,6 +264,139 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       where: { manufacturerId: profile.id },
       update: capability,
       create: { manufacturerId: profile.id, ...capability },
+    });
+  }
+
+  // -- what a buyer reads after the match ---------------------------------
+  //
+  // The equipment list, the capability sheets and the shop's writing are what
+  // the profile shows once a request has reached a shop. They gate nothing —
+  // ManufacturerCapability above is what decides that — so they live apart from
+  // it, and they are seeded here so the screens draw something true rather than
+  // a placeholder with a warning under it.
+  const equipment = [
+    { id: 'seed_equip_a1', manufacturerId: ID.manufacturerA, name: 'SMT placement lines', quantity: 4, note: 'Yamaha YSM20, 0201 capable', position: 0 },
+    { id: 'seed_equip_a2', manufacturerId: ID.manufacturerA, name: 'Reflow ovens', quantity: 2, note: '10-zone, nitrogen', position: 1 },
+    { id: 'seed_equip_a3', manufacturerId: ID.manufacturerA, name: 'AOI stations', quantity: 3, note: 'Post-reflow, both sides', position: 2 },
+    { id: 'seed_equip_a4', manufacturerId: ID.manufacturerA, name: 'X-ray inspection', quantity: 1, note: 'BGA and QFN voiding', position: 3 },
+    { id: 'seed_equip_a5', manufacturerId: ID.manufacturerA, name: 'Stencil cutter', quantity: 1, note: 'In-house, same day', position: 4 },
+    { id: 'seed_equip_b1', manufacturerId: ID.manufacturerB, name: 'SMT placement lines', quantity: 1, note: null, position: 0 },
+    { id: 'seed_equip_b2', manufacturerId: ID.manufacturerB, name: 'Reflow ovens', quantity: 1, note: null, position: 1 },
+    { id: 'seed_equip_c1', manufacturerId: ID.manufacturerC, name: 'SLS printers', quantity: 3, note: 'EOS P396', position: 0 },
+    { id: 'seed_equip_c2', manufacturerId: ID.manufacturerC, name: 'Resin printers', quantity: 2, note: 'For fit checks', position: 1 },
+    { id: 'seed_equip_c3', manufacturerId: ID.manufacturerC, name: 'Bead blasting cabinet', quantity: 1, note: null, position: 2 },
+  ];
+  for (const item of equipment) {
+    await prisma.shopEquipment.upsert({
+      where: { id: item.id },
+      update: item,
+      create: { ...item, createdAt: T.requirementsLocked },
+    });
+  }
+
+  const sheets = [
+    {
+      id: 'seed_sheet_a_pcb',
+      manufacturerId: ID.manufacturerA,
+      kind: 'pcb_fabrication' as const,
+      title: 'PCB fabrication',
+      position: 0,
+      parameters: [
+        { label: 'Layer count', values: ['1-16 layers'] },
+        { label: 'Minimum hole size', values: ['0.2 mm'] },
+        { label: 'Surface finish', values: ['ENIG', 'HASL', 'OSP'] },
+        { label: 'Base material', values: ['FR-4', 'High-Tg FR-4', 'Rogers 4350B'] },
+        { label: 'Copper weight', values: ['1 oz', '2 oz'] },
+        { label: 'Impedance control', values: ['plus or minus 7%'] },
+        { label: 'Build time', values: ['24-48 hours'] },
+      ],
+    },
+    {
+      id: 'seed_sheet_a_pcba',
+      manufacturerId: ID.manufacturerA,
+      kind: 'pcb_assembly' as const,
+      title: 'PCB assembly',
+      position: 1,
+      parameters: [
+        { label: 'Smallest placement', values: ['0201'] },
+        { label: 'Sides', values: ['Single', 'Double'] },
+        { label: 'Inspection', values: ['AOI', 'X-ray', 'Functional test'] },
+        { label: 'Conformal coating', values: ['Acrylic', 'Silicone'] },
+        { label: 'Build time', values: ['24-48 hours'] },
+      ],
+    },
+    {
+      id: 'seed_sheet_c_print',
+      manufacturerId: ID.manufacturerC,
+      kind: 'printing_3d' as const,
+      title: '3D printing',
+      position: 0,
+      parameters: [
+        { label: 'Technology', values: ['SLS', 'MJF', 'Resin'] },
+        { label: 'Material', values: ['PA12', 'PA11', 'TPU'] },
+        { label: 'Maximum part', values: ['340 x 340 x 600 mm'] },
+        { label: 'Layer height', values: ['60-120 microns'] },
+        { label: 'Finishing', values: ['Bead blast', 'Dye', 'Vapour smooth'] },
+        { label: 'Build time', values: ['48-72 hours'] },
+      ],
+    },
+  ];
+  for (const sheet of sheets) {
+    const { parameters, ...row } = sheet;
+    await prisma.shopCapabilitySheet.upsert({ where: { id: row.id }, update: row, create: row });
+    await prisma.shopCapabilityParameter.deleteMany({ where: { sheetId: row.id } });
+    await prisma.shopCapabilityParameter.createMany({
+      data: parameters.map((parameter, index) => ({
+        id: row.id + '_p' + String(index),
+        sheetId: row.id,
+        label: parameter.label,
+        values: parameter.values,
+        position: index,
+      })),
+    });
+  }
+
+  const articles = [
+    {
+      id: 'seed_article_a1',
+      manufacturerId: ID.manufacturerA,
+      title: 'What we check before a board goes on the line',
+      category: 'Quality',
+      tags: ['AOI', 'process'],
+      body: 'Every job that reaches our floor gets the same first hour: the gerbers are opened next to the assembly drawing, the stack-up is checked against the impedance the buyer asked for, and the bill of materials is matched line by line against what is on the shelf.\n\nMost problems are found in that hour, and they are cheap there. The same problem found after the stencil is cut is a week and a scrapped panel.',
+      status: 'published' as const,
+      rejectReason: null,
+      publishedAt: T.requirementsLocked,
+    },
+    {
+      id: 'seed_article_a2',
+      manufacturerId: ID.manufacturerA,
+      title: 'Why we ask about your test plan before quoting',
+      category: 'Process',
+      tags: ['testing'],
+      body: 'A board that cannot be tested is a board nobody can accept. We ask early because the answer changes the quote: test points, a fixture, or a functional rig are all different numbers.',
+      status: 'in_review' as const,
+      rejectReason: null,
+      publishedAt: null,
+    },
+    {
+      id: 'seed_article_a3',
+      manufacturerId: ID.manufacturerA,
+      title: 'Ten reasons to choose us over everyone else',
+      category: null,
+      tags: [],
+      body: 'A draft that reads as advertising rather than as something a buyer learns from.',
+      status: 'rejected' as const,
+      rejectReason:
+        'Reads as advertising. Buyers use the blog to judge competence, so it has to teach them something.',
+      publishedAt: null,
+    },
+  ];
+  for (const article of articles) {
+    await prisma.shopArticle.upsert({
+      where: { id: article.id },
+      update: article,
+      create: { ...article, createdAt: T.requirementsLocked },
     });
   }
 

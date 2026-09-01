@@ -46,6 +46,8 @@ describe('migrations apply to a clean database', () => {
       '20260827062618_quote_volume_prices',
       '20260827065859_inventory_movements',
       '20260901060900_problem_reports',
+      '20260901102118_profile_contact_and_social',
+      '20260901103556_profile_equipment_sheets_articles',
     ]);
   });
 
@@ -69,12 +71,17 @@ describe('migrations apply to a clean database', () => {
     // volumes, and the answers have to be comparable rather than prose.
     // ProblemReport arrived with the Report a Problem dialog — a report that is
     // not stored is a form that lies, so it gets a table of its own.
-    expect(tables).toBe(50);
+    // ShopEquipment, ShopCapabilitySheet, ShopCapabilityParameter and
+    // ShopArticle arrived with the profile alignment: the design shows a floor
+    // list, capability sheets and the shop's writing, and each of them was
+    // being drawn from a constant because there was nowhere to keep it.
+    expect(tables).toBe(54);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with
-    // the Report a Problem dialog.
-    expect(enums).toBe(48);
+    // the Report a Problem dialog. CapabilityKind and ArticleStatus arrived
+    // with the profile alignment.
+    expect(enums).toBe(50);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

@@ -14,14 +14,30 @@ import {
   Input,
   Modal,
   Tabs,
+  Textarea,
   Tag,
   Text,
   useToast,
 } from '@ideeza/ui';
 import {
+  addEquipmentAction,
+  removeEquipmentAction,
   saveCapabilityAction,
   saveCompanyAction,
 } from '@/app/(app)/profile/actions.js';
+
+/**
+ * The four networks the design lists, in its order.
+ *
+ * A shop with none of them shows none — an empty row per network would be four
+ * lines saying nothing, and the design does not draw them either.
+ */
+const SOCIAL_LINKS = [
+  { field: 'facebookUrl', label: 'Facebook' },
+  { field: 'twitterUrl', label: 'Twitter' },
+  { field: 'instagramUrl', label: 'Instagram' },
+  { field: 'linkedinUrl', label: 'LinkedIn' },
+] as const satisfies readonly { readonly field: string; readonly label: string }[];
 
 export interface ProfileReviewRow {
   readonly id: string;
@@ -41,6 +57,18 @@ export interface ProfileData {
   readonly region: string;
   readonly postalCode: string;
   readonly countryCode: string;
+  /** The line under the name, and the introduction below it. */
+  readonly tagline: string;
+  readonly about: string;
+  /** How a buyer reaches the shop outside the platform. */
+  readonly phone: string;
+  readonly websiteUrl: string;
+  readonly employeeBand: string;
+  readonly shippingMethods: readonly string[];
+  readonly facebookUrl: string;
+  readonly twitterUrl: string;
+  readonly instagramUrl: string;
+  readonly linkedinUrl: string;
   readonly verified: boolean;
   readonly rating: number | null;
   readonly onTimeDeliveryRate: number | null;
@@ -61,11 +89,30 @@ export interface ProfileData {
     readonly email: string;
     readonly owner: boolean;
   }[];
-  /** Articles this shop has published, from the blog. */
+  /** What is on the floor, as the shop lists it. */
+  readonly equipment: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly quantity: number;
+    readonly note: string | null;
+  }[];
+  /** What the shop can do, per kind of work — the detail after the match. */
+  readonly capabilitySheets: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly parameters: readonly {
+      readonly id: string;
+      readonly label: string;
+      readonly values: readonly string[];
+    }[];
+  }[];
+  /** Articles this shop has written. Buyers read the published ones. */
   readonly articles: readonly {
     readonly id: string;
     readonly title: string;
+    readonly category: string | null;
     readonly status: string;
+    readonly rejectReason: string | null;
     readonly on: string;
   }[];
 }
@@ -81,76 +128,21 @@ const SERVICE_OPTIONS = [
 
 const REGION_OPTIONS = ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania'];
 
-/** The parameter sheets the design shows per kind of work. */
-const CAPABILITY_SHEETS = [
-  {
-    id: 'pcb',
-    title: 'PCB manufacturing',
-    rows: [
-      { label: 'Layer support', values: ['1–16 layers'] },
-      { label: 'Minimum hole size', values: ['0.2mm'] },
-      { label: 'Surface finish', values: ['ENIG', 'HASL'] },
-      { label: 'Material', values: ['FR-4', 'High-Tg FR4'] },
-      { label: 'Copper weight', values: ['1oz', '2oz'] },
-      { label: 'Impedance control', values: ['±7%'] },
-      { label: 'Build time', values: ['24–48 hours'] },
-    ],
-  },
-  {
-    id: 'pcba',
-    title: 'PCB assembly',
-    rows: [
-      { label: 'Placement', values: ['0402 and up'] },
-      { label: 'Sides', values: ['Single', 'Double'] },
-      { label: 'Inspection', values: ['AOI', 'Functional test'] },
-      { label: 'Build time', values: ['24–48 hours'] },
-    ],
-  },
-  {
-    id: 'printing',
-    title: '3D printing',
-    rows: [
-      { label: 'Technology', values: ['SLS', 'MJF', 'FDM'] },
-      { label: 'Material', values: ['PA12', 'PETG'] },
-      { label: 'Max print size', values: ['380 × 284 × 380 mm'] },
-      { label: 'Resolution', values: ['60–120 µm layer'] },
-      { label: 'Build time', values: ['48–72 hours'] },
-    ],
-  },
-  {
-    id: 'cnc',
-    title: 'CNC machining',
-    rows: [
-      { label: 'Axis', values: ['3-axis', '5-axis'] },
-      { label: 'Material', values: ['Aluminium 6061', 'Stainless 316'] },
-      { label: 'Tolerance', values: ['±0.025mm'] },
-      { label: 'Max work area', values: ['1200 × 700 × 500 mm'] },
-      { label: 'Build time', values: ['7–10 business days'] },
-    ],
-  },
-];
-
-const EQUIPMENT = [
-  { count: '05', label: '5-axis CNC mills' },
-  { count: '04', label: '3D printers' },
-  { count: '03', label: 'Laser cutters' },
-  { count: '02', label: 'Reflow ovens' },
-];
-
 /**
  * The shop's profile: what buyers see, and what decides whether a request reaches
  * it at all.
  *
- * Two parts of this are stored and matter immediately — the company details an
- * order ships to, and the services, regions, minimum quantity and lead time a
- * request is matched against. The parameter sheets, the equipment list and the
- * agent section are laid out from the design and marked as the prototype they
- * are: the platform has nowhere to keep them yet, and a screen that pretended
- * otherwise would lose a shop's work.
+ * What gates anything is one record: the services, regions, minimum quantity
+ * and lead time a request is matched against. Everything else here — the
+ * shop's own words, its floor list, its capability sheets, its writing — is
+ * what a buyer reads once a request has reached it, and all of it is stored.
+ *
+ * The Agent tab is the exception and says so: it belongs to IDEEZA's own
+ * assistant rather than to this platform.
  */
 export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
   const [tab, setTab] = useState('about');
-  const [editing, setEditing] = useState<'company' | 'capability' | null>(null);
+  const [editing, setEditing] = useState<'company' | 'capability' | 'equipment' | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>(undefined);
@@ -166,6 +158,18 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
     region: data.region,
     postalCode: data.postalCode,
     countryCode: data.countryCode,
+    tagline: data.tagline,
+    about: data.about,
+    phone: data.phone,
+    websiteUrl: data.websiteUrl,
+    employeeBand: data.employeeBand,
+    // Typed as one line, stored as a list: a shop writes "DHL, FedEx", not an
+    // array, and asking for one carrier per field would be five empty boxes.
+    shippingMethods: data.shippingMethods.join(', '),
+    facebookUrl: data.facebookUrl,
+    twitterUrl: data.twitterUrl,
+    instagramUrl: data.instagramUrl,
+    linkedinUrl: data.linkedinUrl,
   });
   const [services, setServices] = useState<readonly string[]>(data.services);
   const [regions, setRegions] = useState<readonly string[]>(data.servedRegions);
@@ -173,6 +177,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
     data.certifications,
   );
   const [newCertification, setNewCertification] = useState('');
+  const [machine, setMachine] = useState({ name: '', quantity: '1', note: '' });
   const [moq, setMoq] = useState(data.minimumOrderQuantity);
   const [lead, setLead] = useState(data.standardLeadTimeDays);
 
@@ -181,7 +186,13 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
   const saveCompany = (): void => {
     setError(undefined);
     startTransition(async () => {
-      const result = await saveCompanyAction(company);
+      const result = await saveCompanyAction({
+        ...company,
+        shippingMethods: company.shippingMethods
+          .split(',')
+          .map((method) => method.trim())
+          .filter((method) => method !== ''),
+      });
       if (!result.saved) {
         setError(result.error ?? 'Those details were not saved.');
         return;
@@ -192,6 +203,36 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
         body: 'Buyers see this, and orders ship to the address.',
         tone: 'success',
       });
+      router.refresh();
+    });
+  };
+
+  const saveMachine = (): void => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await addEquipmentAction({
+        name: machine.name,
+        quantity: Number(machine.quantity),
+        note: machine.note,
+      });
+      if (!result.saved) {
+        setError(result.error ?? 'That machine was not added.');
+        return;
+      }
+      setEditing(null);
+      setMachine({ name: '', quantity: '1', note: '' });
+      push({ title: 'Added to your floor list', tone: 'success' });
+      router.refresh();
+    });
+  };
+
+  const dropMachine = (equipmentId: string): void => {
+    startTransition(async () => {
+      const result = await removeEquipmentAction(equipmentId);
+      if (!result.saved) {
+        push({ title: result.error ?? 'It was not removed.', tone: 'danger' });
+        return;
+      }
       router.refresh();
     });
   };
@@ -260,12 +301,47 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                 </Button>
               }
             />
+            {data.about === '' ? (
+              <Text tone="muted" size="sm" className="mt-4 block">
+                Nothing written yet. A buyer choosing between two shops reads this
+                first — it is worth a paragraph.
+              </Text>
+            ) : (
+              <div className="mt-4">
+                <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
+                  About
+                </p>
+                <Text size="sm" className="mt-1 block max-w-measure leading-lg">
+                  {data.about}
+                </Text>
+              </div>
+            )}
+
             <DefinitionList
-              className="mt-4"
+              className="mt-5"
               columns={2}
               items={[
                 { label: 'Name buyers see', value: data.displayName },
                 { label: 'Legal name', value: data.legalName },
+                {
+                  label: 'Phone',
+                  value: data.phone === '' ? 'Not given' : data.phone,
+                },
+                {
+                  label: 'Employees',
+                  value: data.employeeBand === '' ? 'Not given' : data.employeeBand,
+                },
+                {
+                  label: 'Ships with',
+                  value:
+                    data.shippingMethods.length === 0
+                      ? 'Not given'
+                      : data.shippingMethods.join(', '),
+                },
+                {
+                  label: 'Website',
+                  value: data.websiteUrl === '' ? 'Not given' : data.websiteUrl,
+                },
                 {
                   label: 'Address',
                   value: [
@@ -297,6 +373,40 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
 
           <Card>
             <CardHeader
+              title="Social"
+              description="Where else a buyer can read about this shop."
+              actions={
+                <Button variant="secondary" size="sm" onClick={() => setEditing('company')}>
+                  Edit
+                </Button>
+              }
+            />
+            {SOCIAL_LINKS.every(({ field }) => data[field] === '') ? (
+              <Text tone="muted" size="sm" className="mt-3 block">
+                No accounts linked. Nothing is shown to buyers until one is.
+              </Text>
+            ) : (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {SOCIAL_LINKS.filter(({ field }) => data[field] !== '').map(
+                  ({ field, label }) => (
+                    <li key={field}>
+                      <a
+                        href={data[field]}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="inline-flex items-center gap-2 rounded-full border border-border bg-bg-surface-raised px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:border-border-brand hover:text-text-brand"
+                      >
+                        {label}
+                      </a>
+                    </li>
+                  ),
+                )}
+              </ul>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader
               title="Your team"
               description="Members who can act for this shop."
             />
@@ -322,12 +432,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
             </Text>
           </Card>
 
-          <Alert tone="info" title="What the design has and the platform does not yet">
-            The about text, the phone number, the website, the employee count, the
-            shipping methods and the social links have nowhere to live in this build.
-            They are not shown as empty fields here, because a form that loses what you
-            type is worse than no form.
-          </Alert>
+
         </>
       )}
 
@@ -388,28 +493,45 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
               title="Equipment"
               description="What is on the floor, as a buyer would want to know it."
               actions={
-                <Button variant="secondary" size="sm" disabled>
+                <Button variant="secondary" size="sm" onClick={() => setEditing('equipment')}>
                   Add new
                 </Button>
               }
             />
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {EQUIPMENT.map((item) => (
-                <div key={item.label} className="rounded-lg border border-border-subtle p-3">
-                  <p className="text-xl font-bold text-text-primary">{item.count}</p>
-                  <Text tone="muted" size="xs">
-                    {item.label}
-                  </Text>
-                </div>
-              ))}
-            </div>
+            {data.equipment.length === 0 ? (
+              <div className="mt-4">
+                <EmptyState
+                  title="No equipment listed"
+                  description="A buyer deciding between two shops reads this before the quote. What is on your floor?"
+                />
+              </div>
+            ) : (
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {data.equipment.map((item) => (
+                  <div key={item.id} className="rounded-lg border border-border-subtle p-3">
+                    <p className="text-xl font-bold text-text-primary" data-numeric>
+                      {item.quantity}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium text-text-primary">{item.name}</p>
+                    {item.note !== null && (
+                      <Text tone="muted" size="xs" className="mt-0.5 block">
+                        {item.note}
+                      </Text>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="mt-2"
+                      disabled={pending}
+                      onClick={() => dropMachine(item.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
-
-          <Alert tone="warning" title="Laid out, not yet stored">
-            This panel is the design with representative numbers. Equipment has no table
-            in the database yet, so nothing typed here would survive — which is why the
-            Add button is disabled rather than pretending.
-          </Alert>
         </>
       )}
 
@@ -481,14 +603,22 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
             </div>
           </Card>
 
+          {data.capabilitySheets.length === 0 && (
+            <EmptyState
+              title="No capability sheets yet"
+              description="The panel above is what a request is matched on. A sheet is the detail a buyer reads once it has reached you — layer counts, tolerances, finishes."
+            />
+          )}
+
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            {CAPABILITY_SHEETS.map((sheet) => (
+            {data.capabilitySheets.map((sheet) => (
               <Card key={sheet.id} padded={false}>
                 <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold text-text-primary">{sheet.title}</p>
                     <Text tone="muted" size="xs">
-                      {sheet.rows.length} parameters
+                      {sheet.parameters.length}{' '}
+                      {sheet.parameters.length === 1 ? 'parameter' : 'parameters'}
                     </Text>
                   </div>
                   <DropdownMenu
@@ -509,9 +639,9 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   />
                 </div>
                 <ul aria-label={`${sheet.title} parameters`}>
-                  {sheet.rows.map((row) => (
+                  {sheet.parameters.map((row) => (
                     <li
-                      key={row.label}
+                      key={row.id}
                       className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-2.5 last:border-b-0"
                     >
                       <Text tone="muted" size="sm">
@@ -531,11 +661,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
             ))}
           </div>
 
-          <Alert tone="warning" title="The parameter sheets are the design, not stored data">
-            What the platform actually matches on is the panel above. These sheets need
-            their own tables — one per kind of work — and they arrive with the logic
-            pass.
-          </Alert>
+
         </>
       )}
 
@@ -561,10 +687,37 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   key={article.id}
                   className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                 >
-                  <p className="text-sm font-semibold text-text-primary">{article.title}</p>
-                  <div className="flex items-center gap-2">
-                    <Tag tone={article.status === 'published' ? 'success' : 'neutral'}>
-                      {article.status}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary">{article.title}</p>
+                    {article.category !== null && (
+                      <Text tone="muted" size="xs">
+                        {article.category}
+                      </Text>
+                    )}
+                    {/*
+                      A rejection is the one status that owes an explanation.
+                      Without the reason beside it a shop is told no and left to
+                      guess, which is how the same article comes back twice.
+                    */}
+                    {article.rejectReason !== null && (
+                      <Text size="xs" className="mt-1 block max-w-measure text-text-error">
+                        {article.rejectReason}
+                      </Text>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Tag
+                      tone={
+                        article.status === 'published'
+                          ? 'success'
+                          : article.status === 'rejected'
+                            ? 'danger'
+                            : article.status === 'in_review'
+                              ? 'warning'
+                              : 'neutral'
+                      }
+                    >
+                      {article.status.replace(/_/g, ' ')}
                     </Tag>
                     <Text tone="muted" size="xs">
                       {article.on}
@@ -653,6 +806,60 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       <Modal
+        open={editing === 'equipment'}
+        onClose={() => setEditing(null)}
+        title="Add equipment"
+        description="What is on your floor. Buyers read this before they choose."
+        size="sm"
+        footer={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={pending || !hydrated}
+              disabled={!hydrated}
+              onClick={saveMachine}
+            >
+              Add
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <FormField label="What is it" required hint="As a buyer would name it.">
+            <Input
+              value={machine.name}
+              maxLength={120}
+              onChange={(event) => setMachine({ ...machine, name: event.target.value })}
+            />
+          </FormField>
+          <FormField label="How many" required>
+            <Input
+              type="number"
+              min={1}
+              max={999}
+              value={machine.quantity}
+              onChange={(event) => setMachine({ ...machine, quantity: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Note" hint="The model, or what it is good for.">
+            <Input
+              value={machine.note}
+              maxLength={200}
+              onChange={(event) => setMachine({ ...machine, note: event.target.value })}
+            />
+          </FormField>
+          {error !== undefined && (
+            <Alert tone="danger" title="Not added">
+              {error}
+            </Alert>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
         open={editing === 'company'}
         onClose={() => setEditing(null)}
         title="Edit company information"
@@ -675,6 +882,25 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            label="About this shop"
+            className="sm:col-span-2"
+            hint="What a buyer choosing between two shops reads first."
+          >
+            <Textarea
+              rows={5}
+              maxLength={4000}
+              value={company.about}
+              onChange={(event) => setCompany({ ...company, about: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Tagline" className="sm:col-span-2" hint="One sentence, under the name.">
+            <Input
+              maxLength={160}
+              value={company.tagline}
+              onChange={(event) => setCompany({ ...company, tagline: event.target.value })}
+            />
+          </FormField>
           <FormField label="Name buyers see" required>
             <Input
               value={company.displayName}
@@ -733,6 +959,68 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
               onChange={(event) =>
                 setCompany({ ...company, countryCode: event.target.value })
               }
+            />
+          </FormField>
+
+          <FormField label="Phone">
+            <Input
+              type="tel"
+              value={company.phone}
+              onChange={(event) => setCompany({ ...company, phone: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Website" hint="example.com is enough.">
+            <Input
+              value={company.websiteUrl}
+              onChange={(event) => setCompany({ ...company, websiteUrl: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Employees" hint="A band, not a headcount: 10-50.">
+            <Input
+              value={company.employeeBand}
+              onChange={(event) =>
+                setCompany({ ...company, employeeBand: event.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="Ships with" hint="Carriers, separated by commas.">
+            <Input
+              value={company.shippingMethods}
+              onChange={(event) =>
+                setCompany({ ...company, shippingMethods: event.target.value })
+              }
+            />
+          </FormField>
+
+          {/*
+            The four networks the design lists. Each is optional and each is
+            checked on save: a link that does not open is worse than no link,
+            because a buyer clicks it once and reads the dead end as the shop.
+          */}
+          <FormField label="Facebook">
+            <Input
+              value={company.facebookUrl}
+              onChange={(event) => setCompany({ ...company, facebookUrl: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Twitter">
+            <Input
+              value={company.twitterUrl}
+              onChange={(event) => setCompany({ ...company, twitterUrl: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Instagram">
+            <Input
+              value={company.instagramUrl}
+              onChange={(event) =>
+                setCompany({ ...company, instagramUrl: event.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="LinkedIn">
+            <Input
+              value={company.linkedinUrl}
+              onChange={(event) => setCompany({ ...company, linkedinUrl: event.target.value })}
             />
           </FormField>
         </div>

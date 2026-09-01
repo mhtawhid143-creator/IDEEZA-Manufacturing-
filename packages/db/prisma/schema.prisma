@@ -565,18 +565,44 @@ model ManufacturerProfile {
   verifiedAt          DateTime?
   createdAt           DateTime  @default(now())
 
-  capability      ManufacturerCapability?
-  members         ManufacturerMember[]
-  rfqRecipients   RfqRecipient[]
-  quotes          Quote[]
-  orders          ManufacturingOrder[]
-  inventoryItems  InventoryItem[]
-  inventoryAlerts InventoryAlert[]
-  payouts         Payout[]
-  withdrawals     WithdrawalRequest[]
-  reviews         Review[]
-  domainEvents    DomainEvent[]
-  sessions        Session[]
+  /// The line under the shop's name on its profile — one sentence, its own words.
+  tagline String?
+  /// The longer introduction the profile leads with.
+  about   String?
+
+  /// How a buyer reaches the shop outside the platform. Shown on the profile,
+  /// which is why they are here and not on the member who happens to be signed in.
+  phone      String?
+  websiteUrl String?
+
+  /// The band a shop describes its size by — "10-50" — rather than a headcount
+  /// nobody keeps current.
+  employeeBand    String?
+  /// Carriers the shop ships with, as the profile lists them.
+  shippingMethods String[] @default([])
+
+  /// Where else a buyer can read about the shop. Absent is the common case and
+  /// renders as nothing rather than as an empty row.
+  facebookUrl  String?
+  twitterUrl   String?
+  instagramUrl String?
+  linkedinUrl  String?
+
+  capability       ManufacturerCapability?
+  equipment        ShopEquipment[]
+  capabilitySheets ShopCapabilitySheet[]
+  articles         ShopArticle[]
+  members          ManufacturerMember[]
+  rfqRecipients    RfqRecipient[]
+  quotes           Quote[]
+  orders           ManufacturingOrder[]
+  inventoryItems   InventoryItem[]
+  inventoryAlerts  InventoryAlert[]
+  payouts          Payout[]
+  withdrawals      WithdrawalRequest[]
+  reviews          Review[]
+  domainEvents     DomainEvent[]
+  sessions         Session[]
 
   @@index([countryCode])
 }
@@ -1647,4 +1673,103 @@ model ProblemReport {
 
   @@index([reportedById, createdAt])
   @@index([kind, createdAt])
+}
+
+/// The kinds of work a capability sheet describes — the tabs the Figma
+/// "Add Manufacturing Capability" flow offers.
+enum CapabilityKind {
+  pcb_fabrication
+  pcb_assembly
+  printing_3d
+  cnc_machining
+  injection_moulding
+  other
+}
+
+/// A machine on the shop floor, as a buyer would want it listed.
+///
+/// Counted rather than serialised: a buyer choosing a shop wants to know it has
+/// five mills, not which five. What it is called is the shop's own words.
+model ShopEquipment {
+  id             String   @id
+  manufacturerId String
+  name           String
+  quantity       Int      @default(1)
+  note           String?
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, position])
+}
+
+/// One sheet of what a shop can actually do, per kind of work.
+///
+/// The platform matches requests on `ManufacturerCapability` — services,
+/// regions, minimum quantity, lead time. These sheets are the detail a buyer
+/// reads after the match: layer counts, tolerances, finishes. They do not gate
+/// anything, which is why they are separate from the record that does.
+model ShopCapabilitySheet {
+  id             String         @id
+  manufacturerId String
+  kind           CapabilityKind
+  title          String
+  position       Int            @default(0)
+  updatedAt      DateTime       @updatedAt
+
+  manufacturer ManufacturerProfile       @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  parameters   ShopCapabilityParameter[]
+
+  @@unique([manufacturerId, kind])
+  @@index([manufacturerId, position])
+}
+
+/// One line of a sheet: "Surface finish" → ENIG, HASL.
+///
+/// The values are a list because a shop offers several and a buyer needs to see
+/// all of them; joining them into a string would make them unsearchable later.
+model ShopCapabilityParameter {
+  id       String   @id
+  sheetId  String
+  label    String
+  values   String[]
+  position Int      @default(0)
+
+  sheet ShopCapabilitySheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId, position])
+}
+
+/// Where an article stands. IDEEZA reads what a shop publishes to buyers, so a
+/// draft is the shop's alone and a rejection carries the reason with it.
+enum ArticleStatus {
+  draft
+  in_review
+  published
+  rejected
+}
+
+/// Something a shop wrote for buyers to read on its profile.
+///
+/// The blog screen and the profile's Blog tab are two views of this one table:
+/// the screen is where it is written, the tab is what a buyer sees, and they
+/// disagreeing was the reason the tab was passed an empty list.
+model ShopArticle {
+  id             String        @id
+  manufacturerId String
+  title          String
+  category       String?
+  tags           String[]      @default([])
+  body           String
+  status         ArticleStatus @default(draft)
+  /// Why IDEEZA sent it back, when it did. Null in every other state.
+  rejectReason   String?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, status, createdAt])
 }

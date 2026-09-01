@@ -11,6 +11,34 @@ export interface ProfileReview {
   readonly publishedAt: Date;
 }
 
+export interface ShopEquipmentRow {
+  readonly id: string;
+  readonly name: string;
+  readonly quantity: number;
+  readonly note: string | null;
+}
+
+export interface ShopCapabilitySheetRow {
+  readonly id: string;
+  readonly kind: string;
+  readonly title: string;
+  readonly parameters: readonly {
+    readonly id: string;
+    readonly label: string;
+    readonly values: readonly string[];
+  }[];
+}
+
+export interface ShopArticleRow {
+  readonly id: string;
+  readonly title: string;
+  readonly category: string | null;
+  readonly tags: readonly string[];
+  readonly status: string;
+  readonly rejectReason: string | null;
+  readonly on: Date;
+}
+
 export interface ShopProfile {
   readonly manufacturerId: ManufacturerId;
   readonly legalName: string;
@@ -21,6 +49,19 @@ export interface ShopProfile {
   readonly region: string | null;
   readonly postalCode: string | null;
   readonly countryCode: string;
+  /** The line under the shop's name, and the introduction below it. */
+  readonly tagline: string | null;
+  readonly about: string | null;
+  /** How a buyer reaches the shop outside the platform. */
+  readonly phone: string | null;
+  readonly websiteUrl: string | null;
+  readonly employeeBand: string | null;
+  readonly shippingMethods: readonly string[];
+  /** Absent is the common case, and renders as nothing rather than an empty row. */
+  readonly facebookUrl: string | null;
+  readonly twitterUrl: string | null;
+  readonly instagramUrl: string | null;
+  readonly linkedinUrl: string | null;
   readonly rating: number | null;
   readonly onTimeDeliveryRate: number | null;
   readonly completedOrderCount: number;
@@ -38,6 +79,10 @@ export interface ShopProfile {
     readonly email: string;
     readonly owner: boolean;
   }[];
+  /** What is on the floor, what it can do, and what the shop has written. */
+  readonly equipment: readonly ShopEquipmentRow[];
+  readonly capabilitySheets: readonly ShopCapabilitySheetRow[];
+  readonly articles: readonly ShopArticleRow[];
   /** Live counts, so the header is not a number somebody typed. */
   readonly quoteCount: number;
   readonly orderCount: number;
@@ -70,6 +115,12 @@ export const getShopProfile = async (
           },
         },
       },
+      equipment: { orderBy: { position: 'asc' } },
+      capabilitySheets: {
+        orderBy: { position: 'asc' },
+        include: { parameters: { orderBy: { position: 'asc' } } },
+      },
+      articles: { orderBy: { createdAt: 'desc' } },
       _count: { select: { reviews: true, quotes: true, orders: true, inventoryItems: true } },
     },
   });
@@ -85,6 +136,16 @@ export const getShopProfile = async (
     region: shop.region,
     postalCode: shop.postalCode,
     countryCode: shop.countryCode,
+    tagline: shop.tagline,
+    about: shop.about,
+    phone: shop.phone,
+    websiteUrl: shop.websiteUrl,
+    employeeBand: shop.employeeBand,
+    shippingMethods: shop.shippingMethods,
+    facebookUrl: shop.facebookUrl,
+    twitterUrl: shop.twitterUrl,
+    instagramUrl: shop.instagramUrl,
+    linkedinUrl: shop.linkedinUrl,
     rating: shop.rating === null ? null : Number(shop.rating),
     onTimeDeliveryRate:
       shop.onTimeDeliveryRate === null ? null : Number(shop.onTimeDeliveryRate),
@@ -111,6 +172,31 @@ export const getShopProfile = async (
       productName: review.order.rfq.package.product.name,
       publishedAt: review.createdAt,
     })),
+    equipment: shop.equipment.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      note: item.note,
+    })),
+    capabilitySheets: shop.capabilitySheets.map((sheet) => ({
+      id: sheet.id,
+      kind: sheet.kind,
+      title: sheet.title,
+      parameters: sheet.parameters.map((parameter) => ({
+        id: parameter.id,
+        label: parameter.label,
+        values: parameter.values,
+      })),
+    })),
+    articles: shop.articles.map((article) => ({
+      id: article.id,
+      title: article.title,
+      category: article.category,
+      tags: article.tags,
+      status: article.status,
+      rejectReason: article.rejectReason,
+      on: article.publishedAt ?? article.createdAt,
+    })),
     members: shop.members.map((member) => ({
       name: member.user.displayName,
       email: member.user.email,
@@ -132,7 +218,45 @@ export interface CompanyEdit {
   readonly region: string;
   readonly postalCode: string;
   readonly countryCode: string;
+  /**
+   * Everything below is optional, and absent means "leave it as it is".
+   *
+   * Two screens call this: the profile, which edits the whole record, and
+   * settings, which edits only the name and the address. If the fields were
+   * required, saving an address from settings would send empty strings for the
+   * shop's own words and quietly wipe them.
+   */
+  readonly tagline?: string;
+  readonly about?: string;
+  readonly phone?: string;
+  readonly websiteUrl?: string;
+  readonly employeeBand?: string;
+  /** Carriers, already split by the caller. */
+  readonly shippingMethods?: readonly string[];
+  readonly facebookUrl?: string;
+  readonly twitterUrl?: string;
+  readonly instagramUrl?: string;
+  readonly linkedinUrl?: string;
 }
+
+/** Empty stays empty; anything else has to be a web address a browser can open. */
+const asLink = (value: string): { readonly ok: true; readonly url: string | null } | { readonly ok: false } => {
+  const trimmed = value.trim();
+  if (trimmed === '') return { ok: true, url: null };
+  // A buyer typing "example.com" means the same thing as typing the scheme, so
+  // the scheme is added rather than the address refused.
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(withScheme);
+    if (parsed.hostname.includes('.')) return { ok: true, url: parsed.toString() };
+    return { ok: false };
+  } catch {
+    return { ok: false };
+  }
+};
+
+const blankToNull = (value: string): string | null =>
+  value.trim() === '' ? null : value.trim();
 
 /**
  * Edits the company details buyers see.
@@ -155,6 +279,23 @@ export const saveCompany = async (
     return { ok: false, message: 'The country is a two-letter code, such as BD or DE.' };
   }
 
+  // A link that does not open is worse than no link: a buyer clicks it once,
+  // lands nowhere, and reads that as the shop rather than as the field.
+  const linkFields = ['websiteUrl', 'facebookUrl', 'twitterUrl', 'instagramUrl', 'linkedinUrl'] as const;
+  const links: Partial<Record<(typeof linkFields)[number], string | null>> = {};
+  for (const field of linkFields) {
+    const given = edit[field];
+    if (given === undefined) continue;
+    const parsed = asLink(given);
+    if (!parsed.ok) {
+      return {
+        ok: false,
+        message: `That ${field.replace('Url', '')} address is not one a buyer's browser could open.`,
+      };
+    }
+    links[field] = parsed.url;
+  }
+
   await database().manufacturerProfile.update({
     where: { id: manufacturerId },
     data: {
@@ -166,10 +307,84 @@ export const saveCompany = async (
       region: edit.region.trim() === '' ? null : edit.region.trim(),
       postalCode: edit.postalCode.trim() === '' ? null : edit.postalCode.trim(),
       countryCode: edit.countryCode.trim().toUpperCase(),
+      // Spread rather than assign: a key that is not in the object is a field
+      // Prisma leaves alone, which is what "absent means unchanged" needs.
+      ...(edit.tagline === undefined ? {} : { tagline: blankToNull(edit.tagline) }),
+      ...(edit.about === undefined ? {} : { about: blankToNull(edit.about) }),
+      ...(edit.phone === undefined ? {} : { phone: blankToNull(edit.phone) }),
+      ...(edit.employeeBand === undefined
+        ? {}
+        : { employeeBand: blankToNull(edit.employeeBand) }),
+      ...(edit.shippingMethods === undefined
+        ? {}
+        : {
+            shippingMethods: edit.shippingMethods
+              .map((method) => method.trim())
+              .filter((method) => method !== ''),
+          }),
+      ...links,
     },
   });
 
   return { ok: true };
+};
+
+export interface EquipmentEdit {
+  readonly name: string;
+  readonly quantity: number;
+  readonly note: string;
+}
+
+/**
+ * Adds a machine to the shop's floor list.
+ *
+ * Scoped to the shop the caller acts for, like every other write here: the id
+ * comes from the session, never from the form, so a member cannot list a
+ * machine against somebody else's shop.
+ */
+export const addEquipment = async (
+  manufacturerId: ManufacturerId,
+  edit: EquipmentEdit,
+): Promise<ProfileOutcome> => {
+  const name = edit.name.trim();
+  if (name.length < 2) {
+    return { ok: false, message: 'A machine needs a name a buyer would recognise.' };
+  }
+  if (!Number.isInteger(edit.quantity) || edit.quantity < 1 || edit.quantity > 999) {
+    return { ok: false, message: 'How many of them? A whole number, at least one.' };
+  }
+
+  const last = await database().shopEquipment.findFirst({
+    where: { manufacturerId },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+
+  await database().shopEquipment.create({
+    data: {
+      id: `equip_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+      manufacturerId,
+      name,
+      quantity: edit.quantity,
+      note: edit.note.trim() === '' ? null : edit.note.trim(),
+      position: (last?.position ?? -1) + 1,
+    },
+  });
+
+  return { ok: true };
+};
+
+/** Removes one, scoped so a member can only remove their own shop's. */
+export const removeEquipment = async (
+  manufacturerId: ManufacturerId,
+  equipmentId: string,
+): Promise<ProfileOutcome> => {
+  const { count } = await database().shopEquipment.deleteMany({
+    where: { id: equipmentId, manufacturerId },
+  });
+  return count === 0
+    ? { ok: false, message: 'That machine is not on your floor list.' }
+    : { ok: true };
 };
 
 export interface CapabilityEdit {
