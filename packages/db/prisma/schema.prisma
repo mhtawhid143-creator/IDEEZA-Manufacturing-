@@ -590,6 +590,8 @@ model ManufacturerProfile {
 
   capability       ManufacturerCapability?
   machines         ShopMachine[]
+  certificates     ShopCertification[]
+  equipment        ShopEquipment[]
   capabilitySheets ShopCapabilitySheet[]
   articles         ShopArticle[]
   members          ManufacturerMember[]
@@ -624,6 +626,10 @@ model ManufacturerMember {
   manufacturerId String
   userId         String
   isOwner        Boolean  @default(false)
+  /// What this person does here — the role under the name on the Agent tab.
+  /// The shop's own words, not a permission: what a member may do is decided
+  /// by isOwner and the route rules, and nothing reads this.
+  title          String?
   createdAt      DateTime @default(now())
 
   manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
@@ -1709,6 +1715,59 @@ model ShopMachine {
   tolerance      String?
   /// Turnaround, as the shop writes it: "3-7 days".
   turnaroundTime String?
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, position])
+}
+
+/// Where a certificate stands with IDEEZA.
+///
+/// Three states rather than two, because the design draws three: a shop has
+/// claimed it and nobody has looked (`pending`), somebody has seen the
+/// certificate itself (`verified`), or IDEEZA issued it (`issued_by_ideeza`)
+/// — which is a different claim again, and the only one the platform can make
+/// entirely on its own word.
+enum CertificationStatus {
+  pending
+  verified
+  issued_by_ideeza
+}
+
+/// A certificate a shop holds, as the profile's Service & certification tab
+/// shows it: the name, who issued it, what it covers, and where it stands.
+///
+/// The flat `ManufacturerCapability.certifications` list stays beside this and
+/// is kept in step with it, because that is what the completeness check and any
+/// later filter read. This table is the record; that array is its index.
+model ShopCertification {
+  id               String              @id
+  manufacturerId   String
+  name             String
+  category         String?
+  issuingAuthority String?
+  status           CertificationStatus @default(pending)
+  position         Int                 @default(0)
+  createdAt        DateTime            @default(now())
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, position])
+}
+
+/// What the shop has, and how many — the design's Equipment card.
+///
+/// Deliberately not `ShopMachine`: that one is a machine a buyer reads a
+/// process, a tolerance and a turnaround from. This is a count on a shelf
+/// ("05 5-Axis CNC Mills"), which is a different question and a different card
+/// on a different tab.
+model ShopEquipment {
+  id             String   @id
+  manufacturerId String
+  name           String
+  quantity       Int
   position       Int      @default(0)
   createdAt      DateTime @default(now())
 

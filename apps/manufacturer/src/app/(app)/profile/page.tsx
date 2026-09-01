@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Card, StatusChip, Text, buttonAppearance } from '@ideeza/ui';
+import { Card, StatusChip, Text, buttonAppearance, majorAmount } from '@ideeza/ui';
 import { ProfilePanels } from '@/components/profile/profile-panels.js';
 import { getShopProfile } from '@/data/profile.js';
 import { requireManufacturer } from '@/lib/auth.js';
@@ -147,15 +147,21 @@ const ProfilePage = async () => {
           standardLeadTimeDays:
             shop.standardLeadTimeDays === null ? '' : String(shop.standardLeadTimeDays),
           reviewCount: shop.reviewCount,
+          averageRating: shop.averageRating,
+          reviewBreakdown: shop.reviewBreakdown,
           quoteCount: shop.quoteCount,
           orderCount: shop.orderCount,
           partCount: shop.partCount,
           members: shop.members,
           machines: shop.machines,
           capabilitySheets: shop.capabilitySheets,
+          certificates: shop.certificates,
+          equipment: shop.equipment,
           articles: shop.articles.map((article) => ({
             id: article.id,
             title: article.title,
+            excerpt: article.excerpt,
+            tags: article.tags,
             category: article.category,
             status: article.status,
             rejectReason: article.rejectReason,
@@ -168,6 +174,9 @@ const ProfilePage = async () => {
             buyerName: review.buyerName,
             productName: review.productName,
             on: day(review.publishedAt),
+            countryCode: review.countryCode,
+            total: `${review.currency} ${majorAmount(review.totalMinor)}`,
+            durationDays: review.durationDays,
           })),
         }}
       />

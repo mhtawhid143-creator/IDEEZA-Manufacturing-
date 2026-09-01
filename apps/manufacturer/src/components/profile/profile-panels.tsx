@@ -26,10 +26,15 @@ import {
 } from '@ideeza/ui';
 import {
   addCapabilitySheetAction,
+  addCertificateAction,
+  addEquipmentAction,
   addMachineAction,
   removeCapabilitySheetAction,
+  removeCertificateAction,
+  removeEquipmentAction,
   removeMachineAction,
   saveCapabilityAction,
+  setMemberTitleAction,
   saveCompanyAction,
   updateCapabilitySheetAction,
   updateMachineAction,
@@ -162,6 +167,10 @@ export interface ProfileReviewRow {
   readonly buyerName: string;
   readonly productName: string;
   readonly on: string;
+  /** Where the order shipped — the only country the platform actually knows. */
+  readonly countryCode: string;
+  readonly total: string;
+  readonly durationDays: number | null;
 }
 
 export interface ProfileData {
@@ -197,13 +206,18 @@ export interface ProfileData {
   readonly standardLeadTimeDays: string;
   readonly reviews: readonly ProfileReviewRow[];
   readonly reviewCount: number;
+  /** Over every review, not only the ones this page lists. */
+  readonly averageRating: number | null;
+  readonly reviewBreakdown: readonly { readonly rating: number; readonly count: number }[];
   readonly quoteCount: number;
   readonly orderCount: number;
   readonly partCount: number;
   readonly members: readonly {
+    readonly id: string;
     readonly name: string;
     readonly email: string;
     readonly owner: boolean;
+    readonly title: string | null;
   }[];
   /** What is on the floor, as the shop lists it. */
   readonly machines: readonly {
@@ -227,10 +241,26 @@ export interface ProfileData {
       readonly values: readonly string[];
     }[];
   }[];
+  /** The certificates the shop claims, and where each one stands with IDEEZA. */
+  readonly certificates: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly category: string | null;
+    readonly issuingAuthority: string | null;
+    readonly status: string;
+  }[];
+  /** How many of each machine there is — a count, not a capability. */
+  readonly equipment: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly quantity: number;
+  }[];
   /** Articles this shop has written. Buyers read the published ones. */
   readonly articles: readonly {
     readonly id: string;
     readonly title: string;
+    readonly excerpt: string;
+    readonly tags: readonly string[];
     readonly category: string | null;
     readonly status: string;
     readonly rejectReason: string | null;
@@ -246,6 +276,54 @@ const SERVICE_OPTIONS = [
   { value: 'testing', label: 'Testing' },
   { value: 'stencil', label: 'Stencils' },
 ];
+
+/**
+ * The certificates the form lists, and what each one covers.
+ *
+ * A list rather than a free text box, for the same reason the machine list is
+ * one: two shops that both hold ISO 9001 should say it in the same words, or a
+ * buyer filtering on it finds one of them. The category fills itself in from
+ * the choice, because a shop should not have to remember that IPC-A-610 is
+ * about workmanship.
+ */
+const CERTIFICATE_CATALOGUE = [
+  { name: 'ISO 9001:2015', category: 'Quality Management', authority: 'ISO Organization' },
+  { name: 'ISO 13485:2016', category: 'Medical Devices', authority: 'ISO Organization' },
+  { name: 'ISO 14001:2015', category: 'Environmental Management', authority: 'ISO Organization' },
+  { name: 'AS9100D', category: 'Aerospace Quality', authority: 'IAQG' },
+  { name: 'IATF 16949', category: 'Automotive Quality', authority: 'IATF' },
+  { name: 'IPC-A-610 Class 3', category: 'Assembly Workmanship', authority: 'IPC' },
+  { name: 'IPC-A-600', category: 'Bare Board Acceptability', authority: 'IPC' },
+  { name: 'IPC/WHMA-A-620', category: 'Cable and Wire Harness', authority: 'IPC' },
+  { name: 'UL 796', category: 'Printed Wiring Boards', authority: 'UL Solutions' },
+  { name: 'RoHS Compliance', category: 'Hazardous Substances', authority: 'European Commission' },
+  { name: 'REACH Compliance', category: 'Chemical Safety', authority: 'ECHA' },
+  { name: 'ITAR Registration', category: 'Defence Trade', authority: 'US State Department' },
+];
+
+const CERTIFICATE_AUTHORITIES = [
+  ...new Set(CERTIFICATE_CATALOGUE.map((entry) => entry.authority)),
+];
+
+const CERTIFICATE_CATEGORIES = [
+  ...new Set(CERTIFICATE_CATALOGUE.map((entry) => entry.category)),
+];
+
+/** How a certificate's standing reads on the card, in IDEEZA's voice. */
+const CERTIFICATE_STANDING: Record<
+  string,
+  { readonly label: string; readonly tone: 'success' | 'warning' | 'brand'; readonly icon: 'check-circle' | 'clock' | 'star' }
+> = {
+  verified: { label: 'Verified', tone: 'success', icon: 'check-circle' },
+  issued_by_ideeza: { label: 'By IDEEZA', tone: 'brand', icon: 'star' },
+  pending: { label: 'Pending', tone: 'warning', icon: 'clock' },
+};
+
+/** Six to a page on the equipment grid, which is two rows of three. */
+const EQUIPMENT_PER_PAGE = 6;
+
+/** The Agent grid pages the same way, two rows of three. */
+const MEMBERS_PER_PAGE = 6;
 
 const REGION_OPTIONS = ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania'];
 
@@ -264,14 +342,31 @@ const REGION_OPTIONS = ['Asia', 'Europe', 'North America', 'South America', 'Afr
 export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
   const [tab, setTab] = useState('about');
   const [editing, setEditing] = useState<
-    'company' | 'capability' | 'machine' | 'sheet' | null
+    | 'company'
+    | 'capability'
+    | 'machine'
+    | 'sheet'
+    | 'certificate'
+    | 'equipment'
+    | 'service'
+    | 'member'
+    | null
   >(null);
+  const [certificate, setCertificate] = useState({
+    name: '',
+    category: '',
+    issuingAuthority: '',
+  });
+  const [equipment, setEquipment] = useState({ name: '', quantity: '1' });
   /** Null while adding a sheet; the sheet's id while rewriting one. */
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [sheet, setSheet] = useState(() => emptySheet(CAPABILITY_KINDS[0]?.kind ?? 'other'));
   /** Null while adding; the machine's id while editing one already listed. */
   const [machineId, setMachineId] = useState<string | null>(null);
   const [machinePage, setMachinePage] = useState(1);
+  const [equipmentPage, setEquipmentPage] = useState(1);
+  const [memberPage, setMemberPage] = useState(1);
+  const [memberEdit, setMemberEdit] = useState({ id: '', title: '' });
   const [hydrated, setHydrated] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>(undefined);
@@ -312,6 +407,20 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
 
   useEffect(() => setHydrated(true), []);
 
+  const memberPageCount = Math.max(1, Math.ceil(data.members.length / MEMBERS_PER_PAGE));
+  const currentMemberPage = Math.min(memberPage, memberPageCount);
+  const membersOnPage = data.members.slice(
+    (currentMemberPage - 1) * MEMBERS_PER_PAGE,
+    currentMemberPage * MEMBERS_PER_PAGE,
+  );
+
+  const equipmentPageCount = Math.max(1, Math.ceil(data.equipment.length / EQUIPMENT_PER_PAGE));
+  const currentEquipmentPage = Math.min(equipmentPage, equipmentPageCount);
+  const equipmentOnPage = data.equipment.slice(
+    (currentEquipmentPage - 1) * EQUIPMENT_PER_PAGE,
+    currentEquipmentPage * EQUIPMENT_PER_PAGE,
+  );
+
   const machinePageCount = Math.max(1, Math.ceil(data.machines.length / MACHINES_PER_PAGE));
   // Removing the last machine on the last page would otherwise leave the pager
   // pointing past the end and the grid empty with no way back.
@@ -346,6 +455,119 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
   };
 
   const sheetSpec: CapabilityKindSpec | undefined = findCapabilityKind(sheet.kind);
+
+  const saveMemberTitle = (): void => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await setMemberTitleAction(memberEdit.id, memberEdit.title);
+      if (!result.saved) {
+        setError(result.error ?? 'That role was not saved.');
+        return;
+      }
+      setEditing(null);
+      push({ title: 'Role saved', tone: 'success' });
+      router.refresh();
+    });
+  };
+
+  const openCertificateForm = (): void => {
+    setError(undefined);
+    setCertificate({ name: '', category: '', issuingAuthority: '' });
+    setEditing('certificate');
+  };
+
+  /** Choosing the name fills the rest in; a shop can still overrule both. */
+  const chooseCertificate = (name: string): void => {
+    const known = CERTIFICATE_CATALOGUE.find((entry) => entry.name === name);
+    setCertificate({
+      name,
+      category: known?.category ?? '',
+      issuingAuthority: known?.authority ?? '',
+    });
+  };
+
+  const saveCertificate = (): void => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await addCertificateAction(certificate);
+      if (!result.saved) {
+        setError(result.error ?? 'That certificate was not added.');
+        return;
+      }
+      setEditing(null);
+      push({
+        title: 'Certificate added',
+        body: 'It reads as pending until IDEEZA has seen it.',
+        tone: 'success',
+      });
+      router.refresh();
+    });
+  };
+
+  const dropCertificate = (id: string): void => {
+    startTransition(async () => {
+      const result = await removeCertificateAction(id);
+      if (!result.saved) {
+        push({ title: result.error ?? 'It was not removed.', tone: 'danger' });
+        return;
+      }
+      router.refresh();
+    });
+  };
+
+  const saveEquipment = (): void => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await addEquipmentAction({
+        name: equipment.name,
+        quantity: Number(equipment.quantity),
+      });
+      if (!result.saved) {
+        setError(result.error ?? 'That was not added.');
+        return;
+      }
+      setEditing(null);
+      setEquipment({ name: '', quantity: '1' });
+      push({ title: 'Added to your equipment list', tone: 'success' });
+      router.refresh();
+    });
+  };
+
+  const dropEquipment = (id: string): void => {
+    startTransition(async () => {
+      const result = await removeEquipmentAction(id);
+      if (!result.saved) {
+        push({ title: result.error ?? 'It was not removed.', tone: 'danger' });
+        return;
+      }
+      router.refresh();
+    });
+  };
+
+  /** Saves only the services, from the tab's own form. */
+  const saveServices = (): void => {
+    setError(undefined);
+    startTransition(async () => {
+      const result = await saveCapabilityAction({
+        services,
+        certifications: data.certifications,
+        servedRegions: regions,
+        minimumOrderQuantity: moq,
+        standardLeadTimeDays: lead,
+      });
+      if (!result.saved) {
+        setError(result.error ?? 'Those were not saved.');
+        return;
+      }
+      setEditing(null);
+      push({
+        title: 'Services saved',
+        body: 'A request now reaches you only if these cover it.',
+        tone: 'success',
+      });
+      router.refresh();
+    });
+  };
 
   /**
    * Opens the capability form: blank for a new kind, or filled from a sheet
@@ -699,48 +921,142 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       {tab === 'review' && (
-        <Card padded={false}>
-          <div className="px-4 py-4 md:px-6">
-            <CardHeader
-              title={`${data.reviewCount} review${data.reviewCount === 1 ? '' : 's'}`}
-              description={
-                data.rating === null
-                  ? 'No rating yet.'
-                  : `Average ${data.rating.toFixed(1)} out of 5, from buyers whose orders you finished.`
-              }
-            />
+        <Card>
+          <h2 className="text-xl font-semibold text-text-primary">Reviews</h2>
+
+          {/*
+            The three readings the design puts side by side: how many there
+            are, what they average, and how they are spread. The spread is the
+            one that cannot be faked by a good week — a shop with one bad month
+            shows it here.
+          */}
+          <div className="mt-4 grid grid-cols-1 gap-6 rounded-xl border border-border-subtle p-4 md:grid-cols-3 md:divide-x md:divide-border-subtle">
+            <div>
+              <Text tone="muted" size="sm" className="block font-medium text-text-primary">
+                Total Reviews
+              </Text>
+              <p className="mt-1 text-3xl font-bold text-text-brand" data-numeric>
+                {data.reviewCount}
+              </p>
+              <Text tone="muted" size="xs" className="block">
+                Every review a delivered order has earned
+              </Text>
+            </div>
+
+            <div className="md:pl-6">
+              <Text tone="muted" size="sm" className="block font-medium text-text-primary">
+                Average Rating
+              </Text>
+              <p className="mt-1 flex items-center gap-2">
+                <span className="text-sm text-text-brand" aria-hidden>
+                  {'★'.repeat(Math.round(data.averageRating ?? 0))}
+                  <span className="text-text-tertiary">
+                    {'★'.repeat(5 - Math.round(data.averageRating ?? 0))}
+                  </span>
+                </span>
+                <span className="text-sm font-semibold text-text-primary" data-numeric>
+                  {data.averageRating === null ? 'No rating yet' : data.averageRating.toFixed(1)}
+                </span>
+              </p>
+              <Text tone="muted" size="xs" className="block">
+                Averaged over all of them, not the newest page
+              </Text>
+            </div>
+
+            <ul aria-label="Ratings breakdown" className="flex flex-col gap-1 md:pl-6">
+              {data.reviewBreakdown.map((row) => {
+                const share =
+                  data.reviewCount === 0 ? 0 : Math.round((row.count / data.reviewCount) * 100);
+                return (
+                  <li key={row.rating} className="flex items-center gap-2">
+                    <span className="w-3 shrink-0 text-xs text-text-tertiary" data-numeric>
+                      {row.rating}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="h-1.5 min-w-1.5 flex-1 overflow-hidden rounded-full bg-bg-subtle"
+                    >
+                      <span
+                        className="block h-full rounded-full bg-bg-brand"
+                        style={{ width: `${String(share)}%` }}
+                      />
+                    </span>
+                    <span className="w-8 shrink-0 text-right text-xs text-text-tertiary" data-numeric>
+                      {row.count}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
+
           {data.reviews.length === 0 ? (
-            <div className="px-4 pb-6 md:px-6">
+            <div className="mt-4">
               <EmptyState
                 title="No reviews yet"
                 description="A buyer can review a shop once an order is delivered and they have confirmed it."
               />
             </div>
           ) : (
-            <ul aria-label="Reviews" className="border-t border-border-subtle">
+            <ul aria-label="Reviews" className="mt-2">
               {data.reviews.map((review) => (
-                <li
-                  key={review.id}
-                  className="border-b border-border-subtle px-4 py-4 last:border-b-0 md:px-6"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                <li key={review.id} className="border-b border-border-subtle py-5 last:border-b-0">
+                  <div className="flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-bg-brand text-sm font-semibold text-text-on-brand"
+                    >
+                      {review.buyerName.slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-text-primary">
+                        {review.buyerName}
+                      </p>
+                      <Text tone="muted" size="xs">
+                        {review.countryCode}
+                      </Text>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-text-primary">
-                      {review.buyerName} · {review.productName}
+                      {review.productName}
                     </p>
-                    <span className="text-sm font-semibold text-text-brand">
+                    <span className="text-sm text-text-brand" aria-label={`${String(review.rating)} out of 5`}>
                       {'★'.repeat(review.rating)}
                       <span className="text-text-tertiary">{'★'.repeat(5 - review.rating)}</span>
                     </span>
+                    <Text tone="muted" size="xs">
+                      {review.on}
+                    </Text>
                   </div>
-                  <Text tone="muted" size="xs" className="mt-0.5 block">
-                    {review.on}
-                  </Text>
+
                   {review.body !== null && (
-                    <Text size="sm" className="mt-2 block">
-                      {review.body}
+                    <Text size="sm" className="mt-2 block max-w-measure">
+                      &ldquo;{review.body}&rdquo;
                     </Text>
                   )}
+
+                  <div className="mt-3 flex flex-wrap items-start gap-6">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary" data-numeric>
+                        {review.total}
+                      </p>
+                      <Text tone="muted" size="xs">
+                        Total price
+                      </Text>
+                    </div>
+                    <div className="border-l border-border-subtle pl-6">
+                      <p className="text-sm font-semibold text-text-primary">
+                        {review.durationDays === null
+                          ? 'Not delivered yet'
+                          : `${String(review.durationDays)} day${review.durationDays === 1 ? '' : 's'}`}
+                      </p>
+                      <Text tone="muted" size="xs">
+                        Project duration
+                      </Text>
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -989,62 +1305,72 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       {tab === 'blog' && (
-        <Card padded={false}>
-          <div className="px-4 py-4 md:px-6">
-            <CardHeader
-              title="Articles"
-              description="What this shop has published. Buyers read it on your profile."
-            />
-          </div>
+        <Card>
           {data.articles.length === 0 ? (
-            <div className="px-4 pb-6 md:px-6">
-              <EmptyState
-                title="Nothing published yet"
-                description="Write from the Blog section in the rail; published articles appear here."
-              />
-            </div>
+            <EmptyState
+              title="Nothing written yet"
+              description="Write from the Blog section in the rail; what you publish appears here for buyers to read."
+            />
           ) : (
-            <ul aria-label="Articles" className="border-t border-border-subtle">
+            <ul aria-label="Articles">
               {data.articles.map((article) => (
                 <li
                   key={article.id}
-                  className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
+                  className="flex flex-col gap-4 border-b border-border-subtle py-5 first:pt-0 last:border-b-0 last:pb-0 sm:flex-row"
                 >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-text-primary">{article.title}</p>
-                    {article.category !== null && (
-                      <Text tone="muted" size="xs">
-                        {article.category}
-                      </Text>
-                    )}
-                    {/*
-                      A rejection is the one status that owes an explanation.
-                      Without the reason beside it a shop is told no and left to
-                      guess, which is how the same article comes back twice.
-                    */}
+                  {/*
+                    No article carries a cover image yet — nothing uploads one —
+                    so the frame is drawn from the title, the way the draft and
+                    model previews are. It keeps the row's shape without
+                    pretending to be a photograph somebody chose.
+                  */}
+                  <span
+                    aria-hidden
+                    className="h-40 w-full shrink-0 rounded-lg bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle sm:h-[158px] sm:w-[236px]"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Text tone="muted" size="xs" className="block">
+                      {data.displayName} · {article.on}
+                    </Text>
+                    <p className="mt-1 text-base font-semibold text-text-primary">
+                      {article.title}
+                    </p>
+                    <Text size="sm" className="mt-1 block max-w-measure">
+                      {article.excerpt}
+                    </Text>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {article.tags.map((entry) => (
+                        <span
+                          key={entry}
+                          className="inline-flex items-center rounded-lg border border-border-brand px-3 py-1 text-xs text-text-brand"
+                        >
+                          {entry}
+                        </span>
+                      ))}
+                      {/*
+                        A draft or a rejection is not what a buyer sees, and a
+                        shop reading its own profile has to be able to tell
+                        which is which.
+                      */}
+                      {article.status !== 'published' && (
+                        <Badge
+                          tone={
+                            article.status === 'rejected'
+                              ? 'danger'
+                              : article.status === 'in_review'
+                                ? 'warning'
+                                : 'neutral'
+                          }
+                        >
+                          {article.status.replace(/_/g, ' ')}
+                        </Badge>
+                      )}
+                    </div>
                     {article.rejectReason !== null && (
-                      <Text size="xs" className="mt-1 block max-w-measure text-text-error">
+                      <Text size="xs" className="mt-2 block max-w-measure text-text-error">
                         {article.rejectReason}
                       </Text>
                     )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Tag
-                      tone={
-                        article.status === 'published'
-                          ? 'success'
-                          : article.status === 'rejected'
-                            ? 'danger'
-                            : article.status === 'in_review'
-                              ? 'warning'
-                              : 'neutral'
-                      }
-                    >
-                      {article.status.replace(/_/g, ' ')}
-                    </Tag>
-                    <Text tone="muted" size="xs">
-                      {article.on}
-                    </Text>
                   </div>
                 </li>
               ))}
@@ -1055,6 +1381,228 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
 
       {tab === 'services' && (
         <>
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold text-text-primary">Certifications</h2>
+              <Button
+                variant="tonal"
+                size="xs"
+                leadingIcon={<Icon name="plus" size={18} />}
+                onClick={openCertificateForm}
+              >
+                Add New
+              </Button>
+            </div>
+
+            {data.certificates.length === 0 ? (
+              <div className="mt-4">
+                <EmptyState
+                  title="No certificates yet"
+                  description="A buyer choosing between two shops reads these first. Add what you hold; IDEEZA marks it verified once it has seen the certificate."
+                  action={
+                    <Button variant="secondary" size="sm" onClick={openCertificateForm}>
+                      Add a certificate
+                    </Button>
+                  }
+                />
+              </div>
+            ) : (
+              <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {data.certificates.map((entry) => {
+                  const standing =
+                    CERTIFICATE_STANDING[entry.status] ?? CERTIFICATE_STANDING['pending'];
+                  return (
+                    <li
+                      key={entry.id}
+                      className="flex flex-col rounded-xl border border-border-subtle bg-bg-surface"
+                    >
+                      <div className="flex items-start gap-3 p-4">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bg-brand-subtle text-icon-brand">
+                          <Icon name="check-circle" size={20} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-text-primary">
+                            {entry.name}
+                          </p>
+                          <Text tone="muted" size="xs">
+                            {entry.issuingAuthority ?? 'Issuer not stated'}
+                          </Text>
+                        </div>
+                        <DropdownMenu
+                          label={`Actions for ${entry.name}`}
+                          items={[
+                            {
+                              id: 'delete',
+                              label: 'Delete',
+                              tone: 'danger',
+                              onSelect: () => dropCertificate(entry.id),
+                            },
+                          ]}
+                          trigger={({ ref, onClick, ...aria }) => (
+                            <button
+                              ref={ref}
+                              type="button"
+                              onClick={onClick}
+                              disabled={pending}
+                              aria-label={`Actions for ${entry.name}`}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                              {...aria}
+                            >
+                              <Icon name="more" size={20} />
+                            </button>
+                          )}
+                        />
+                      </div>
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border-subtle px-4 py-3">
+                        <Text tone="muted" size="xs">
+                          {entry.category ?? 'Uncategorised'}
+                        </Text>
+                        {/*
+                          Whose word this is. "Verified" is IDEEZA's, "By IDEEZA"
+                          means the platform issued it, and a shop's own claim
+                          reads Pending until somebody has seen the certificate.
+                        */}
+                        <Badge tone={standing?.tone ?? 'warning'}>
+                          <span className="inline-flex items-center gap-1">
+                            <Icon name={standing?.icon ?? 'clock'} size={14} />
+                            {standing?.label ?? 'Pending'}
+                          </span>
+                        </Badge>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
+
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold text-text-primary">Service</h2>
+              <DropdownMenu
+                label="Actions for services"
+                items={[
+                  {
+                    id: 'edit',
+                    label: 'Edit',
+                    onSelect: () => {
+                      setError(undefined);
+                      setServices(data.services);
+                      setEditing('service');
+                    },
+                  },
+                ]}
+                trigger={({ ref, onClick, ...aria }) => (
+                  <button
+                    ref={ref}
+                    type="button"
+                    onClick={onClick}
+                    disabled={pending}
+                    aria-label="Actions for services"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                    {...aria}
+                  >
+                    <Icon name="more" size={20} />
+                  </button>
+                )}
+              />
+            </div>
+            {data.services.length === 0 ? (
+              <Text tone="muted" size="sm" className="mt-3 block">
+                None published — no request can reach you until at least one is.
+              </Text>
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {data.services.map((service) => (
+                  <span
+                    key={service}
+                    className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm text-text-primary"
+                  >
+                    {SERVICE_OPTIONS.find((option) => option.value === service)?.label ??
+                      service.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold text-text-primary">Equipment</h2>
+              <Button
+                variant="tonal"
+                size="xs"
+                leadingIcon={<Icon name="plus" size={18} />}
+                onClick={() => {
+                  setError(undefined);
+                  setEquipment({ name: '', quantity: '1' });
+                  setEditing('equipment');
+                }}
+              >
+                Add New
+              </Button>
+            </div>
+
+            {data.equipment.length === 0 ? (
+              <div className="mt-4">
+                <EmptyState
+                  title="No equipment counted yet"
+                  description="How many of each machine you run. The Machine & process tab is what each one does; this is how much of it there is."
+                />
+              </div>
+            ) : (
+              <>
+                <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {equipmentOnPage.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-start justify-between gap-2 rounded-xl border border-border-subtle bg-bg-surface p-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-lg font-semibold text-text-primary" data-numeric>
+                          {String(item.quantity).padStart(2, '0')}
+                        </p>
+                        <Text tone="muted" size="sm" className="block truncate">
+                          {item.name}
+                        </Text>
+                      </div>
+                      <DropdownMenu
+                        label={`Actions for ${item.name}`}
+                        items={[
+                          {
+                            id: 'delete',
+                            label: 'Delete',
+                            tone: 'danger',
+                            onSelect: () => dropEquipment(item.id),
+                          },
+                        ]}
+                        trigger={({ ref, onClick, ...aria }) => (
+                          <button
+                            ref={ref}
+                            type="button"
+                            onClick={onClick}
+                            disabled={pending}
+                            aria-label={`Actions for ${item.name}`}
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                            {...aria}
+                          >
+                            <Icon name="more" size={20} />
+                          </button>
+                        )}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                <Pagination
+                  page={currentEquipmentPage}
+                  pageCount={equipmentPageCount}
+                  onChange={setEquipmentPage}
+                  className="mt-5"
+                />
+              </>
+            )}
+          </Card>
+
           <Card>
             <CardHeader
               title="What buyers are matched on"
@@ -1121,67 +1669,312 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
             </div>
           </Card>
 
-          <Card>
-            <CardHeader
-              title="Certifications"
-              description="What you hold. Buyers filter on these."
-              actions={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setEditing('capability')}
-                >
-                  Edit
-                </Button>
-              }
-            />
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {data.certifications.length === 0 ? (
-                <Text tone="muted" size="sm">
-                  None published yet.
-                </Text>
-              ) : (
-                data.certifications.map((certification) => (
-                  <div
-                    key={certification}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle p-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-text-primary">
-                        {certification}
-                      </p>
-                      <Text tone="muted" size="xs">
-                        Published by you
-                      </Text>
-                    </div>
-                    <Tag tone="neutral">Not verified by IDEEZA</Tag>
-                  </div>
-                ))
-              )}
-            </div>
-            <Text tone="muted" size="xs" className="mt-3 block">
-              IDEEZA does not check certificates in this build, so none of them claims to
-              be verified. Saying otherwise on a buyer&rsquo;s screen would be a promise
-              the platform cannot keep.
-            </Text>
-          </Card>
-
         </>
       )}
 
       {tab === 'agent' && (
         <Card>
-          <CardHeader
-            title="Agent"
-            description="Part of the wider IDEEZA product, outside this manufacturing platform."
-          />
-          <Text size="sm" className="mt-2 block">
-            The agent section belongs to IDEEZA&rsquo;s own assistant, which is not part
-            of the manufacturing panel. It is left here as the design has it so nothing
-            appears to have been dropped.
-          </Text>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-text-primary">Agent</h2>
+            {/*
+              Inviting somebody means creating an account for them, and this
+              build has no invitation, no acceptance and no way for that person
+              to set a password. The control is drawn where the design has it
+              and says what is true, because a button that opened a form and
+              then did nothing would be worse than one that admits it.
+            */}
+            <Button
+              variant="tonal"
+              size="xs"
+              leadingIcon={<Icon name="plus" size={18} />}
+              disabled
+              title="Inviting a teammate needs an account for them, which this build does not create yet."
+            >
+              Add New
+            </Button>
+          </div>
+
+          {data.members.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="Nobody is listed yet"
+                description="The people in this shop, as a buyer sees them."
+              />
+            </div>
+          ) : (
+            <>
+              <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {membersOnPage.map((member) => (
+                  <li
+                    key={member.id}
+                    className="relative flex flex-col items-center gap-1 rounded-xl border border-border-subtle bg-bg-surface px-4 py-6 text-center"
+                  >
+                    <div className="absolute right-2 top-2">
+                      <DropdownMenu
+                        label={`Actions for ${member.name}`}
+                        items={[
+                          {
+                            id: 'role',
+                            label: 'Edit role',
+                            onSelect: () => {
+                              setError(undefined);
+                              setMemberEdit({ id: member.id, title: member.title ?? '' });
+                              setEditing('member');
+                            },
+                          },
+                        ]}
+                        trigger={({ ref, onClick, ...aria }) => (
+                          <button
+                            ref={ref}
+                            type="button"
+                            onClick={onClick}
+                            disabled={pending}
+                            aria-label={`Actions for ${member.name}`}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                            {...aria}
+                          >
+                            <Icon name="more" size={20} />
+                          </button>
+                        )}
+                      />
+                    </div>
+                    <span
+                      aria-hidden
+                      className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-bg-brand text-base font-semibold text-text-on-brand"
+                    >
+                      {member.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    <p className="mt-2 text-sm font-semibold text-text-primary">{member.name}</p>
+                    <Text tone="muted" size="xs">
+                      {member.title ?? (member.owner ? 'Owner' : 'Role not set')}
+                    </Text>
+                  </li>
+                ))}
+              </ul>
+              <Pagination
+                page={currentMemberPage}
+                pageCount={memberPageCount}
+                onChange={setMemberPage}
+                className="mt-5"
+              />
+            </>
+          )}
         </Card>
       )}
+
+      <Modal
+        open={editing === 'member'}
+        onClose={() => setEditing(null)}
+        title="Edit role"
+        description="What this person does here. A buyer reads it; nothing in the platform acts on it."
+        size="sm"
+        footer={
+          <div className="grid w-full grid-cols-2 gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              loading={pending || !hydrated}
+              disabled={!hydrated}
+              onClick={saveMemberTitle}
+            >
+              Save
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <FormField
+            label="Role"
+            hint="Leave it empty to take the role off the card. This is not a permission."
+          >
+            <Input
+              value={memberEdit.title}
+              maxLength={60}
+              placeholder="eg: Director of Engineering"
+              onChange={(event) => setMemberEdit({ ...memberEdit, title: event.target.value })}
+            />
+          </FormField>
+          {error !== undefined && (
+            <Alert tone="danger" title="Not saved">
+              {error}
+            </Alert>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={editing === 'certificate'}
+        onClose={() => setEditing(null)}
+        title="Add new certification"
+        description="What you hold. IDEEZA marks it verified once it has seen the certificate."
+        size="sm"
+        footer={
+          <div className="grid w-full grid-cols-2 gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              loading={pending || !hydrated}
+              disabled={!hydrated}
+              onClick={saveCertificate}
+            >
+              Add
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <FormField label="Certification name" required>
+            <Select
+              options={CERTIFICATE_CATALOGUE.map((entry) => ({
+                value: entry.name,
+                label: entry.name,
+                // Already on the profile: adding it twice would show a buyer
+                // the same certificate with two different standings.
+                disabled: data.certificates.some((row) => row.name === entry.name),
+              }))}
+              placeholder="Select a Name"
+              value={certificate.name}
+              onChange={(event) => chooseCertificate(event.target.value)}
+            />
+          </FormField>
+          <FormField
+            label="Category"
+            hint="Filled in from the name; change it if yours covers something else."
+          >
+            <Select
+              options={CERTIFICATE_CATEGORIES.map((name) => ({ value: name, label: name }))}
+              placeholder="Select a Category"
+              value={certificate.category}
+              onChange={(event) =>
+                setCertificate({ ...certificate, category: event.target.value })
+              }
+            />
+          </FormField>
+          <FormField label="Issuing Authority">
+            <Select
+              options={CERTIFICATE_AUTHORITIES.map((name) => ({ value: name, label: name }))}
+              placeholder="eg: ISO"
+              value={certificate.issuingAuthority}
+              onChange={(event) =>
+                setCertificate({ ...certificate, issuingAuthority: event.target.value })
+              }
+            />
+          </FormField>
+          {error !== undefined && (
+            <Alert tone="danger" title="Not added">
+              {error}
+            </Alert>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={editing === 'equipment'}
+        onClose={() => setEditing(null)}
+        title="Add New Equipment"
+        description="How many of each machine you run."
+        size="sm"
+        footer={
+          <div className="grid w-full grid-cols-2 gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              loading={pending || !hydrated}
+              disabled={!hydrated}
+              onClick={saveEquipment}
+            >
+              Add
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <FormField label="Equipment Name" required>
+            <Input
+              value={equipment.name}
+              maxLength={80}
+              placeholder="Write equipment Name"
+              onChange={(event) => setEquipment({ ...equipment, name: event.target.value })}
+            />
+          </FormField>
+          <FormField label="Quantity" required>
+            <Input
+              type="number"
+              min={1}
+              max={999}
+              placeholder="eg: 3"
+              value={equipment.quantity}
+              onChange={(event) => setEquipment({ ...equipment, quantity: event.target.value })}
+            />
+          </FormField>
+          {error !== undefined && (
+            <Alert tone="danger" title="Not added">
+              {error}
+            </Alert>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={editing === 'service'}
+        onClose={() => setEditing(null)}
+        title="Add New Service"
+        description="This one is not decoration: a request only reaches you if these cover it."
+        size="sm"
+        footer={
+          <div className="grid w-full grid-cols-2 gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              loading={pending || !hydrated}
+              disabled={!hydrated}
+              onClick={saveServices}
+            >
+              Save
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {/*
+            The design draws a searchable multi-select. With this many services
+            a search box would be a box nobody types in, so the same answer is
+            asked as chips — every option visible, one tap each.
+          */}
+          <ChoiceChips
+            label="Service Name"
+            options={SERVICE_OPTIONS.map((option) => option.label)}
+            value={SERVICE_OPTIONS.filter((option) => services.includes(option.value)).map(
+              (option) => option.label,
+            )}
+            onChange={(next) =>
+              setServices(
+                SERVICE_OPTIONS.filter((option) => next.includes(option.label)).map(
+                  (option) => option.value,
+                ),
+              )
+            }
+            hint="Publishing none of them takes you out of matching entirely."
+          />
+          {error !== undefined && (
+            <Alert tone="danger" title="Not saved">
+              {error}
+            </Alert>
+          )}
+        </div>
+      </Modal>
 
       <Modal
         open={editing === 'sheet'}

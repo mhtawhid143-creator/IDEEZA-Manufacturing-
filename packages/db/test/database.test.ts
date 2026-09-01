@@ -50,6 +50,8 @@ describe('migrations apply to a clean database', () => {
       '20260901103556_profile_equipment_sheets_articles',
       '20260901113001_shop_machines',
       '20260901125643_capability_verification',
+      '20260901151917_certifications_and_equipment',
+      '20260901154826_member_title',
     ]);
   });
 
@@ -81,7 +83,11 @@ describe('migrations apply to a clean database', () => {
     // machine card is a process, its sub-processes, a tolerance and a
     // turnaround, and "name and quantity" could not carry any of that. The
     // count is unchanged because one table became the other.
-    expect(tables).toBe(54);
+    // ShopCertification and ShopEquipment arrived with the Service &
+    // certification tab: the design shows a certificate card with its own
+    // standing, and an equipment count that is a different question from what
+    // a machine can do.
+    expect(tables).toBe(56);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with
@@ -89,7 +95,10 @@ describe('migrations apply to a clean database', () => {
     // with the profile alignment. CapabilityVerification arrived with the
     // capability tab: a sheet a shop just wrote has not been read by anyone at
     // IDEEZA, and the card has to be able to say so.
-    expect(enums).toBe(51);
+    // CertificationStatus arrived with the same tab: a shop can claim a
+    // certificate, IDEEZA can verify one, and IDEEZA can issue one, and those
+    // are three different claims.
+    expect(enums).toBe(52);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

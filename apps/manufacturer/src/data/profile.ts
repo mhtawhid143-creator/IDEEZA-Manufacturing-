@@ -9,6 +9,23 @@ export interface ProfileReview {
   readonly buyerName: string;
   readonly productName: string;
   readonly publishedAt: Date;
+  /** Where the order shipped, which is the only country the platform knows. */
+  readonly countryCode: string;
+  /** What the buyer paid, in minor units, with the currency it was paid in. */
+  readonly totalMinor: number;
+  readonly currency: string;
+  /**
+   * Days from the order being placed to it being delivered. Null while an
+   * order has been reviewed but not yet marked delivered — the design shows a
+   * duration, and inventing one would be worse than saying it is not known.
+   */
+  readonly durationDays: number | null;
+}
+
+/** How many reviews sit at each star, five down to one. */
+export interface ReviewBreakdown {
+  readonly rating: number;
+  readonly count: number;
 }
 
 export interface ShopMachineRow {
@@ -34,9 +51,26 @@ export interface ShopCapabilitySheetRow {
   }[];
 }
 
+export interface ShopCertificateRow {
+  readonly id: string;
+  readonly name: string;
+  readonly category: string | null;
+  readonly issuingAuthority: string | null;
+  /** `pending`, `verified` or `issued_by_ideeza` — IDEEZA's word, not the shop's. */
+  readonly status: string;
+}
+
+export interface ShopEquipmentRow {
+  readonly id: string;
+  readonly name: string;
+  readonly quantity: number;
+}
+
 export interface ShopArticleRow {
   readonly id: string;
   readonly title: string;
+  /** The opening of the article, for the card. Drawn from the body itself. */
+  readonly excerpt: string;
   readonly category: string | null;
   readonly tags: readonly string[];
   readonly status: string;
@@ -79,14 +113,22 @@ export interface ShopProfile {
   readonly standardLeadTimeDays: number | null;
   readonly reviews: readonly ProfileReview[];
   readonly reviewCount: number;
+  /** Averaged over every review, not only the twenty this page lists. */
+  readonly averageRating: number | null;
+  readonly reviewBreakdown: readonly ReviewBreakdown[];
   readonly members: readonly {
+    readonly id: string;
     readonly name: string;
     readonly email: string;
     readonly owner: boolean;
+    /** What they do here, in the shop's words. Null until somebody says. */
+    readonly title: string | null;
   }[];
   /** What is on the floor, what it can do, and what the shop has written. */
   readonly machines: readonly ShopMachineRow[];
   readonly capabilitySheets: readonly ShopCapabilitySheetRow[];
+  readonly certificates: readonly ShopCertificateRow[];
+  readonly equipment: readonly ShopEquipmentRow[];
   readonly articles: readonly ShopArticleRow[];
   /** Live counts, so the header is not a number somebody typed. */
   readonly quoteCount: number;
@@ -113,6 +155,10 @@ export const getShopProfile = async (
           author: { select: { displayName: true } },
           order: {
             select: {
+              shipToCountryCode: true,
+              createdAt: true,
+              deliveredAt: true,
+              acceptedQuote: { select: { totalPriceMinor: true, currency: true } },
               rfq: {
                 select: { package: { select: { product: { select: { name: true } } } } },
               },
@@ -121,6 +167,8 @@ export const getShopProfile = async (
         },
       },
       machines: { orderBy: { position: 'asc' } },
+      certificates: { orderBy: { position: 'asc' } },
+      equipment: { orderBy: { position: 'asc' } },
       capabilitySheets: {
         orderBy: { position: 'asc' },
         include: { parameters: { orderBy: { position: 'asc' } } },
@@ -130,6 +178,23 @@ export const getShopProfile = async (
     },
   });
   if (shop === null) return null;
+
+  // Counted rather than derived from the twenty rows above: a shop with three
+  // hundred reviews would otherwise show an average of its most recent page.
+  const byRating = await database().review.groupBy({
+    by: ['rating'],
+    where: { manufacturerId },
+    _count: { _all: true },
+  });
+  const breakdown = [5, 4, 3, 2, 1].map((rating) => ({
+    rating,
+    count: byRating.find((row) => row.rating === rating)?._count._all ?? 0,
+  }));
+  const totalReviews = breakdown.reduce((sum, row) => sum + row.count, 0);
+  const averageRating =
+    totalReviews === 0
+      ? null
+      : breakdown.reduce((sum, row) => sum + row.rating * row.count, 0) / totalReviews;
 
   return {
     manufacturerId: asId<ManufacturerId>(shop.id),
@@ -176,7 +241,22 @@ export const getShopProfile = async (
       buyerName: review.anonymous ? 'A buyer' : review.author.displayName,
       productName: review.order.rfq.package.product.name,
       publishedAt: review.createdAt,
+      countryCode: review.order.shipToCountryCode,
+      totalMinor: Number(review.order.acceptedQuote.totalPriceMinor),
+      currency: review.order.acceptedQuote.currency,
+      durationDays:
+        review.order.deliveredAt === null
+          ? null
+          : Math.max(
+              1,
+              Math.round(
+                (review.order.deliveredAt.getTime() - review.order.createdAt.getTime()) /
+                  86_400_000,
+              ),
+            ),
     })),
+    averageRating,
+    reviewBreakdown: breakdown,
     machines: shop.machines.map((machine) => ({
       id: machine.id,
       name: machine.name,
@@ -197,9 +277,26 @@ export const getShopProfile = async (
         values: parameter.values,
       })),
     })),
+    certificates: shop.certificates.map((certificate) => ({
+      id: certificate.id,
+      name: certificate.name,
+      category: certificate.category,
+      issuingAuthority: certificate.issuingAuthority,
+      status: certificate.status,
+    })),
+    equipment: shop.equipment.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+    })),
     articles: shop.articles.map((article) => ({
       id: article.id,
       title: article.title,
+      // The card shows the opening rather than a second field nobody fills in:
+      // an excerpt kept apart from the body drifts from it the first time the
+      // article is edited.
+      excerpt:
+        article.body.length > 180 ? `${article.body.slice(0, 177).trimEnd()}…` : article.body,
       category: article.category,
       tags: article.tags,
       status: article.status,
@@ -207,9 +304,11 @@ export const getShopProfile = async (
       on: article.publishedAt ?? article.createdAt,
     })),
     members: shop.members.map((member) => ({
+      id: member.id,
       name: member.user.displayName,
       email: member.user.email,
       owner: member.isOwner,
+      title: member.title,
     })),
   };
 };
@@ -610,6 +709,155 @@ export const removeCapabilitySheet = async (
   });
   return count === 0
     ? { ok: false, message: 'That sheet is not one of yours.' }
+    : { ok: true };
+};
+
+/**
+ * Says what a member does here.
+ *
+ * A role, not a permission — what a member may do is decided by `isOwner` and
+ * the route rules, and nothing reads this. It is on the profile because a
+ * buyer choosing a shop reads who is in it.
+ */
+export const setMemberTitle = async (
+  manufacturerId: ManufacturerId,
+  memberId: string,
+  title: string,
+): Promise<ProfileOutcome> => {
+  const { count } = await database().manufacturerMember.updateMany({
+    where: { id: memberId, manufacturerId },
+    data: { title: blankToNull(title) },
+  });
+  return count === 0
+    ? { ok: false, message: 'That person is not in your shop.' }
+    : { ok: true };
+};
+
+export interface CertificateEdit {
+  readonly name: string;
+  readonly category: string;
+  readonly issuingAuthority: string;
+}
+
+/**
+ * Keeps the flat list on the capability record in step with the rows.
+ *
+ * Two places hold the certificate names — the rows the tab draws, and the
+ * array the completeness check reads. They are written together so the second
+ * can never say a shop holds something the first has never heard of.
+ */
+const syncCertificationNames = async (manufacturerId: ManufacturerId): Promise<void> => {
+  const rows = await database().shopCertification.findMany({
+    where: { manufacturerId },
+    orderBy: { position: 'asc' },
+    select: { name: true },
+  });
+  const names = [...new Set(rows.map((row) => row.name))];
+  await database().manufacturerCapability.updateMany({
+    where: { manufacturerId },
+    data: { certifications: names },
+  });
+};
+
+/** Adds a certificate the shop claims. IDEEZA decides whether it is verified. */
+export const addCertificate = async (
+  manufacturerId: ManufacturerId,
+  edit: CertificateEdit,
+): Promise<ProfileOutcome> => {
+  const name = edit.name.trim();
+  if (name.length < 2) {
+    return { ok: false, message: 'Which certificate? Pick one from the list.' };
+  }
+
+  const already = await database().shopCertification.findFirst({
+    where: { manufacturerId, name },
+    select: { id: true },
+  });
+  if (already !== null) {
+    return { ok: false, message: `${name} is already on your profile.` };
+  }
+
+  const last = await database().shopCertification.findFirst({
+    where: { manufacturerId },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+
+  await database().shopCertification.create({
+    data: {
+      id: `cert_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+      manufacturerId,
+      name,
+      category: blankToNull(edit.category),
+      issuingAuthority: blankToNull(edit.issuingAuthority),
+      position: (last?.position ?? -1) + 1,
+    },
+  });
+  await syncCertificationNames(manufacturerId);
+
+  return { ok: true };
+};
+
+/** Takes one off, scoped by shop. */
+export const removeCertificate = async (
+  manufacturerId: ManufacturerId,
+  certificateId: string,
+): Promise<ProfileOutcome> => {
+  const { count } = await database().shopCertification.deleteMany({
+    where: { id: certificateId, manufacturerId },
+  });
+  if (count === 0) return { ok: false, message: 'That certificate is not one of yours.' };
+  await syncCertificationNames(manufacturerId);
+  return { ok: true };
+};
+
+export interface EquipmentEdit {
+  readonly name: string;
+  readonly quantity: number;
+}
+
+/** Adds a line to the equipment count the profile shows. */
+export const addEquipment = async (
+  manufacturerId: ManufacturerId,
+  edit: EquipmentEdit,
+): Promise<ProfileOutcome> => {
+  const name = edit.name.trim();
+  if (name.length < 2) {
+    return { ok: false, message: 'What is it? A buyer has to recognise the name.' };
+  }
+  if (!Number.isInteger(edit.quantity) || edit.quantity < 1 || edit.quantity > 999) {
+    return { ok: false, message: 'How many? A whole number, at least one.' };
+  }
+
+  const last = await database().shopEquipment.findFirst({
+    where: { manufacturerId },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+
+  await database().shopEquipment.create({
+    data: {
+      id: `equip_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+      manufacturerId,
+      name,
+      quantity: edit.quantity,
+      position: (last?.position ?? -1) + 1,
+    },
+  });
+
+  return { ok: true };
+};
+
+/** Takes one off, scoped by shop. */
+export const removeEquipment = async (
+  manufacturerId: ManufacturerId,
+  equipmentId: string,
+): Promise<ProfileOutcome> => {
+  const { count } = await database().shopEquipment.deleteMany({
+    where: { id: equipmentId, manufacturerId },
+  });
+  return count === 0
+    ? { ok: false, message: 'That is not on your equipment list.' }
     : { ok: true };
 };
 

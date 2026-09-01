@@ -2,15 +2,22 @@
 
 import {
   addCapabilitySheet,
+  addCertificate,
+  addEquipment,
   addMachine,
   removeCapabilitySheet,
+  removeCertificate,
+  removeEquipment,
   removeMachine,
+  setMemberTitle,
   updateCapabilitySheet,
   updateMachine,
   saveCapability,
   saveCompany,
   type CompanyEdit,
   type CapabilitySheetEdit,
+  type CertificateEdit,
+  type EquipmentEdit,
   type MachineEdit,
 } from '@/data/profile.js';
 import { requireManufacturer } from '@/lib/auth.js';
@@ -79,6 +86,44 @@ export const updateCapabilitySheetAction = async (
 export const removeCapabilitySheetAction = async (sheetId: string): Promise<ProfileState> => {
   const actor = await requireManufacturer('/profile');
   const result = await removeCapabilitySheet(actor.manufacturerId, sheetId);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Adds a certificate the shop claims to hold. */
+export const addCertificateAction = async (edit: CertificateEdit): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await addCertificate(actor.manufacturerId, edit);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Takes one off the profile. */
+export const removeCertificateAction = async (certificateId: string): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await removeCertificate(actor.manufacturerId, certificateId);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Adds a line to the equipment count. */
+export const addEquipmentAction = async (edit: EquipmentEdit): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await addEquipment(actor.manufacturerId, edit);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Takes one off it. */
+export const removeEquipmentAction = async (equipmentId: string): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await removeEquipment(actor.manufacturerId, equipmentId);
+  return result.ok ? { saved: true } : { saved: false, error: result.message };
+};
+
+/** Says what a member of the shop does here. */
+export const setMemberTitleAction = async (
+  memberId: string,
+  title: string,
+): Promise<ProfileState> => {
+  const actor = await requireManufacturer('/profile');
+  const result = await setMemberTitle(actor.manufacturerId, memberId, title);
   return result.ok ? { saved: true } : { saved: false, error: result.message };
 };
 

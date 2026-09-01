@@ -450,6 +450,78 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
     });
   }
 
+  const certificates = [
+    {
+      id: 'seed_cert_a1',
+      manufacturerId: ID.manufacturerA,
+      name: 'ISO 9001:2015',
+      category: 'Quality Management',
+      issuingAuthority: 'ISO Organization',
+      status: 'verified' as const,
+      position: 0,
+    },
+    {
+      id: 'seed_cert_a2',
+      manufacturerId: ID.manufacturerA,
+      name: 'IPC-A-610 Class 3',
+      category: 'Assembly Workmanship',
+      issuingAuthority: 'IPC',
+      status: 'verified' as const,
+      position: 1,
+    },
+    {
+      // Claimed by the shop, not yet seen by anyone — the design's third chip.
+      id: 'seed_cert_a3',
+      manufacturerId: ID.manufacturerA,
+      name: 'UL 796',
+      category: 'Printed Wiring Boards',
+      issuingAuthority: 'UL Solutions',
+      status: 'pending' as const,
+      position: 2,
+    },
+    {
+      id: 'seed_cert_c1',
+      manufacturerId: ID.manufacturerC,
+      name: 'ISO 9001:2015',
+      category: 'Quality Management',
+      issuingAuthority: 'ISO Organization',
+      status: 'verified' as const,
+      position: 0,
+    },
+    {
+      id: 'seed_cert_c2',
+      manufacturerId: ID.manufacturerC,
+      name: 'IDEEZA Trusted Printer',
+      category: 'Platform Standing',
+      issuingAuthority: 'IDEEZA',
+      status: 'issued_by_ideeza' as const,
+      position: 1,
+    },
+  ];
+  for (const certificate of certificates) {
+    await prisma.shopCertification.upsert({
+      where: { id: certificate.id },
+      update: certificate,
+      create: { ...certificate, createdAt: T.requirementsLocked },
+    });
+  }
+
+  const equipment = [
+    { id: 'seed_equip_a1', manufacturerId: ID.manufacturerA, name: 'SMT Lines', quantity: 2, position: 0 },
+    { id: 'seed_equip_a2', manufacturerId: ID.manufacturerA, name: 'Reflow Ovens', quantity: 3, position: 1 },
+    { id: 'seed_equip_a3', manufacturerId: ID.manufacturerA, name: 'AOI Stations', quantity: 4, position: 2 },
+    { id: 'seed_equip_c1', manufacturerId: ID.manufacturerC, name: '5-Axis CNC Mills', quantity: 5, position: 0 },
+    { id: 'seed_equip_c2', manufacturerId: ID.manufacturerC, name: '3D Printers', quantity: 12, position: 1 },
+    { id: 'seed_equip_c3', manufacturerId: ID.manufacturerC, name: 'Laser Cutters', quantity: 3, position: 2 },
+  ];
+  for (const item of equipment) {
+    await prisma.shopEquipment.upsert({
+      where: { id: item.id },
+      update: item,
+      create: { ...item, createdAt: T.requirementsLocked },
+    });
+  }
+
   const articles = [
     {
       id: 'seed_article_a1',
@@ -495,13 +567,23 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
   }
 
   const memberships = [
-    { id: ID.membershipA, manufacturerId: ID.manufacturerA, userId: ID.memberA },
-    { id: ID.membershipB, manufacturerId: ID.manufacturerB, userId: ID.memberB },
+    {
+      id: ID.membershipA,
+      manufacturerId: ID.manufacturerA,
+      userId: ID.memberA,
+      title: 'Director of Engineering',
+    },
+    {
+      id: ID.membershipB,
+      manufacturerId: ID.manufacturerB,
+      userId: ID.memberB,
+      title: 'Production Manager',
+    },
   ];
   for (const membership of memberships) {
     await prisma.manufacturerMember.upsert({
       where: { id: membership.id },
-      update: {},
+      update: { title: membership.title },
       create: { ...membership, isOwner: true, createdAt: T.requirementsLocked },
     });
   }

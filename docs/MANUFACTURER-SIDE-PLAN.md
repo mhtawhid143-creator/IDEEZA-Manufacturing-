@@ -933,3 +933,26 @@ The same as the buyer side, and one addition.
 - **And: every stage that touches a shared record ends with a two-sided test** —
   the same row read from both apps, asserting the buyer sees exactly what the
   manufacturer wrote.
+
+## Known defect: the tutorial chapter tree sometimes does not move
+
+Clicking a lesson in the chapter tree (`components/tutorial/chapter-tree.tsx`)
+occasionally leaves the page where it was. Measured on 2026-09-01 over several
+runs of `tools/verify-manufacturer-app.mjs` and three standalone reproductions:
+
+- it moves on most attempts and stays put on some, on the same build;
+- waiting for React to attach first does not remove it — a run that waited
+  three seconds after `networkidle` still stayed put;
+- arriving through the category redirect (`/tutorial/code-tech` →
+  `.../introduction`) versus arriving at the lesson directly makes no reliable
+  difference; both have moved and both have stayed;
+- the address the link carries is always right, and opening that address
+  directly always renders the lesson. So the routes are sound; it is the client
+  navigation that is not.
+
+The harness therefore pins both ends — the link points at the next lesson, and
+that address is a page with that lesson on it — rather than racing the click.
+Whoever picks this up: start with the aborted `?_rsc=` prefetches visible in
+the browser log on that screen, and with whether `redirect()` from a
+`force-dynamic` category page leaves the router cache in a state where a
+sibling soft navigation is dropped.
