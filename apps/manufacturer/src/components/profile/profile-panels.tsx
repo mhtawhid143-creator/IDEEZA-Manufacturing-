@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   CardHeader,
+  cn,
   ChoiceChips,
   DefinitionList,
   DropdownMenu,
@@ -926,29 +927,29 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
 
           {/*
             The three readings the design puts side by side: how many there
-            are, what they average, and how they are spread. The spread is the
-            one that cannot be faked by a good week — a shop with one bad month
-            shows it here.
+            are, what they average, and how they are spread. No box around
+            them, as the design has it — three columns parted by hairlines and
+            closed with one rule, because a card inside a card is two frames
+            for one thought.
+
+            The spread is the reading that cannot be flattered by a good week:
+            a shop with one bad month shows it here whatever its average says.
           */}
-          <div className="mt-4 grid grid-cols-1 gap-6 rounded-xl border border-border-subtle p-4 md:grid-cols-3 md:divide-x md:divide-border-subtle">
+          <div className="mt-4 grid grid-cols-1 gap-6 border-b border-border-subtle pb-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)] md:divide-x md:divide-border-subtle">
             <div>
-              <Text tone="muted" size="sm" className="block font-medium text-text-primary">
-                Total Reviews
-              </Text>
-              <p className="mt-1 text-3xl font-bold text-text-brand" data-numeric>
+              <p className="text-base font-semibold text-text-primary">Total Reviews</p>
+              <p className="mt-2 text-4xl font-bold text-text-brand" data-numeric>
                 {data.reviewCount}
               </p>
-              <Text tone="muted" size="xs" className="block">
+              <Text tone="muted" size="xs" className="mt-1 block">
                 Every review a delivered order has earned
               </Text>
             </div>
 
-            <div className="md:pl-6">
-              <Text tone="muted" size="sm" className="block font-medium text-text-primary">
-                Average Rating
-              </Text>
-              <p className="mt-1 flex items-center gap-2">
-                <span className="text-sm text-text-brand" aria-hidden>
+            <div className="md:pl-8">
+              <p className="text-base font-semibold text-text-primary">Average Rating</p>
+              <p className="mt-2 flex items-center gap-2">
+                <span className="text-base text-text-brand" aria-hidden>
                   {'★'.repeat(Math.round(data.averageRating ?? 0))}
                   <span className="text-text-tertiary">
                     {'★'.repeat(5 - Math.round(data.averageRating ?? 0))}
@@ -958,27 +959,33 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
                   {data.averageRating === null ? 'No rating yet' : data.averageRating.toFixed(1)}
                 </span>
               </p>
-              <Text tone="muted" size="xs" className="block">
+              <Text tone="muted" size="xs" className="mt-1 block">
                 Averaged over all of them, not the newest page
               </Text>
             </div>
 
-            <ul aria-label="Ratings breakdown" className="flex flex-col gap-1 md:pl-6">
+            <ul aria-label="Ratings breakdown" className="flex flex-col gap-2 md:pl-8">
               {data.reviewBreakdown.map((row) => {
                 const share =
                   data.reviewCount === 0 ? 0 : Math.round((row.count / data.reviewCount) * 100);
                 return (
-                  <li key={row.rating} className="flex items-center gap-2">
+                  <li key={row.rating} className="flex items-center gap-3">
                     <span className="w-3 shrink-0 text-xs text-text-tertiary" data-numeric>
                       {row.rating}
                     </span>
-                    <span
-                      aria-hidden
-                      className="h-1.5 min-w-1.5 flex-1 overflow-hidden rounded-full bg-bg-subtle"
-                    >
+                    {/*
+                      Only the filled part is drawn, as the design draws it: a
+                      full grey track behind every row makes five ratings look
+                      like five that were earned. A star nobody gave keeps a
+                      stub, so the row still reads as a row.
+                    */}
+                    <span aria-hidden className="flex min-w-0 flex-1 items-center">
                       <span
-                        className="block h-full rounded-full bg-bg-brand"
-                        style={{ width: `${String(share)}%` }}
+                        className={cn(
+                          'block h-1.5 rounded-full',
+                          share === 0 ? 'w-2 bg-bg-subtle' : 'bg-bg-brand',
+                        )}
+                        style={share === 0 ? undefined : { width: `${String(share)}%` }}
                       />
                     </span>
                     <span className="w-8 shrink-0 text-right text-xs text-text-tertiary" data-numeric>

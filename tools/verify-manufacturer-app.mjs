@@ -1825,6 +1825,79 @@ const main = async () => {
       check('a role can be set, and it lands on the card', renamed);
     }
 
+    // ------------------------------------ the blog: written here, kept, and read
+    //
+    // The screen used to hold articles in React state and say so on the page,
+    // which meant the profile's Blog tab — reading the table — showed a shop
+    // nothing it had ever written. So the walk is: write one, send it, reload,
+    // and find it on the profile. A reload is the whole point of the check.
+    await page.goto(`${base}/blog`, { waitUntil: 'networkidle' });
+    check(
+      'the blog screen lists this shop’s own articles',
+      await visible(page.getByRole('button', { name: 'Write an article' }).first()),
+    );
+
+    const title = 'How we read a stack-up before quoting';
+    await page.getByRole('button', { name: 'Write an article' }).first().click();
+    const editor = page.getByRole('dialog', { name: /Write an article|Edit the article/ });
+    check('and opens an editor', await visible(editor));
+
+    if (await visible(editor)) {
+      await editor.getByLabel('Title').fill(title);
+      await editor.getByLabel('Category').selectOption('PCB design');
+      await editor.getByLabel('Tags').fill('stack-up, impedance');
+
+      // Too short is refused here rather than left for a reviewer to bounce.
+      await editor.getByLabel('The article').fill('Too short.');
+      await editor.getByRole('button', { name: 'Send for review' }).click();
+      await page.waitForTimeout(1_200);
+      check(
+        'an article nobody could learn from is refused',
+        await visible(page.getByText('A few sentences at least', { exact: false })),
+      );
+
+      await editor
+        .getByLabel('The article')
+        .fill(
+          'A four layer board quoted from a gerber alone is a guess. We open the stack-up first, because the copper weights and the dielectric decide the impedance, and the impedance decides whether the board works at all.',
+        );
+      await editor.getByRole('button', { name: 'Send for review' }).click();
+      await editor.waitFor({ state: 'detached', timeout: 30_000 }).catch(() => {});
+      await clearToasts(page);
+
+      // The reload is the assertion: state in a component would not survive it.
+      await page.reload({ waitUntil: 'networkidle' });
+      const kept = page.locator('main').filter({ hasText: title });
+      check('what was written survives a reload', await visible(kept, 20_000));
+      check(
+        'and it is with IDEEZA, because a shop cannot publish itself',
+        (await page.locator('main').innerText()).includes('With IDEEZA'),
+      );
+
+      // And the profile tab is the same table, read the other way round.
+      await page.goto(`${base}/profile`, { waitUntil: 'networkidle' });
+      await page.getByRole('tab', { name: 'Blog' }).first().click();
+      await page.waitForTimeout(600);
+      check(
+        'the profile’s Blog tab shows it too — one table, two views',
+        (await page.locator('main').innerText()).includes(title),
+      );
+
+      // Put the shop back as it was.
+      await page.goto(`${base}/blog`, { waitUntil: 'networkidle' });
+      const card = page.locator('main').getByRole('button', { name: 'Delete' });
+      if ((await card.count()) > 0) {
+        await clearToasts(page);
+        await card.first().click();
+        let left = 1;
+        for (let poll = 0; poll < 40 && left > 0; poll += 1) {
+          await page.waitForTimeout(500);
+          left = await page.locator('main').filter({ hasText: title }).count();
+        }
+        check('and it can be deleted again', left === 0);
+      }
+    }
+
     // ------------------------------------------ reporting a problem, end to end
     //
     // The rail's last row used to read "Help and Feedback — n/a". It opens the

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Alert,
   Button,
@@ -17,13 +18,23 @@ import {
   useToast,
 } from '@ideeza/ui';
 
+import {
+  removeArticleAction,
+  saveArticleAction,
+} from '@/app/(app)/blog/actions.js';
+
 export interface Article {
   readonly id: string;
   readonly title: string;
   readonly category: string;
   readonly tags: readonly string[];
   readonly body: string;
-  readonly status: 'draft' | 'submitted' | 'published' | 'rejected';
+  /**
+   * The database's own words. `in_review` reads as "With IDEEZA" on screen,
+   * because that is what it means to the shop, but the two are not translated
+   * anywhere else — one vocabulary, all the way down.
+   */
+  readonly status: 'draft' | 'in_review' | 'published' | 'rejected';
   readonly on: string;
   readonly rejectReason: string | null;
   readonly readMinutes: number;
@@ -41,29 +52,28 @@ const CATEGORIES = [
 const STATUS_TONE: Readonly<Record<Article['status'], 'neutral' | 'warning' | 'success' | 'danger'>> =
   {
     draft: 'neutral',
-    submitted: 'warning',
+    in_review: 'warning',
     published: 'success',
     rejected: 'danger',
   };
 
 const STATUS_LABEL: Readonly<Record<Article['status'], string>> = {
   draft: 'Draft',
-  submitted: 'With IDEEZA',
+  in_review: 'With IDEEZA',
   published: 'Published',
   rejected: 'Sent back',
 };
-
-const readMinutes = (body: string): number =>
-  Math.max(1, Math.round(body.trim().split(/\s+/).filter(Boolean).length / 200));
 
 /**
  * The blog, as a shop uses it: write, send for review, and read what came back.
  *
  * IDEEZA reviews an article before it appears on a shop's profile, which is why
- * "submitted" and "sent back with a reason" are states rather than a publish
- * button that does everything. Articles live in this screen for now — the tables
- * they need arrive with the logic pass, and the screen says so rather than
- * implying a draft is safe.
+ * "with IDEEZA" and "sent back with a reason" are states rather than a publish
+ * button that does everything.
+ *
+ * What a shop writes here is stored. It used to live in this component's state
+ * with a notice admitting it, which also meant the profile's Blog tab — reading
+ * the same table this now writes — showed a shop nothing it had ever written.
  */
 export const BlogWorkspace = ({
   shopName,
@@ -72,7 +82,7 @@ export const BlogWorkspace = ({
   readonly shopName: string;
   readonly seed: readonly Article[];
 }) => {
-  const [articles, setArticles] = useState<readonly Article[]>(seed);
+  const articles = seed;
   const [tab, setTab] = useState('all');
   const [editing, setEditing] = useState<Article | null>(null);
   const [reading, setReading] = useState<Article | null>(null);
@@ -80,6 +90,8 @@ export const BlogWorkspace = ({
   const [category, setCategory] = useState(CATEGORIES[0] ?? 'Manufacturing');
   const [tags, setTags] = useState('');
   const [body, setBody] = useState('');
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
   const { push } = useToast();
 
   const visible = articles.filter(
@@ -104,46 +116,51 @@ export const BlogWorkspace = ({
     setBody(article?.body ?? '');
   };
 
-  const save = (status: Article['status']): void => {
+  const save = (status: 'draft' | 'in_review'): void => {
     const draft = editing;
     if (draft === null) return;
-    if (title.trim() === '' || body.trim().length < 50) {
-      push({
-        title: 'Not ready to save',
-        body: 'An article needs a title and at least a few sentences.',
-        tone: 'danger',
+
+    startTransition(async () => {
+      const result = await saveArticleAction({
+        // A draft that has never been saved has an id this screen invented, and
+        // sending it would ask the data layer to rewrite a row nobody has.
+        ...(draft.id.startsWith('draft_') ? {} : { id: draft.id }),
+        title,
+        category,
+        tags: tags.split(','),
+        body,
+        status,
       });
-      return;
-    }
+      if (!result.saved) {
+        push({
+          title: 'Not saved',
+          body: result.error ?? 'That article was not saved.',
+          tone: 'danger',
+        });
+        return;
+      }
+      setEditing(null);
+      push({
+        title: status === 'in_review' ? 'Sent for review' : 'Draft saved',
+        body:
+          status === 'in_review'
+            ? 'IDEEZA reads it before it appears on your profile.'
+            : 'Saved. It is yours until you send it.',
+        tone: 'success',
+      });
+      router.refresh();
+    });
+  };
 
-    const next: Article = {
-      ...draft,
-      title: title.trim(),
-      category,
-      tags: tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag !== ''),
-      body: body.trim(),
-      status,
-      on: new Date().toISOString().slice(0, 10),
-      rejectReason: status === 'submitted' ? null : draft.rejectReason,
-      readMinutes: readMinutes(body),
-    };
-
-    setArticles((current) =>
-      current.some((article) => article.id === next.id)
-        ? current.map((article) => (article.id === next.id ? next : article))
-        : [next, ...current],
-    );
-    setEditing(null);
-    push({
-      title: status === 'submitted' ? 'Sent for review' : 'Draft saved',
-      body:
-        status === 'submitted'
-          ? 'IDEEZA reads it before it appears on your profile.'
-          : 'Kept in this screen for now.',
-      tone: 'success',
+  const drop = (articleId: string): void => {
+    startTransition(async () => {
+      const result = await removeArticleAction(articleId);
+      if (!result.saved) {
+        push({ title: result.error ?? 'It was not deleted.', tone: 'danger' });
+        return;
+      }
+      push({ title: 'Article deleted', tone: 'success' });
+      router.refresh();
     });
   };
 
@@ -163,9 +180,9 @@ export const BlogWorkspace = ({
                 count: articles.filter((article) => article.status === 'draft').length,
               },
               {
-                id: 'submitted',
+                id: 'in_review',
                 label: 'With IDEEZA',
-                count: articles.filter((article) => article.status === 'submitted').length,
+                count: articles.filter((article) => article.status === 'in_review').length,
               },
               {
                 id: 'published',
@@ -229,9 +246,24 @@ export const BlogWorkspace = ({
                     Read
                   </Button>
                   {article.status !== 'published' && (
-                    <Button variant="secondary" size="sm" onClick={() => open(article)}>
-                      Edit
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => open(article)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => drop(article.id)}
+                      >
+                        Delete
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -240,11 +272,10 @@ export const BlogWorkspace = ({
         </div>
       )}
 
-      <Alert tone="info" title="Articles are held in this screen for now">
-        Writing, sending for review and reading what came back all work here. The blog
-        has no tables in the database yet, so nothing survives a reload — that arrives
-        with the logic pass, and until then nothing here claims to have been published to
-        the world.
+      <Alert tone="info" title="IDEEZA reads an article before buyers do">
+        Drafts and articles you send are stored, and both appear on your profile&rsquo;s
+        Blog tab where you can see which is which. Only IDEEZA can mark one published,
+        so nothing here puts your writing in front of a buyer on its own.
       </Alert>
 
       <Modal
@@ -258,10 +289,10 @@ export const BlogWorkspace = ({
             <Button variant="secondary" onClick={() => setEditing(null)}>
               Cancel
             </Button>
-            <Button variant="secondary" onClick={() => save('draft')}>
+            <Button variant="secondary" loading={pending} onClick={() => save('draft')}>
               Save as draft
             </Button>
-            <Button variant="primary" onClick={() => save('submitted')}>
+            <Button variant="primary" loading={pending} onClick={() => save('in_review')}>
               Send for review
             </Button>
           </div>
@@ -286,7 +317,7 @@ export const BlogWorkspace = ({
           <FormField
             label="The article"
             required
-            hint="Plain paragraphs. Rich text and images arrive with the logic pass."
+            hint="Plain paragraphs. Rich text and images are not stored yet."
           >
             <Textarea
               rows={12}

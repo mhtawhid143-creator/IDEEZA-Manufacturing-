@@ -810,7 +810,7 @@ approved and rejected states of a re-submitted post.
 | 13.2 | The editor: title, category, tags, body, with a read-time estimate | done |
 | 13.3 | Submit for review, and the approved and sent-back states with the reason | done |
 | 13.4 | The reading view | done |
-| 13.5 | Storage: `BlogPost` and its moderation state | prototype — held in the screen, stated on it |
+| 13.5 | Storage: `ShopArticle` and its moderation state | done |
 
 **Decisions and corrections made here**
 
@@ -823,9 +823,12 @@ approved and rejected states of a re-submitted post.
 
 **Design deviations (data, not layout)**
 
-- *Articles do not survive a reload.* There is no blog table yet, and the screen
-  says so where a shop might assume a draft is safe. Nothing here claims an
-  article was published to the world.
+- *Publishing is nobody’s to do yet.* Articles are stored in `ShopArticle`
+  and survive a reload; the profile Blog tab reads the same rows. But only
+  IDEEZA may mark one published and there is no ops panel, so `published` is
+  reachable through the seed and not through the product. Until that panel
+  exists, a live shop’s writing reads “With IDEEZA” — which is true rather
+  than flattering.
 - *Rich text and images* are plain paragraphs and a generated card header; the
   editor states it.
 
