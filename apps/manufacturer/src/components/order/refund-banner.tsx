@@ -6,22 +6,41 @@ import { useEffect, useState, useTransition } from 'react';
 import {
   Alert,
   Button,
+  Checkbox,
   FormField,
   Input,
   Modal,
   Radio,
   RadioGroup,
+  Select,
   Text,
   Textarea,
   buttonAppearance,
   useToast,
 } from '@ideeza/ui';
-import { claimReference, issueReasonLabel } from '@ideeza/domain';
+import { claimReference, issueReasonLabel, orderReference } from '@ideeza/domain';
 import {
   approveRefundAction,
   challengeRefundAction,
 } from '@/app/(app)/orders/resolution-actions.js';
 import { goTo } from '@/lib/navigate.js';
+
+/**
+ * Why a shop agrees to a claim, as the design's "Select Reason" asks.
+ *
+ * A list rather than free text, because the answer is one of a few and a shop
+ * writing it out differently every time makes the record harder to read later.
+ * The choice is stored as the opening line of the statement on the claim — it
+ * belongs with the shop's own words rather than in a column of its own, since
+ * what it means is "here is why", not a fact the platform acts on.
+ */
+const ACCEPT_REASONS = [
+  { value: 'our_fault', label: 'The fault is ours' },
+  { value: 'spec_ambiguous', label: 'The specification was ambiguous' },
+  { value: 'packing', label: 'Damage from how we packed it' },
+  { value: 'faster', label: 'Faster to settle than to argue' },
+  { value: 'goodwill', label: 'Goodwill, without accepting fault' },
+];
 
 export interface RefundBannerProps {
   readonly orderId: string;
@@ -64,6 +83,8 @@ export const RefundBanner = ({
   const [amount, setAmount] = useState('0.00');
   const [share, setShare] = useState<'full' | 'custom'>('full');
   const [acceptAmount, setAcceptAmount] = useState(claimedMajor);
+  const [acceptReason, setAcceptReason] = useState('');
+  const [accepted, setAccepted] = useState(false);
   const [statement, setStatement] = useState('');
   const router = useRouter();
   const { push } = useToast();
@@ -73,10 +94,13 @@ export const RefundBanner = ({
   const approve = (): void => {
     setError(undefined);
     startTransition(async () => {
+      const chosen = ACCEPT_REASONS.find((entry) => entry.value === acceptReason);
+      const statement =
+        chosen === undefined ? note : `${chosen.label}. ${note}`.trim();
       const result = await approveRefundAction(
         orderId,
         refundId,
-        note,
+        statement,
         share === 'full' ? undefined : acceptAmount,
       );
       if (!result.done) {
@@ -149,7 +173,10 @@ export const RefundBanner = ({
           )
         }
       >
-        {claimReference(refundId)} · {issueReasonLabel(reason)} — {description}
+        {claimReference(refundId)} · {issueReasonLabel(reason)} — {description}{' '}
+        <Link href={`/orders/${orderId}`} className="text-text-link underline">
+          (Order {orderReference(orderId)})
+        </Link>
         {!answered && (
           <span className="mt-1 block font-medium text-text-primary">
             Answer by {respondByOn}. If you do not, IDEEZA decides on what is on the
@@ -161,7 +188,7 @@ export const RefundBanner = ({
       <Modal
         open={open === 'approve'}
         onClose={() => setOpen(null)}
-        title="Answer this refund claim"
+        title="Refund Request"
         description="Accepting in full ends your objection. Offering an amount is an answer IDEEZA weighs. Either way, IDEEZA moves the money."
         size="sm"
         footer={
@@ -172,10 +199,12 @@ export const RefundBanner = ({
             <Button
               variant="primary"
               loading={pending || !hydrated}
-              disabled={!hydrated}
+              // The terms have to be accepted, because this moves money out of
+              // an escrow the platform is holding on this shop's behalf.
+              disabled={!hydrated || !accepted || acceptReason === ''}
               onClick={approve}
             >
-              {share === 'full' ? 'Accept the claim' : 'Offer this amount'}
+              Give refund
             </Button>
           </div>
         }
@@ -187,7 +216,16 @@ export const RefundBanner = ({
             releases to them.
           </Text>
 
-          <RadioGroup legend="How much of the claim do you accept?">
+          <FormField label="Select Reason" required>
+            <Select
+              options={ACCEPT_REASONS}
+              placeholder="Select Reason"
+              value={acceptReason}
+              onChange={(event) => setAcceptReason(event.target.value)}
+            />
+          </FormField>
+
+          <RadioGroup legend="Refund Amount">
             <Radio
               name="accepted-share"
               label={`The full ${currency} ${claimedMajor}`}
@@ -217,13 +255,22 @@ export const RefundBanner = ({
               />
             </FormField>
           )}
-          <FormField label="Anything to add" hint="Optional, and both sides read it.">
+          <FormField
+            label="Description"
+            hint="Optional, and both sides read it. Your reason above is recorded with it."
+          >
             <Textarea
               rows={3}
               value={note}
+              placeholder="If you didn’t complete something, explain why not and if the client changed requirement."
               onChange={(event) => setNote(event.target.value)}
             />
           </FormField>
+          <Checkbox
+            label="I accept the Terms and Conditions"
+            checked={accepted}
+            onChange={(event) => setAccepted(event.target.checked)}
+          />
           {error !== undefined && (
             <Text tone="danger" size="sm">
               {error}

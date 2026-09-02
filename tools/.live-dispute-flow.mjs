@@ -46,7 +46,7 @@ try {
   // The buyer lists orders as cards rather than a table, and the delivered one
   // is known: it is the order the shop side shows as delivered and is not the
   // production-tracking demo.
-  const orderPath = '/manufacturing/orders/demo_order_payloadbay';
+  const orderPath = '/manufacturing/orders/verify_order_delivered';
   console.log('claiming on: ' + orderPath);
 
   if (!(await reach(buyer, `${buyerSite}${orderPath}/refund`))) {
@@ -58,7 +58,7 @@ try {
   if (/already/i.test(already) && /claim/i.test(already)) {
     console.log('a claim is already open on it');
   } else {
-    await buyer.locator('select').first().selectOption({ index: 3 });
+    await buyer.locator('select').first().selectOption({ index: 2 });
     await buyer.waitForTimeout(300);
     const amount = buyer.getByLabel('Amount');
     if ((await amount.count()) > 0) await amount.fill('180.00');

@@ -1190,30 +1190,52 @@ const main = async () => {
       'the claim says what silence costs, with a date on it',
       /Answer by /.test(claimBody),
     );
-
-    // The design lets a shop accept in full or accept an amount of its own.
-    await page.getByRole('button', { name: 'Approve' }).click();
-    const approveModal = page.getByRole('dialog', { name: /Answer this refund claim/ });
     check(
-      'accepting offers the full claim or an amount of the shop’s own',
-      (await visible(approveModal.getByText('How much of the claim do you accept?'))) &&
-        (await visible(approveModal.getByRole('radio', { name: /The full/ }))) &&
-        (await visible(approveModal.getByRole('radio', { name: /An amount of your own/ }))),
+      'and names the order it is about, as a link',
+      /\(Order ORDER-[0-9A-Z]{8}\)/.test(claimBody),
+      (claimBody.match(/\(Order ORDER-[0-9A-Z]{8}\)/) ?? ['(not named)'])[0],
     );
+
+    // The design's Refund Request form: a reason, the full claim or an amount of
+    // the shop's own, a description, and the terms accepted before money moves.
+    await page.getByRole('button', { name: 'Approve' }).click();
+    const approveModal = page.getByRole('dialog', { name: /Refund Request/ });
+    check(
+      'the refund form asks the design’s four things',
+      (await visible(approveModal.getByLabel('Select Reason'))) &&
+        (await visible(approveModal.getByRole('radio', { name: /The full/ }))) &&
+        (await visible(approveModal.getByRole('radio', { name: /An amount of your own/ }))) &&
+        (await visible(approveModal.getByLabel('Description'))) &&
+        (await visible(approveModal.getByRole('checkbox', { name: /Terms and Conditions/ }))),
+    );
+    // Money leaves an escrow the platform holds, so the terms are not optional
+    // and neither is saying why.
+    check(
+      'and refuses to give a refund until the reason and the terms are answered',
+      await approveModal.getByRole('button', { name: 'Give refund' }).isDisabled(),
+    );
+
+    await approveModal.getByLabel('Select Reason').selectOption('spec_ambiguous');
+    await approveModal.getByRole('checkbox', { name: /Terms and Conditions/ }).check();
+    check(
+      'answering both arms it',
+      !(await approveModal.getByRole('button', { name: 'Give refund' }).isDisabled()),
+    );
+
     await approveModal.getByRole('radio', { name: /An amount of your own/ }).check();
     check(
       'choosing an amount asks for it, bounded by what was claimed',
       await visible(approveModal.getByLabel(/Amount you accept/)),
     );
     await approveModal.getByLabel(/Amount you accept/).fill('999999');
-    await approveModal.getByRole('button', { name: 'Offer this amount' }).click();
+    await approveModal.getByRole('button', { name: 'Give refund' }).click();
     await page.waitForTimeout(2_000);
     check(
       'more than the claim is refused rather than recorded',
       await visible(page.getByText('cannot accept more than the buyer claimed', { exact: false })),
     );
     await approveModal.getByLabel(/Amount you accept/).fill('120.00');
-    await approveModal.getByRole('button', { name: 'Offer this amount' }).click();
+    await approveModal.getByRole('button', { name: 'Give refund' }).click();
     await page.waitForTimeout(2_500);
     await page.goto(`${base}/orders/verify_order_delivered`, { waitUntil: 'networkidle' });
     const answered = ((await page.locator('main').innerText()) ?? '').replace(/\s+/g, ' ');
@@ -2264,7 +2286,7 @@ const main = async () => {
       check(
         'an open case carries the buyer’s account and a way to answer it',
         /silkscreen is the wrong revision/.test(caseText) &&
-          (await page.getByRole('button', { name: /Add to the case|Submit/ }).count()) > 0,
+          (await page.getByRole('button', { name: /Add the statement/ }).count()) > 0,
         caseText.slice(0, 100),
       );
       check(
@@ -2332,7 +2354,7 @@ const main = async () => {
         check(
           'a closed case offers no reply, and says why',
           /The case is closed/.test(caseText) &&
-            (await page.getByRole('button', { name: /Add to the case|Submit/ }).count()) === 0,
+            (await page.getByRole('button', { name: /Add the statement/ }).count()) === 0,
         );
         check(
           'and the outcome says what happened to the money',
