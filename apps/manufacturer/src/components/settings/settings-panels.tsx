@@ -2806,7 +2806,7 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
               onChange={(event) => setTaxId({ ...taxId, kind: event.target.value })}
             />
           </FormField>
-          <FormField label="Number" required>
+          <FormField label="Tax number" required>
             <Input
               value={taxId.number}
               maxLength={32}

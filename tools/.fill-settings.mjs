@@ -80,7 +80,7 @@ try {
   await page.getByRole('button', { name: 'Tax Identification' }).click();
   const taxId = page.getByRole('dialog', { name: /Tax Identification/ });
   await taxId.waitFor({ timeout: 30_000 });
-  await taxId.getByLabel('Number').fill('91440300MA5EX1234');
+  await taxId.getByLabel('Tax number').fill('91440300MA5EX1234');
   await taxId.getByRole('button', { name: 'Save' }).click();
   await taxId.waitFor({ state: 'detached', timeout: 40_000 }).catch(() => {});
   await page.waitForTimeout(2000);
