@@ -129,7 +129,7 @@ const OrdersPage = async ({
         />
       </div>
 
-      <Card padded={false}>
+      <Card padded={false} data-tour="order-list">
         <div className="flex flex-col gap-4 p-4 md:p-6">
           <OrderList
             page={orders.page}

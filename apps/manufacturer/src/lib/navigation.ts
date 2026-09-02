@@ -46,15 +46,13 @@ export interface NavEntry {
   readonly opens?: 'report-problem';
 }
 
-const OTHER_MODULE =
-  'Part of the wider IDEEZA product, outside this manufacturing platform.';
-
 /*
- * Every destination in the rail now has a screen, so the helper that rendered an
- * unbuilt one as a disabled row with its reason has no work left. The
- * other-module reason above stays for the Tour Guide, which belongs to the
- * wider IDEEZA product. Reporting a problem does not, and neither does the
- * tutorial — both are this platform's own, and both are built.
+ * Every destination in the rail has a screen, so the helper that rendered an
+ * unbuilt one as a disabled row with its reason has no work left, and neither
+ * has the reason itself: the Tour Guide was the last row carrying one, and it
+ * is now this platform's own guided tour rather than a door into the wider
+ * IDEEZA product. `unavailableReason` stays on the type for the next honestly
+ * unbuilt row; nothing sets it today.
  */
 
 /**
@@ -139,7 +137,7 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
 
 export const SECONDARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[]>([
   { id: 'tutorial', label: 'Tutorial', href: '/tutorial', icon: 'book' },
-  { id: 'tour', label: 'Tour Guide', icon: 'map', unavailableReason: OTHER_MODULE },
+  { id: 'tour', label: 'Tour Guide', href: '/tour', icon: 'map' },
   { id: 'report', label: 'Report a problem', icon: 'flag', opens: 'report-problem' },
 ]);
 

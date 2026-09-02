@@ -80,7 +80,7 @@ const PayoutsPage = async ({
         description="What is held, what has been released, and the event that released it."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-tour="payout-balance">
         <Counter
           value={`${summary.currency} ${major(summary.pendingReleaseMinor)}`}
           label="Pending release"
@@ -98,7 +98,7 @@ const PayoutsPage = async ({
         />
       </div>
 
-      <Card padded={false}>
+      <Card padded={false} data-tour="payout-list">
         <div className="flex flex-col gap-4 p-4 md:p-6">
           <PayoutList
             currency={summary.currency}

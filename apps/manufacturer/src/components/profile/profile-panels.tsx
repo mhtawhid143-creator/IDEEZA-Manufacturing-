@@ -340,8 +340,15 @@ const REGION_OPTIONS = ['Asia', 'Europe', 'North America', 'South America', 'Afr
  * The Agent tab is the exception and says so: it belongs to IDEEZA's own
  * assistant rather than to this platform.
  */
-export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
-  const [tab, setTab] = useState('about');
+export const ProfilePanels = ({
+  data,
+  initialTab,
+}: {
+  readonly data: ProfileData;
+  /** Which tab to open on, from `?tab=` — see the profile page. */
+  readonly initialTab?: string | undefined;
+}) => {
+  const [tab, setTab] = useState(initialTab ?? 'about');
   const [editing, setEditing] = useState<
     | 'company'
     | 'capability'
@@ -756,7 +763,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
 
   return (
     <>
-      <Card padded={false}>
+      <Card padded={false} data-tour="profile-tabs">
         <div className="px-4 py-3 md:px-6">
           <Tabs
             label="Profile sections"
@@ -1072,7 +1079,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       {tab === 'machines' && (
-        <Card>
+        <Card data-tour="profile-panel">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-text-primary">Machines &amp; Processes</h2>
             <Button
@@ -1192,7 +1199,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
       )}
 
       {tab === 'capabilities' && (
-        <Card>
+        <Card data-tour="profile-panel">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-text-primary">Capabilities</h2>
             <Button
@@ -1388,7 +1395,7 @@ export const ProfilePanels = ({ data }: { readonly data: ProfileData }) => {
 
       {tab === 'services' && (
         <>
-          <Card>
+          <Card data-tour="profile-panel">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-xl font-semibold text-text-primary">Certifications</h2>
               <Button

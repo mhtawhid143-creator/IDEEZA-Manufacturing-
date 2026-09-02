@@ -410,3 +410,16 @@ arrow paints `--color-text-disabled`, which measures 1.48:1 in light and 2.47:1
 in dark. WCAG 1.4.3 exempts inactive controls, and the token is the system's own
 answer for a disabled thing, so nothing here overrides it — but a disabled
 control that cannot be seen at all is worth the design team's attention.
+
+**There is no scrim step between "modal" and nothing.** The guided tour's
+spotlight (`packages/ui/src/components/spotlight.tsx`) needs a veil that dims
+the page without putting it beyond reach: half of the tour's stops ask somebody
+to press the control being lit, so the screen behind has to stay legible. The
+system ships `--color-modal-overlay` for the modal case, which is deliberately
+heavy — over a full screen it reads as black, and the light then picks a control
+out of a void, which teaches nothing about where that control lives. There is no
+lighter scrim colour and no scrim opacity step. The veil therefore uses
+`bg-bg-overlay` — the system's own overlay colour — at the `opacity-disabled`
+step, which is the system's 0.4. Both are shipped tokens; what is missing is a
+name for the role. A `--color-scrim-subtle`, or an `--opacity-scrim`, would let
+this stop borrowing the disabled step for something that is not disabled.

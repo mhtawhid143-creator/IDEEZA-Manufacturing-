@@ -140,7 +140,7 @@ export const OrderShell = ({
             )}
           </Card>
 
-          <Card className="flex flex-col gap-2">
+          <Card className="flex flex-col gap-2" data-tour="order-money">
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-xl font-bold text-text-brand">
                 {order.currency} {major(order.totalPriceMinor)}

@@ -255,9 +255,14 @@ Rules for future changes:
   schema change with no migration fails the suite. Two more tests in the same
   file pin the migration list and count the tables and enums, so a new table
   cannot arrive unnoticed — update them in the same commit that adds it.
-- The most recent is `20260901125643_capability_verification`, which adds
-  `CapabilityVerification` and the sheet's `verification` and
-  `attachmentNames` columns.
+- The most recent is `20260902114625_tour_progress`, which adds `TourProgress`:
+  one row per person per guided tour, holding the stop they reached and whether
+  they finished it. It hangs off `User` rather than `ManufacturerProfile`
+  because a tour teaches a person and not a shop. The three before it are
+  `20260901151917_certifications_and_equipment`, `20260901154826_member_title`
+  and `20260902042510_settings_flows` — the last of those bringing the ten
+  settings panes: `UserSecurity`, `UserPreference`, `NotificationChoice`,
+  `KycSubmission`, `PayoutMethod` and `TaxProfile`.
 
 Commands:
 

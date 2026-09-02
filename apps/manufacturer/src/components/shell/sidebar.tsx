@@ -44,6 +44,7 @@ const NavRow = ({
           type="button"
           onClick={() => onOpen?.(entry.opens as NonNullable<NavEntry['opens']>)}
           className={rowClasses(false, false)}
+          data-tour={`nav-${entry.id}`}
         >
           <NavIconGlyph name={entry.icon} />
           <span className="truncate">{entry.label}</span>
@@ -74,6 +75,7 @@ const NavRow = ({
         href={entry.href ?? '/dashboard'}
         aria-current={active ? 'page' : undefined}
         className={rowClasses(active, false)}
+        data-tour={`nav-${entry.id}`}
       >
         <NavIconGlyph name={entry.icon} />
         <span className="truncate">{entry.label}</span>

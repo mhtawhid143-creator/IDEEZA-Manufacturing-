@@ -17,14 +17,22 @@ const day = (value: Date): string => value.toISOString().slice(0, 10);
  * here too, because it is the same record — and it is the difference between
  * being reachable and being invisible.
  */
-const ProfilePage = async () => {
+const ProfilePage = async ({
+  searchParams,
+}: {
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
   const actor = await requireManufacturer('/profile');
+  // Which tab to open on. A tour stop links straight to one, and so can
+  // anybody sending a colleague to the right part of this screen.
+  const asked = (await searchParams)['tab'];
+  const opening = typeof asked === 'string' ? asked : undefined;
   const shop = await getShopProfile(actor.manufacturerId);
   if (shop === null) notFound();
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <Card data-tour="profile-head">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-4">
@@ -115,6 +123,7 @@ const ProfilePage = async () => {
       </Card>
 
       <ProfilePanels
+        {...(opening === undefined ? {} : { initialTab: opening })}
         data={{
           displayName: shop.displayName,
           legalName: shop.legalName,

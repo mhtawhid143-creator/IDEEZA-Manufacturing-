@@ -153,7 +153,7 @@ export const ProductionTimeline = ({
 
   return (
     <>
-      <Card padded={false}>
+      <Card padded={false} data-tour="production-stages">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 md:px-6">
           <div>
             <p className="text-base font-semibold text-text-primary">Production tracking</p>

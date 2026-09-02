@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 import { Drawer } from '@ideeza/ui';
 import { Navbar } from './navbar.js';
 import { ReportProblemDialog } from './report-problem-dialog.js';
 import { Sidebar } from './sidebar.js';
+import { TourRunner } from '../tour/tour-runner.js';
 
 export interface AppShellProps {
   readonly displayName: string;
@@ -83,6 +84,16 @@ export const AppShell = ({
         </Drawer>
 
         <ReportProblemDialog open={reporting} onClose={() => setReporting(false)} />
+
+        {/* The tour runs over whatever screen it has walked to, so it is mounted
+            here for the same reason the dialog above is: the rail is a sticky
+            stacking context, and nothing rendered inside it can rise over the
+            page. It reads its place from the query string, which is why it needs
+            a Suspense boundary of its own — without one, every page in this
+            shell would have to be dynamic to satisfy `useSearchParams`. */}
+        <Suspense fallback={null}>
+          <TourRunner />
+        </Suspense>
       </div>
   );
 };

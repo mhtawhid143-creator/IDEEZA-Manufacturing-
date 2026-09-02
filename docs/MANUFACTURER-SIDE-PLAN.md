@@ -905,11 +905,63 @@ sessions, deactivate and delete) and policy and privacy (report, activity).
 
 ---
 
+## M15 — The tour guide
+
+The rail's last unavailable row. It had said "part of the wider IDEEZA product"
+since the shell was built; it is this platform's own now, and the reason is that
+the thing it needed to teach is this panel.
+
+**What it is, and what it is not.** The tutorial next door is something to read:
+categories, chapters, videos. The tour is being shown around. Five walks, 27
+stops, and every stop stands on a real screen and lights the real control it is
+talking about — the rail row where requests arrive, one row of the inbox, the
+status chip a buyer watches, the withdraw button, the pane where a bank account
+goes.
+
+**It never takes the screen over.** Half the stops ask for something to be done:
+open the Capabilities tab, use a row's menu to open an order. So the veil lets
+the pointer through and only the panel takes a click, and the veil itself is
+light enough to read the page behind it (`bg-bg-overlay` at the 0.4 step, not the
+modal scrim — see `docs/DESIGN-SYSTEM.md` §11). A tour that had to be dismissed
+before the panel could be used would be a slideshow with a screenshot behind it.
+
+**A stop with nothing to point at says so.** A new shop has no requests, no
+orders and no payouts, which is exactly when somebody takes a tour. Every stop
+that points at a shop's own data carries the words to use when it is not there,
+and the panel centres itself and says them rather than lighting the corner of the
+window. The same path covers a panel behind a tab nobody has opened yet.
+
+**Where the position lives.** In the query string (`?tour=` and `?stop=`), so a
+stop can be linked to and a refresh keeps its place, and in `TourProgress` — one
+row per person per tour — so the index can offer to pick a walk up where it was
+left. Progress belongs to the person and not to the shop: a tour teaches somebody
+how this panel works, and they keep that if they join a second shop.
+
+**Two kinds of move, and why they differ.** A stop on another screen is a
+navigation and goes through the router. A stop on the screen already showing is
+not one, so it is a state change in the runner with the address corrected to
+match. That is not a preference. A router navigation whose only change is the
+query string does not commit from a component in the shell — it fetched its
+payload and left the address alone, which left Next and Back doing nothing at all
+for most of the tour, first as buttons and again as real links. The split that
+works is also the truer description of a walk: only the stops that change screen
+are navigations.
+
+**What it needed from the rest of the panel.** Fifteen `data-tour` hooks on real
+elements, and the profile and settings screens taking their opening tab and pane
+from the address — which they should have done anyway, since "look at the machine
+tab" was a link that landed on About.
+
+**Discovery.** A guided tour nobody finds is a guided tour nobody takes, and a
+rail row was not finding anybody. The dashboard offers the first walk until a
+walk has been started, and then stops offering — a dismissal is a preference to
+store for a question that answers itself.
+
 ## Where the manufacturer side stands
 
 M01–M08 are built against real rows, with the domain refusing what it should
-refuse and a two-sided test proving the buyer reads what the shop wrote. M09–M12
-and M14 are built the same way wherever a table exists, and the panels that
+refuse and a two-sided test proving the buyer reads what the shop wrote. M09–M12,
+M14 and M15 are built the same way wherever a table exists, and the panels that
 depend on tables this build does not have — equipment and parameter sheets, blog
 posts, preferences, KYC and payment providers, withdrawals — are laid out to the
 design and labelled on the screen as not yet stored. M13 is a prototype

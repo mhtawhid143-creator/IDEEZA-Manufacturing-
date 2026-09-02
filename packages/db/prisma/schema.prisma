@@ -496,6 +496,7 @@ model User {
   noticeChoices     NotificationChoice[]
   kycSubmissions    KycSubmission[]
   taxProfile        TaxProfile?
+  tourProgress      TourProgress[]
 
   @@index([role])
 }
@@ -2057,4 +2058,34 @@ model ShopArticle {
   manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
 
   @@index([manufacturerId, status, createdAt])
+}
+
+/// How far a person has walked one of the guided tours.
+///
+/// Progress belongs to the person and not to the shop: a tour teaches somebody
+/// how this panel works, and somebody who joins a second shop already knows it.
+///
+/// `stopIndex` is where they stand now, counted from zero, and it is the only
+/// thing the runner writes as they move. A finished tour keeps its index on the
+/// last stop and gains `completedAt`, so "finished" and "standing on the last
+/// stop" stay two different states — the index alone cannot tell them apart, and
+/// the index alone is what the resume button would otherwise read.
+///
+/// The tour id is a string rather than an enum because the tours are editorial
+/// content in `data/tours.ts`, not domain vocabulary: writing a new tour must
+/// not need a migration. A row whose tour no longer exists is ignored on read.
+model TourProgress {
+  id     String @id
+  userId String
+  tourId String
+
+  stopIndex   Int       @default(0)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tourId])
+  @@index([userId])
 }

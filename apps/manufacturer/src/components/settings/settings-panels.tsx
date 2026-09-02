@@ -169,8 +169,15 @@ const Row = ({
  * IDEEZA decides identity checks and account deletions, so submitting one is
  * where a shop's part ends.
  */
-export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
-  const [section, setSection] = useState<string>('profile');
+export const SettingsPanels = ({
+  data,
+  initialPane,
+}: {
+  readonly data: SettingsData;
+  /** Which pane to open on, from the `pane` query parameter. */
+  readonly initialPane?: string | undefined;
+}) => {
+  const [section, setSection] = useState<string>(initialPane ?? 'profile');
   const [dialog, setDialog] = useState<Dialog>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -343,7 +350,7 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
         </nav>
       </Card>
 
-      <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4" data-tour="settings-pane">
         <Breadcrumbs
           items={[
             { label: 'Settings' },

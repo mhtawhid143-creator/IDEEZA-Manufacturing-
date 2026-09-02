@@ -16,6 +16,8 @@ import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
 import { listDisputes } from '@/data/resolution.js';
 import { getShopContext } from '@/data/shop.js';
 import { linkIfBuilt } from '@/lib/navigation.js';
+import { readProgress } from '@/data/tour.js';
+import { stopHref, TOURS } from '@/data/tours.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
@@ -248,11 +250,12 @@ const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
  */
 const DashboardPage = async () => {
   const actor = await requireManufacturer('/dashboard');
-  const [shop, tiles, sections, disputes] = await Promise.all([
+  const [shop, tiles, sections, disputes, walked] = await Promise.all([
     getShopContext(actor.manufacturerId, actor.userId),
     getHeadlineTiles(actor.manufacturerId),
     getDashboardSections(actor.manufacturerId),
     listDisputes(actor.manufacturerId),
+    readProgress(actor.userId),
   ]);
 
   // A dispute is the one thing on this panel that is waiting on the shop and
@@ -260,6 +263,13 @@ const DashboardPage = async () => {
   // So it is said at the top of the first screen rather than left to be found.
   const openDisputes = disputes.filter((dispute) => dispute.status !== 'resolved');
   const unanswered = openDisputes.filter((dispute) => dispute.status === 'open');
+
+  // The tour is offered here exactly once in somebody's life on this panel:
+  // until they have started one. A guided tour nobody finds is a guided tour
+  // nobody takes, and the rail row alone was not finding anybody. It disappears
+  // the moment a tour is begun rather than needing to be dismissed, because a
+  // dismissal is a preference to store for something that answers itself.
+  const firstTour = Object.keys(walked).length === 0 ? TOURS[0] : undefined;
 
   const now = Date.now();
   const orderTrend =
@@ -292,40 +302,72 @@ const DashboardPage = async () => {
       />
 
       {openDisputes.length > 0 && (
-        <Alert
-          tone="danger"
-          title={
-            openDisputes.length === 1
-              ? `A dispute is open on ${openDisputes[0]?.productName ?? 'an order'}`
-              : `${String(openDisputes.length)} disputes are open on your orders`
-          }
-          actions={
-            <div className="flex flex-wrap gap-2">
+        <div data-tour="dashboard-notice">
+          <Alert
+            tone="danger"
+            title={
+              openDisputes.length === 1
+                ? `A dispute is open on ${openDisputes[0]?.productName ?? 'an order'}`
+                : `${String(openDisputes.length)} disputes are open on your orders`
+            }
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={
+                    openDisputes[0] === undefined
+                      ? '/orders'
+                      : `/orders/${openDisputes[0].orderId}/disputes/${openDisputes[0].id}`
+                  }
+                  className={buttonAppearance({ variant: 'primary', size: 'sm' })}
+                >
+                  {unanswered.length > 0 ? 'Answer it' : 'Open the case'}
+                </Link>
+                {openDisputes.length > 1 && (
+                  <Link
+                    href="/settings"
+                    className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                  >
+                    See all of them
+                  </Link>
+                )}
+              </div>
+            }
+          >
+            {unanswered.length > 0
+              ? `${String(unanswered.length)} of them has had no answer from you yet. IDEEZA decides a dispute on what is written on the case, and the payout stays held until it does.`
+              : 'Answered and with IDEEZA. The payout stays held until the case is decided.'}
+          </Alert>
+        </div>
+      )}
+
+      {firstTour !== undefined && (
+        <Card tone="brand" data-tour="dashboard-tour-offer">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text-primary">
+                New here? Let the panel show you round.
+              </p>
+              <Text size="sm" tone="muted" className="mt-1 block max-w-measure">
+                {firstTour.stops.length} stops on the real screens, about{' '}
+                {firstTour.minutes} minutes, and you can stop in the middle — {firstTour.promise.toLowerCase()}
+              </Text>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <Link
-                href={
-                  openDisputes[0] === undefined
-                    ? '/orders'
-                    : `/orders/${openDisputes[0].orderId}/disputes/${openDisputes[0].id}`
-                }
+                href={stopHref(firstTour, 0)}
                 className={buttonAppearance({ variant: 'primary', size: 'sm' })}
               >
-                {unanswered.length > 0 ? 'Answer it' : 'Open the case'}
+                Start the tour
               </Link>
-              {openDisputes.length > 1 && (
-                <Link
-                  href="/settings"
-                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-                >
-                  See all of them
-                </Link>
-              )}
+              <Link
+                href="/tour"
+                className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+              >
+                All five tours
+              </Link>
             </div>
-          }
-        >
-          {unanswered.length > 0
-            ? `${String(unanswered.length)} of them has had no answer from you yet. IDEEZA decides a dispute on what is written on the case, and the payout stays held until it does.`
-            : 'Answered and with IDEEZA. The payout stays held until the case is decided.'}
-        </Alert>
+          </div>
+        </Card>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -23,6 +23,7 @@ import {
   Radio,
   RadioGroup,
   Select,
+  Spotlight,
   StatusChip,
   Switch,
   TabPanel,
@@ -591,5 +592,74 @@ describe('Accordion', () => {
     render(<Accordion label="One" items={items} initiallyOpen={['a']} single />);
     await userEvent.click(screen.getByRole('button', { name: 'Second' }));
     expect(screen.getByRole('button', { name: 'First' }).getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('Spotlight', () => {
+  /**
+   * jsdom measures everything as zero, and a zero-sized box is exactly how this
+   * component recognises an element it must not point at. So a test about
+   * finding the target has to give the target a size first.
+   */
+  const withSize = (width: number, height: number) => {
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function measured(this: Element) {
+      return this.hasAttribute('data-tour')
+        ? ({ top: 100, left: 200, width, height, right: 200 + width, bottom: 100 + height, x: 200, y: 100, toJSON: () => ({}) } as DOMRect)
+        : ({ top: 0, left: 0, width: 360, height: 200, right: 360, bottom: 200, x: 0, y: 0, toJSON: () => ({}) } as DOMRect);
+    };
+    return () => {
+      Element.prototype.getBoundingClientRect = original;
+    };
+  };
+
+  it('lights up a target it can find, and tells the caller it found it', async () => {
+    const restore = withSize(120, 40);
+    render(
+      <>
+        <button type="button" data-tour="thing">
+          The control
+        </button>
+        <Spotlight target='[data-tour="thing"]' label="Stop 1 of 3">
+          {(found) => <p>{found ? 'Pointing at it' : 'Not on this screen'}</p>}
+        </Spotlight>
+      </>,
+    );
+
+    // The measurement waits a frame for a smooth scroll to settle.
+    expect(await screen.findByText('Pointing at it')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Stop 1 of 3' })).toBeTruthy();
+    restore();
+  });
+
+  it('says nothing is there rather than pointing at nothing', async () => {
+    const restore = withSize(0, 0);
+    render(
+      <Spotlight target='[data-tour="absent"]' label="Stop 2 of 3">
+        {(found) => <p>{found ? 'Pointing at it' : 'Not on this screen'}</p>}
+      </Spotlight>,
+    );
+
+    expect(await screen.findByText('Not on this screen')).toBeTruthy();
+    restore();
+  });
+
+  it('leaves the page usable: the dimming never takes the pointer', async () => {
+    const restore = withSize(120, 40);
+    const clicked = vi.fn();
+    render(
+      <>
+        <button type="button" data-tour="thing" onClick={clicked}>
+          The control
+        </button>
+        <Spotlight target='[data-tour="thing"]' label="Stop 1 of 3">
+          {() => <p>Open it yourself</p>}
+        </Spotlight>
+      </>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'The control' }));
+    expect(clicked).toHaveBeenCalledTimes(1);
+    restore();
   });
 });

@@ -53,6 +53,7 @@ describe('migrations apply to a clean database', () => {
       '20260901151917_certifications_and_equipment',
       '20260901154826_member_title',
       '20260902042510_settings_flows',
+      '20260902114625_tour_progress',
     ]);
   });
 
@@ -91,7 +92,10 @@ describe('migrations apply to a clean database', () => {
     // The settings flows brought UserSecurity, UserPreference,
     // NotificationChoice, KycSubmission, PayoutMethod and TaxProfile: ten panes
     // that all write something, and none of them a switch held in a component.
-    expect(tables).toBe(62);
+    // TourProgress arrived with the tour guide: where somebody is up to in a
+    // guided walk of the panel. It hangs off the person and not the shop,
+    // because a tour teaches somebody how this works and they keep that.
+    expect(tables).toBe(63);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with

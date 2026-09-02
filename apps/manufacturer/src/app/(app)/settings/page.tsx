@@ -51,8 +51,16 @@ const eventWords = (kind: string, subject: string): string => {
  * the activity list is the platform's own append-only events rather than a
  * second log kept for this screen, and the disputes are the domain's.
  */
-const SettingsPage = async () => {
+const SettingsPage = async ({
+  searchParams,
+}: {
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
   const actor = await requireManufacturer('/settings');
+  // Which pane to open on. A tour stop links straight to one, and so can
+  // anybody sending a colleague to the right part of this screen.
+  const asked = (await searchParams)['pane'];
+  const opening = typeof asked === 'string' ? asked : undefined;
 
   const [
     shop,
@@ -106,6 +114,7 @@ const SettingsPage = async () => {
       />
 
       <SettingsPanels
+        {...(opening === undefined ? {} : { initialPane: opening })}
         data={{
           displayName: shop.displayName,
           legalName: shop.legalName,

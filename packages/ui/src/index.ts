@@ -38,3 +38,4 @@ export * from './components/table.js';
 export * from './components/states.js';
 export * from './components/layout.js';
 
+export * from './components/spotlight.js';

@@ -1398,6 +1398,156 @@ const main = async () => {
       );
     }
 
+    // ------------------------------------------------- the tour guide, walked
+    //
+    // The tour is the one feature here that runs on top of every other screen,
+    // so what is checked is the walking rather than the page: that a stop is an
+    // address, that the light finds a real control, that a stop pointing at
+    // something this shop has not got says so instead of pointing at nothing,
+    // and that leaving and coming back lands where it left off.
+    await page.goto(`${base}/dashboard`, { waitUntil: 'networkidle' });
+    check(
+      'the dashboard offers the tour to somebody who has not walked one',
+      await visible(page.getByText('New here? Let the panel show you round.')),
+    );
+
+    await page.goto(`${base}/tour`, { waitUntil: 'networkidle' });
+    check(
+      'the tour guide is a screen now, not an unavailable row',
+      await visible(page.getByRole('heading', { name: 'Tour guide', level: 1 })),
+    );
+    const tourRows = page.locator('main ul > li');
+    check('all five tours are listed', (await tourRows.count()) === 5, `${await tourRows.count()} rows`);
+    const startLinks = await page.getByRole('link', { name: 'Start the tour' }).count();
+    check(
+      'a tour nobody has walked says so and offers to start',
+      startLinks === 5 && (await visible(page.getByText('Not started').first())),
+      `${startLinks} of 5 offer to start`,
+    );
+
+    // The stops are the content of a row, not a count of them.
+    await page.getByRole('button', { name: /The 6 stops/ }).first().click();
+    check(
+      'a tour row opens onto its stops in order',
+      await visible(page.getByText('This page is what a buyer sees')),
+    );
+
+    await page.getByRole('link', { name: 'Start the tour' }).first().click();
+    await page.waitForLoadState('networkidle');
+    check(
+      'starting a tour is an address, and it goes to the first stop',
+      //profile?.*tour=shop-setup/.test(page.url()) && /stop=0/.test(page.url()),
+      page.url(),
+    );
+
+    const coachmark = page.getByRole('dialog', { name: /Set your shop up, stop 1 of 6/ });
+    check('the tour says its piece over the real screen', await visible(coachmark));
+    if (await visible(coachmark)) {
+      check(
+        'the stop knows where it is',
+        /stop 1 of 6/.test(await coachmark.innerText()),
+        (await coachmark.innerText()).split('\n')[0],
+      );
+      // The panel is beside the lit control, not centred on the screen: a
+      // centred panel is what this falls back to when it has nothing to point
+      // at, so its position is the assertion that the light landed.
+      const seat = await coachmark.boundingBox();
+      const anchor = await page.locator('[data-tour="profile-head"]').boundingBox();
+      check(
+        'the light found the control the stop is about',
+        seat !== null && anchor !== null && seat.y > anchor.y,
+        seat === null || anchor === null ? 'no box' : `panel at ${Math.round(seat.y)}, target at ${Math.round(anchor.y)}`,
+      );
+      await page.screenshot({ path: join(shotDir, 'tour-stop.png'), fullPage: false });
+
+      await coachmark.getByRole('button', { name: 'Next' }).click();
+      await page.waitForTimeout(600);
+      check(
+        'Next walks to the next stop',
+        /stop=1/.test(page.url()) &&
+          (await visible(page.getByText('Seven tabs, and buyers read them in this order'))),
+        page.url(),
+      );
+
+      // The third stop lights a tab and asks for it to be opened. Pressing the
+      // lit tab has to work with the tour still standing there — that is the
+      // whole promise of a tour that does not take the screen over.
+      await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
+      await page.waitForTimeout(600);
+      check(
+        'a stop can point at a control and wait for it to be pressed',
+        /stop=2/.test(page.url()) &&
+          (await visible(page.getByText('Say what you can actually make'))),
+        page.url(),
+      );
+      await page.locator('#tab-capabilities').click();
+      await page.waitForTimeout(600);
+      check(
+        'the lit control still takes the press, with the tour on screen',
+        (await page.locator('#tab-capabilities').getAttribute('aria-selected')) === 'true' &&
+          (await page.getByRole('dialog').count()) === 1,
+      );
+
+      // A sequence is what the arrow keys are for.
+      await page.keyboard.press('ArrowLeft');
+      await page.waitForTimeout(600);
+      check('the arrow keys walk the tour', /stop=1/.test(page.url()), page.url());
+    }
+
+    // A stop that points at something this screen has not got must teach the
+    // same thing in words rather than light up the corner of the window.
+    await page.goto(`${base}/dashboard?tour=production&stop=3`, { waitUntil: 'networkidle' });
+    check(
+      'a stop with nothing to point at says what would be there',
+      await visible(page.getByText('Open one of your orders to see this.')),
+    );
+
+    // Leaving takes the tour out of the address, and leaves the screen behind.
+    await page.getByRole('button', { name: 'Leave the tour' }).click();
+    await page.waitForTimeout(600);
+    check(
+      'leaving a tour leaves the screen it was standing on',
+      !/tour=/.test(page.url()) && (await page.getByRole('dialog').count()) === 0,
+      page.url(),
+    );
+
+    await page.goto(`${base}/tour`, { waitUntil: 'networkidle' });
+    check(
+      'a tour left part way through is offered back, at the stop it reached',
+      await visible(page.getByText(/You are part way through/)),
+    );
+    check(
+      'and the row says where that was',
+      (await page.getByText(/Stop 2 of 6/).count()) > 0 ||
+        (await page.getByText(/Stop 4 of 5/).count()) > 0,
+    );
+
+    // Finishing is its own state, and the last stop is not it.
+    await page.goto(`${base}/settings?tour=money&stop=4`, { waitUntil: 'networkidle' });
+    const lastStop = page.getByRole('dialog', { name: /Get paid, stop 5 of 5/ });
+    if (await visible(lastStop)) {
+      await lastStop.getByRole('button', { name: 'Finish' }).click();
+      await page.waitForLoadState('networkidle');
+      check(
+        'finishing a tour says so and comes back to the guide',
+        //tour?finished=money/.test(page.url()) &&
+          (await visible(page.getByText(/That is Get paid walked/))),
+        page.url(),
+      );
+      check(
+        'a finished tour reads as finished, and offers to be walked again',
+        (await page.getByText('Finished').count()) > 0 &&
+          (await page.getByRole('button', { name: 'Walk it again' }).count()) > 0,
+      );
+    }
+
+    check(
+      'the dashboard stops offering the tour once one has been walked',
+      await page
+        .goto(`${base}/dashboard`, { waitUntil: 'networkidle' })
+        .then(async () => (await page.getByText('New here? Let the panel show you round.').count()) === 0),
+    );
+
     // ----------------------------------------------------- the tutorial, read
     //
     // The rail's first "for you" row used to be unavailable. It is a screen

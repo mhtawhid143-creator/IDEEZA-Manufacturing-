@@ -114,7 +114,11 @@ export const PayoutList = ({
           <Button variant="secondary" onClick={() => setHistory(true)}>
             Withdrawal history
           </Button>
-          <Button variant="primary" onClick={() => setWithdrawing(true)}>
+          <Button
+            variant="primary"
+            onClick={() => setWithdrawing(true)}
+            data-tour="payout-withdraw"
+          >
             Withdraw balance
           </Button>
         </div>

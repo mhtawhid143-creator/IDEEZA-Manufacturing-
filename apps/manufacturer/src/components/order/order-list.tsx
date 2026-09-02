@@ -197,7 +197,7 @@ export const OrderList = ({
             id: 'status',
             header: 'Status',
             cell: (row) => (
-              <div className="flex flex-col items-start gap-1">
+              <div className="flex flex-col items-start gap-1" data-tour="order-status">
                 <StatusChip status={row.status} />
                 {/*
                   A dispute is not always the order's status: one can be raised
