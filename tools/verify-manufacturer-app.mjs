@@ -114,12 +114,24 @@ const removeCard = async (page, cards, text) => {
       for (let settle = 0; settle < 40 && (await trigger.isDisabled()); settle += 1) {
         await page.waitForTimeout(500);
       }
+      // Scrolled to the middle rather than into view. The navbar is sticky, so
+      // it sits above whatever the page brings to the top of itself — and a
+      // kebab parked under it is a kebab no click can reach, which is what
+      // these deletes were timing out on rather than being slow.
+      await trigger.evaluate((element) => {
+        element.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+      await page.waitForTimeout(300);
       await trigger.click({ timeout: 15_000 });
-      // Scoped to this card's own menu by its label. Two menus can be open at
-      // once, and deleting from the wrong one would take down a card nobody
-      // asked about while leaving this check's card exactly where it was.
+      // Scoped to this card's own menu, found through the trigger's own label
+      // rather than the searched text: the two are not always the same. A
+      // payout card matched on part of its body ("····1234") is labelled by its
+      // title, and looking for a menu named after the text found nothing.
+      // Two menus can be open at once, and deleting from the wrong one would
+      // take down a card nobody asked about.
+      const menuName = (await trigger.getAttribute('aria-label')) ?? `Actions for ${text}`;
       const item = page
-        .getByRole('menu', { name: `Actions for ${text}` })
+        .getByRole('menu', { name: menuName })
         .getByRole('menuitem', { name: 'Delete' });
       await item.waitFor({ state: 'visible', timeout: 10_000 });
       await item.click({ timeout: 15_000 });
@@ -1411,6 +1423,29 @@ const main = async () => {
         await visible(page.getByRole('heading', { name: 'IDEEZA AI Model' })),
       );
 
+      // And following the contents list actually shows the heading it names.
+      // The navbar is sticky, so without a scroll margin the browser parks the
+      // heading behind it and the reader arrives at the paragraph after the one
+      // they asked for.
+      const contentsLink = page.getByRole('link', { name: 'IDEEZA AI Model' }).first();
+      if ((await contentsLink.count()) > 0) {
+        await contentsLink.click();
+        await page.waitForTimeout(700);
+        const clear = await page.evaluate(() => {
+          const heading = [...document.querySelectorAll('h2')].find(
+            (node) => node.textContent?.trim() === 'IDEEZA AI Model',
+          );
+          const bar = document.querySelector('header');
+          if (heading === undefined || bar === null) return null;
+          return heading.getBoundingClientRect().top - bar.getBoundingClientRect().bottom;
+        });
+        check(
+          'and the heading it names is not hidden behind the navbar',
+          clear !== null && clear >= 0,
+          clear === null ? 'not found' : String(Math.round(clear)) + 'px clear',
+        );
+      }
+
       // The reward is shown and cannot be taken, because nothing could pay it.
       const claim = page.getByRole('button', { name: /Claim / }).first();
       check('the token reward is offered', (await claim.count()) > 0);
@@ -2106,6 +2141,7 @@ const main = async () => {
     await page.getByRole('button', { name: 'KYC Verification', exact: true }).click();
     await page.waitForTimeout(300);
     await page.getByLabel('Full Legal Name').fill('Ada Byron');
+    await page.getByLabel('Mobile Number').fill('+8801711223344');
     await page.getByLabel('Country of Residence').selectOption('BD');
     await page.getByLabel(/Marketplace Seller Terms/).check();
     await page.getByRole('button', { name: 'Submit for Review' }).click();
@@ -2168,12 +2204,77 @@ const main = async () => {
       (await page.locator('main').innerText()).includes('Actions you have done in IDEEZA'),
     );
 
+    // The dispute pane has a section of its own below, which opens it and
+    // reads both halves; checking the heading twice would only mean two
+    // failures for one cause.
+
+    // ------------------------------------- the dispute, open and after the answer
+    //
+    // A disagreement has two shapes and both are on the profile of this build:
+    // an open case, which is a conversation nobody but operations can end, and
+    // an answered one, which is a record. The seed carries an answered case,
+    // because the resolved view had nothing to show before it.
+    await page.goto(`${base}/settings`, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Dispute', exact: true }).click();
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(500);
+    const disputePane = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
     check(
-      'the dispute pane says who may decide one',
-      (await page.locator('main').innerText()).includes('Disputes on your orders'),
+      'settings parts the open disputes from the answered ones',
+      /Open disputes/.test(disputePane) && /Resolved disputes/.test(disputePane),
+      disputePane.slice(disputePane.indexOf('Open disputes'), disputePane.indexOf('Open disputes') + 80),
     );
+
+    const resolvedGroup = page.getByRole('group', { name: 'Resolved disputes' });
+    const hasResolved = await visible(resolvedGroup, 8_000);
+    check('and lists the answered one with its outcome', hasResolved);
+
+    if (hasResolved) {
+      await resolvedGroup.getByRole('button').first().click();
+      await page.waitForTimeout(400);
+      const opened = (await resolvedGroup.innerText()).replace(/\s+/g, ' ');
+      check(
+        'a closed case says what was decided and when',
+        /no issue found/i.test(opened) && /Closed —/.test(opened),
+        opened.slice(0, 110),
+      );
+
+      const intoCase = resolvedGroup.getByRole('link', { name: 'Open the case' });
+      check('and links into the case itself', (await intoCase.count()) > 0);
+      if ((await intoCase.count()) > 0) {
+        const href = await intoCase.first().getAttribute('href');
+        await page.goto(`${base}${String(href)}`, { waitUntil: 'networkidle' });
+
+        const caseText = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+        check(
+          'the case is the design\'s Dispute Center page',
+          /Dispute Center Case/.test(caseText) &&
+            /Client Name/.test(caseText) &&
+            /Dispute Reason/.test(caseText) &&
+            /Dispute Amount/.test(caseText),
+          caseText.slice(0, 100),
+        );
+        check(
+          'both sides’ statements are on it, in the order they were written',
+          /measurement report was missing/.test(caseText) &&
+            /went with the shipping documents/.test(caseText),
+        );
+        check(
+          'the records that travel with it are shown as attachments',
+          /Attachment/.test(caseText) && /Dimensional report/.test(caseText),
+        );
+        // A closed case is closed to both sides: inviting another statement
+        // would invite one nobody will read.
+        check(
+          'a closed case offers no reply, and says why',
+          /The case is closed/.test(caseText) &&
+            (await page.getByRole('button', { name: /Add to the case|Submit/ }).count()) === 0,
+        );
+        check(
+          'and the outcome says what happened to the money',
+          /Nothing moved/.test(caseText) || /moved on the outcome/.test(caseText),
+        );
+      }
+    }
 
     // ------------------------------------------ reporting a problem, end to end
     //

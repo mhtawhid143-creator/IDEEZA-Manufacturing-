@@ -136,3 +136,18 @@ td,
 caption {
   position: relative;
 }
+
+/*
+ * The navbar is sticky, so it sits above whatever the page scrolls to the top
+ * of itself. Following a link to a heading therefore parks that heading behind
+ * the navbar: the reader presses "IDEEZA AI Model" in a lesson's contents and
+ * arrives at the paragraph after it, with the heading they asked for hidden.
+ *
+ * `scroll-margin-top` is the browser's answer to exactly this — it moves where
+ * a scroll stops, not where the element sits, so nothing about the layout
+ * changes. The height comes from the shell measurement the navbar itself uses,
+ * so the two can never disagree.
+ */
+[id] {
+  scroll-margin-top: calc(var(--layout-navbar-height) + 1rem);
+}

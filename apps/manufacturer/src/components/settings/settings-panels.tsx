@@ -1088,9 +1088,15 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
                     <Button
                       variant="primary"
                       loading={pending || !hydrated}
+                      // Every field the data layer refuses without, so the
+                      // button is not offered for a submission that would come
+                      // straight back. The mobile number was missing from this
+                      // list, which made Submit pressable and then useless.
                       disabled={
                         !hydrated ||
-                        kycOne.fullLegalName.trim() === '' ||
+                        kycOne.fullLegalName.trim().length < 3 ||
+                        !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(kycOne.contactEmail.trim()) ||
+                        kycOne.mobileNumber.replace(/\D/g, '').length < 8 ||
                         kycOne.countryOfResidence === '' ||
                         !kycOne.agreedToTerms
                       }
@@ -1684,70 +1690,132 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
 
         {/* ── dispute ────────────────────────────────────────────────────── */}
         {section === 'dispute' && (
-          <Card>
-            <CardHeader
-              title="Disputes on your orders"
-              description="Both the open ones and the ones already answered. A manufacturer cannot cancel an order — a dispute is how a disagreement is raised."
-            />
-            {data.disputes.length === 0 ? (
-              <div className="mt-4">
-                <EmptyState
-                  title="No disputes"
-                  description="Nothing has been raised against your orders, and you have raised nothing."
+          <>
+            {/*
+              Open first, answered after. A shop reading this pane is looking
+              for what still needs it, and a closed case is history — but it is
+              history it may need, which is why the answered ones are here at
+              all rather than dropped once decided.
+            */}
+            {(
+              [
+                ['Open', data.disputes.filter((row) => row.resolvedOn === null)],
+                ['Resolved', data.disputes.filter((row) => row.resolvedOn !== null)],
+              ] as const
+            ).map(([heading, rows]) => (
+              <Card key={heading}>
+                <CardHeader
+                  title={`${heading} disputes`}
+                  description={
+                    heading === 'Open'
+                      ? 'A manufacturer cannot cancel an order — a dispute is how a disagreement is raised, and IDEEZA decides it.'
+                      : 'Answered by IDEEZA. The outcome is what moved the money.'
+                  }
+                  actions={<Badge tone={heading === 'Open' ? 'warning' : 'neutral'}>{rows.length}</Badge>}
                 />
-              </div>
-            ) : (
-              <Accordion
-                className="mt-2"
-                label="Disputes"
-                items={data.disputes.map((dispute) => ({
-                  id: dispute.id,
-                  title: `${dispute.productName} · ${dispute.reason.replace(/_/g, ' ')}`,
-                  description: `${dispute.resolvedOn === null ? 'Open' : 'Resolved'} · opened ${dispute.openedOn}${
-                    dispute.openedByYou ? ' by you' : ' by the buyer'
-                  }`,
-                  content: (
-                    <div className="flex flex-col gap-3">
-                      <DefinitionList
-                        columns={2}
-                        items={[
-                          { label: 'Order', value: dispute.orderId },
-                          { label: 'Status', value: dispute.status.replace(/_/g, ' ') },
-                          {
-                            label: 'Outcome',
-                            value:
-                              dispute.outcome === null
-                                ? 'Not decided'
-                                : dispute.outcome.replace(/_/g, ' '),
-                          },
-                          { label: 'Resolved', value: dispute.resolvedOn ?? 'Not yet' },
-                        ]}
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/orders/${dispute.orderId}`}
-                          className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-                        >
-                          Open the order
-                        </Link>
-                        <Link
-                          href="/messages"
-                          className={buttonAppearance({ variant: 'ghost', size: 'sm' })}
-                        >
-                          Message about it
-                        </Link>
-                      </div>
-                      <Text tone="muted" size="xs" className="block max-w-measure">
-                        Only IDEEZA decides a dispute. What a shop can do is answer it with
-                        evidence, which is done on the order.
-                      </Text>
-                    </div>
-                  ),
-                }))}
-              />
-            )}
-          </Card>
+                {rows.length === 0 ? (
+                  <div className="mt-4">
+                    <EmptyState
+                      title={heading === 'Open' ? 'Nothing open' : 'Nothing answered yet'}
+                      description={
+                        heading === 'Open'
+                          ? 'Nothing has been raised against your orders, and you have raised nothing.'
+                          : 'When operations answers a case, it moves here with its outcome.'
+                      }
+                    />
+                  </div>
+                ) : (
+                  <Accordion
+                    className="mt-2"
+                    label={`${heading} disputes`}
+                    items={rows.map((dispute) => ({
+                      id: dispute.id,
+                      title: `${dispute.productName} · ${dispute.reason.replace(/_/g, ' ')}`,
+                      description: (
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span>
+                            opened {dispute.openedOn}
+                            {dispute.openedByYou ? ' by you' : ' by the buyer'}
+                          </span>
+                          {dispute.resolvedOn === null ? (
+                            <Badge tone="warning">{dispute.status.replace(/_/g, ' ')}</Badge>
+                          ) : (
+                            <Badge
+                              tone={dispute.outcome === 'no_issue_found' ? 'success' : 'info'}
+                            >
+                              {(dispute.outcome ?? 'resolved').replace(/_/g, ' ')}
+                            </Badge>
+                          )}
+                        </span>
+                      ),
+                      content: (
+                        <div className="flex flex-col gap-3">
+                          <DefinitionList
+                            columns={2}
+                            items={[
+                              { label: 'Order', value: dispute.orderId },
+                              { label: 'Status', value: dispute.status.replace(/_/g, ' ') },
+                              {
+                                label: 'Outcome',
+                                value:
+                                  dispute.outcome === null
+                                    ? 'Not decided'
+                                    : dispute.outcome.replace(/_/g, ' '),
+                              },
+                              {
+                                label: dispute.resolvedOn === null ? 'Resolved' : 'Answered on',
+                                value: dispute.resolvedOn ?? 'Not yet',
+                              },
+                            ]}
+                          />
+                          {dispute.resolvedOn !== null && (
+                            <Alert
+                              tone={dispute.outcome === 'no_issue_found' ? 'success' : 'info'}
+                              title={`Closed — ${(dispute.outcome ?? 'resolved').replace(/_/g, ' ')}`}
+                            >
+                              Operations answered this on {dispute.resolvedOn}. Nothing more can
+                              be added to a closed case; the record stays so both sides can read
+                              what was decided.
+                            </Alert>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            <Link
+                              href={`/orders/${dispute.orderId}/disputes/${dispute.id}`}
+                              className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                            >
+                              Open the case
+                            </Link>
+                            <Link
+                              href={`/orders/${dispute.orderId}`}
+                              className={buttonAppearance({ variant: 'ghost', size: 'sm' })}
+                            >
+                              Open the order
+                            </Link>
+                            {dispute.resolvedOn === null && (
+                              <Link
+                                href="/messages"
+                                className={buttonAppearance({ variant: 'ghost', size: 'sm' })}
+                              >
+                                Message about it
+                              </Link>
+                            )}
+                          </div>
+                          {dispute.resolvedOn === null && (
+                            <Text tone="muted" size="xs" className="block max-w-measure">
+                              Only IDEEZA decides a dispute. What a shop can do is answer it with
+                              evidence, which is done on the case.
+                            </Text>
+                          )}
+                        </div>
+                      ),
+                    }))}
+                  />
+                )}
+              </Card>
+            ))}
+          </>
         )}
+
       </div>
 
       {/* ── dialogs ───────────────────────────────────────────────────────── */}

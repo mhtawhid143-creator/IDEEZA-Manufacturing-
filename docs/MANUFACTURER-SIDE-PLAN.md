@@ -962,6 +962,25 @@ The same as the buyer side, and one addition.
   the same row read from both apps, asserting the buyer sees exactly what the
   manufacturer wrote.
 
+## Fixed: a sticky navbar was hiding what a link jumped to
+
+Measured on 2026-09-02. The navbar is `sticky top-0`, so it sits above
+whatever the page scrolls to the top of itself. Two consequences, one of them
+visible to readers:
+
+- following a lesson’s contents list parked the heading behind the navbar, so
+  the reader arrived at the paragraph after the one they asked for;
+- anything scrolled to the top became unclickable, which is what the profile
+  tabs’ delete checks were timing out on. They looked flaky and were not: the
+  kebab was genuinely unreachable whenever the card landed under the bar.
+
+`[id] { scroll-margin-top: calc(var(--layout-navbar-height) + 1rem) }` in
+`packages/ui/src/styles/base.css` is the browser’s own answer — it moves where
+a scroll stops, not where the element sits, so no layout changes. The height
+comes from the shell measurement the navbar itself uses, so the two cannot
+disagree. A harness check now measures the gap in pixels rather than trusting
+it: 16px clear.
+
 ## Known defect: the tutorial chapter tree sometimes does not move
 
 Clicking a lesson in the chapter tree (`components/tutorial/chapter-tree.tsx`)

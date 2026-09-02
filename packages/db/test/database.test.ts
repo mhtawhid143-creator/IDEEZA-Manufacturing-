@@ -189,7 +189,11 @@ describe('seed', () => {
     expect(await prisma.payout.count()).toBe(1);
     expect(await prisma.messageThread.count()).toBe(2);
     expect(await prisma.message.count()).toBe(2);
-    expect(await prisma.evidence.count()).toBe(2);
+    // Two on the order, plus the three the closed dispute carries: each side's
+    // statement and the document the shop attached to answer it.
+    expect(await prisma.evidence.count()).toBe(5);
+    expect(await prisma.refund.count()).toBe(1);
+    expect(await prisma.dispute.count()).toBe(1);
     expect(await prisma.domainEvent.count()).toBe(9);
     expect(await prisma.inventoryItem.count()).toBe(3);
   });

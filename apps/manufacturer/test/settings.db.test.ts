@@ -397,3 +397,55 @@ describe('what has happened', () => {
     }
   });
 });
+
+describe('a dispute the platform has answered', () => {
+  it('reads the resolved case with its outcome and the day it closed', async () => {
+    const rows = await settings.readDisputes(SHOP, userId);
+    const closed = rows.find((row) => row.resolvedAt !== null);
+    expect(closed).toBeDefined();
+    if (closed === undefined) return;
+
+    expect(closed.status).toBe('resolved');
+    // An outcome is what moved the money; a resolved case without one would be
+    // a decision nobody could act on.
+    expect(closed.outcome).not.toBeNull();
+    expect(closed.productName).toBeTruthy();
+    // The settings row is a summary — what it is, who raised it, and how it
+    // ended. The amounts belong on the case itself, where the argument is.
+    expect(closed.reason).toBeTruthy();
+    expect(closed.openedByYou).toBe(true);
+    expect(closed.resolvedAt?.getTime() ?? 0).toBeGreaterThan(closed.openedAt.getTime());
+  });
+
+  it('carries both sides’ statements and the records that travel with it', async () => {
+    const { getDisputeCase } = await import('../src/data/resolution.js');
+    const rows = await settings.readDisputes(SHOP, userId);
+    const closed = rows.find((row) => row.resolvedAt !== null);
+    if (closed === undefined) return;
+
+    const view = await getDisputeCase(SHOP, closed.id);
+    expect(view).not.toBeNull();
+    if (view === null) return;
+
+    // The buyer's account and the shop's, in the order they were written.
+    expect(view.statements.length).toBeGreaterThanOrEqual(2);
+    expect(view.statements.map((row) => row.authorRole)).toContain('buyer');
+    expect(view.statements.map((row) => row.authorRole)).toContain('manufacturer');
+    expect(view.statements[0]?.at.getTime()).toBeLessThanOrEqual(
+      view.statements[1]?.at.getTime() ?? Infinity,
+    );
+    // A document is a record, not a statement, and must not appear as one.
+    expect(view.records.length).toBeGreaterThan(0);
+    expect(view.records.some((row) => row.title.includes('Dimensional report'))).toBe(true);
+    expect(view.outcome).toBe('no_issue_found');
+    expect(view.resolvedAt).not.toBeNull();
+  });
+
+  it('will not show one shop another shop’s case', async () => {
+    const { getDisputeCase } = await import('../src/data/resolution.js');
+    const rows = await settings.readDisputes(SHOP, userId);
+    const mine = rows[0];
+    if (mine === undefined) return;
+    expect(await getDisputeCase(OTHER, mine.id)).toBeNull();
+  });
+});

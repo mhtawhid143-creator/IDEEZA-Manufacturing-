@@ -26,6 +26,9 @@ const T = {
   orderConfirmed: at('2026-05-05T08:26:00.000Z'),
   productionStarted: at('2026-05-06T07:00:00.000Z'),
   rfqClosed: at('2026-05-05T08:30:00.000Z'),
+  refundRequested: at('2026-05-08T10:15:00.000Z'),
+  shopAnswered: at('2026-05-08T14:40:00.000Z'),
+  disputeResolved: at('2026-05-12T09:05:00.000Z'),
 } as const;
 
 const ID = {
@@ -34,6 +37,11 @@ const ID = {
   memberA: 'seed_user_member_a',
   memberB: 'seed_user_member_b',
   addressBuyer: 'seed_address_buyer_primary',
+  refundClosed: 'seed_refund_closed',
+  disputeClosed: 'seed_dispute_closed',
+  evidenceBuyerStatement: 'seed_evidence_buyer_statement',
+  evidenceShopStatement: 'seed_evidence_shop_statement',
+  evidenceDisputePhoto: 'seed_evidence_dispute_photo',
   manufacturerA: 'seed_mfr_a',
   manufacturerB: 'seed_mfr_b',
   manufacturerC: 'seed_mfr_c',
@@ -1234,6 +1242,104 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       capturedAt: T.productionStarted,
     },
   });
+
+  // -- one disagreement, raised and answered -------------------------------
+  //
+  // A resolved case rather than an open one, on purpose. An open dispute moves
+  // its order to `disputed`, and this reference order is in production — which
+  // is exactly the shape a real closed case has: a buyer queried something,
+  // both sides wrote what they knew, operations found no fault, and the build
+  // carried on. It is also the only way the resolved view has anything to show.
+  //
+  // Nothing here decides anything the domain would not: the outcome and the
+  // date are operations' own, and the statements are `Evidence` rows, which is
+  // where the platform keeps what either side said.
+  await prisma.refund.upsert({
+    where: { id: ID.refundClosed },
+    update: {},
+    create: {
+      id: ID.refundClosed,
+      orderId: ID.order,
+      requestedById: ID.buyer,
+      status: 'rejected',
+      reason: 'missing_documentation',
+      currency: 'USD',
+      requestedAmountMinor: 45_000n,
+      description:
+        'The first shipment arrived without the measurement report we asked for in the requirements, so we could not book it in.',
+      createdAt: T.refundRequested,
+      manufacturerRespondedAt: T.shopAnswered,
+      decidedAt: T.disputeResolved,
+    },
+  });
+
+  await prisma.dispute.upsert({
+    where: { id: ID.disputeClosed },
+    update: {
+      status: 'resolved',
+      outcome: 'no_issue_found',
+      outcomeAmountMinor: 0n,
+      resolvedAt: T.disputeResolved,
+    },
+    create: {
+      id: ID.disputeClosed,
+      orderId: ID.order,
+      refundId: ID.refundClosed,
+      openedById: ID.memberA,
+      status: 'resolved',
+      reason: 'missing_documentation',
+      currency: 'USD',
+      claimedAmountMinor: 45_000n,
+      outcome: 'no_issue_found',
+      outcomeAmountMinor: 0n,
+      resolvedAt: T.disputeResolved,
+      createdAt: T.shopAnswered,
+    },
+  });
+
+  const disputeRecords = [
+    {
+      id: ID.evidenceBuyerStatement,
+      contextKind: 'dispute' as const,
+      kind: 'buyer_statement' as const,
+      title: 'The measurement report was missing',
+      submittedById: ID.buyer,
+      capturedAt: T.refundRequested,
+      payload: {
+        detail:
+          'We received 500 boards on the fifth and could not book them in, because the requirements asked for a dimensional report with the shipment and none was in the box.\n\nWe are not disputing the boards themselves. We are asking for the report, or for the part of the price that covers the inspection we then had to do ourselves.',
+      },
+    },
+    {
+      id: ID.evidenceShopStatement,
+      contextKind: 'dispute' as const,
+      kind: 'manufacturer_statement' as const,
+      title: 'The report went with the shipping documents',
+      submittedById: ID.memberA,
+      capturedAt: T.shopAnswered,
+      payload: {
+        detail:
+          'The dimensional report was uploaded to the order on the fourth, before the shipment left, and it is attached to the quality check stage. It travelled in the document wallet on the outside of the carton rather than inside it, which is how we ship it.\n\nWe have attached it to this case as well. Nothing was withheld and nothing is missing; if the wallet was lost in transit we will send the report again, and we would rather do that than argue about the price.',
+      },
+    },
+    {
+      id: ID.evidenceDisputePhoto,
+      contextKind: 'dispute' as const,
+      kind: 'measurement_data' as const,
+      title: 'Dimensional report, 500 boards',
+      submittedById: ID.memberA,
+      capturedAt: T.shopAnswered,
+    },
+  ];
+  for (const record of disputeRecords) {
+    await prisma.evidence.upsert({
+      where: { id: record.id },
+      update: {},
+      // One context only — the database enforces it. A statement on a case
+      // belongs to the case; naming the order as well would make it two things.
+      create: { ...record, disputeId: ID.disputeClosed },
+    });
+  }
 
   // -- a shortage the manufacturer hit in production ----------------------
   //
