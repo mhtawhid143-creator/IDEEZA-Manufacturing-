@@ -112,8 +112,17 @@ export default tseslint.config(
     },
   },
   {
-    // Repository tooling: node scripts, some of which drive a browser.
-    files: ['tools/**/*.mjs', 'tools/**/*.ts', '*.mjs', '*.ts'],
+    // Repository tooling: node scripts, some of which drive a browser. A
+    // package's own scripts directory is the same kind of thing — it runs in
+    // node during a build, not in the app.
+    files: [
+      'tools/**/*.mjs',
+      'tools/**/*.ts',
+      'packages/*/scripts/**/*.mjs',
+      'packages/*/scripts/**/*.ts',
+      '*.mjs',
+      '*.ts',
+    ],
     languageOptions: {
       globals: { ...NODE_GLOBALS, ...BROWSER_GLOBALS },
     },

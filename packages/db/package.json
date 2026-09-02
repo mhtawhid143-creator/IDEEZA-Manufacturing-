@@ -17,7 +17,7 @@
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate && prisma format --check",
     "migration:sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script",
-    "db:deploy": "prisma migrate deploy",
+    "db:deploy": "node scripts/migrate-deploy.mjs",
     "db:seed": "node --env-file=.env --import tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force --skip-seed",
     "migration:new": "node --import tsx scripts/migration-diff.ts"
