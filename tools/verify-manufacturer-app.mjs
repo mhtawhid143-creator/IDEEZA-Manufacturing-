@@ -1898,6 +1898,283 @@ const main = async () => {
       }
     }
 
+    // ------------------------------------------------ settings, all ten panes
+    //
+    // The design gives settings ten panes and every one of them used to be a
+    // placeholder that said so. Each is now read from a table and writes back,
+    // so the walk is: every pane opens, and the writes that matter land.
+    await page.goto(`${base}/settings`, { waitUntil: 'networkidle' });
+
+    const panes = [
+      ['Profile', 'My Profile'],
+      ['Company Information', 'Company Information'],
+      ['Security', 'Security Information'],
+      ['KYC Verification', 'KYC Verification'],
+      ['Get Paid', 'Get Paid'],
+      ['Notification', 'Notification Settings'],
+      ['Language', 'Language Settings'],
+      ['Profile locking', 'Profile locking'],
+      ['Policy & Privacy', 'Privacy'],
+      ['Activity', 'Activity'],
+      ['Dispute', 'Dispute'],
+    ];
+    const missing = [];
+    for (const [label, heading] of panes) {
+      await page.getByRole('button', { name: label, exact: true }).click();
+      await page.waitForTimeout(350);
+      const shown = await visible(
+        page.getByRole('heading', { name: heading, exact: true }).first(),
+        8_000,
+      );
+      if (!shown) missing.push(label);
+    }
+    check('every settings pane opens on its own heading', missing.length === 0, missing.join(', '));
+
+    // ── the person's name is stored, and the whole follows the halves ──────
+    await page.getByRole('button', { name: 'Profile', exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByLabel('First Name').fill('Ada');
+    await page.getByLabel('Last Name').fill('Byron');
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Update' }).click();
+    await page.waitForTimeout(2_000);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: 'Profile', exact: true }).click();
+    await page.waitForTimeout(400);
+    check(
+      'a name survives a reload',
+      (await page.getByLabel('First Name').inputValue()) === 'Ada' &&
+        (await page.getByLabel('Last Name').inputValue()) === 'Byron',
+    );
+
+    // ── a picture is a preset, and it can be taken off again ──────────────
+    await page.getByRole('button', { name: 'Choose Picture' }).click();
+    const avatarForm = page.getByRole('dialog', { name: 'Upload Profile Picture' });
+    check('the picture dialog offers presets rather than a file', await visible(avatarForm));
+    if (await visible(avatarForm)) {
+      await avatarForm.getByRole('radio', { name: 'Mint' }).click();
+      await avatarForm.getByRole('button', { name: 'Update' }).click();
+      await avatarForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(1_500);
+      check(
+        'and Remove is offered once one is chosen',
+        !(await page.getByRole('button', { name: 'Remove' }).first().isDisabled()),
+      );
+      await clearToasts(page);
+      await page.getByRole('button', { name: 'Remove' }).first().click();
+      await page.waitForTimeout(1_500);
+    }
+
+    // ── an email change needs the code for that address ───────────────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Change Email' }).click();
+    const emailForm = page.getByRole('dialog', { name: 'Change Email' });
+    if (await visible(emailForm)) {
+      await emailForm.getByLabel('New email address').fill('ada@precisioncircuit.test');
+      await emailForm.getByRole('button', { name: 'Continue' }).click();
+      await page.waitForTimeout(1_200);
+      // Nothing sends mail here, so the code is shown rather than claimed sent.
+      check(
+        'the code is shown rather than said to have been sent',
+        (await emailForm.innerText()).includes('No mail is sent in this build'),
+      );
+      await emailForm.getByLabel('Verification code').fill('000000');
+      await emailForm.getByRole('button', { name: 'Set Verification' }).click();
+      await page.waitForTimeout(1_500);
+      check(
+        'a wrong code is refused',
+        (await page.locator('body').innerText()).includes('does not match'),
+      );
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+    }
+
+    // ── the password ──────────────────────────────────────────────────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Security', exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Change Password' }).click();
+    const passwordForm = page.getByRole('dialog', { name: 'Update Password' });
+    check('the password dialog asks for the current one', await visible(passwordForm));
+    if (await visible(passwordForm)) {
+      await passwordForm.getByLabel('Current Password').fill('not-the-password');
+      await passwordForm.getByLabel('New Password').fill('a-long-enough-one');
+      await passwordForm.getByLabel('Confirm Password').fill('a-long-enough-one');
+      await passwordForm.getByRole('button', { name: 'Update' }).click();
+      await page.waitForTimeout(2_000);
+      // The current password has to be right, or knowing the screen would be
+      // enough to change the lock.
+      check(
+        'and refuses a wrong current password',
+        (await page.locator('body').innerText()).includes('not your current password'),
+      );
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(400);
+    }
+
+    // ── the switches ──────────────────────────────────────────────────────
+    await clearToasts(page);
+    const alerts = page.getByRole('switch', { name: 'Login alerts' });
+    if ((await alerts.count()) > 0) {
+      await alerts.click();
+      await page.waitForTimeout(2_000);
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'Security', exact: true }).click();
+      await page.waitForTimeout(400);
+      check(
+        'a security switch survives a reload',
+        (await page.getByRole('switch', { name: 'Login alerts' }).getAttribute('aria-checked')) ===
+          'true',
+      );
+    }
+
+    await clearToasts(page);
+    await page.getByRole('button', { name: /Where you logged in/ }).click();
+    const deviceList = page.getByRole('dialog', { name: 'Where you logged in ?' });
+    check('the devices dialog names this session', await visible(deviceList));
+    if (await visible(deviceList)) {
+      // Signing out of the device you are asking from is refused, so the row
+      // for it carries no Sign out at all.
+      check(
+        'and the current one is marked rather than offered a sign out',
+        (await deviceList.innerText()).includes('Current Login'),
+      );
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(400);
+    }
+
+    // ── notifications: the mandatory one cannot be switched off ───────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Notification', exact: true }).click();
+    await page.waitForTimeout(300);
+    // Scoped to the accordion: the rail has a Dispute row of its own, and
+    // clicking that one leaves this pane entirely.
+    const topics = page.getByRole('group', { name: 'Notification topics' });
+    await topics.getByRole('button', { name: /^Dispute/ }).first().click();
+    await page.waitForTimeout(400);
+    const disputeWeb = page.getByRole('switch', { name: 'Dispute by Web Notification' });
+    const disputeEmail = page.getByRole('switch', { name: 'Dispute by Email' });
+    check(
+      'a notification the platform depends on is locked on',
+      (await disputeWeb.count()) === 1 && (await disputeWeb.isDisabled()),
+    );
+    if ((await disputeEmail.count()) === 1) {
+      await disputeEmail.click();
+      await page.waitForTimeout(2_000);
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'Notification', exact: true }).click();
+      await page.waitForTimeout(300);
+      await topics.getByRole('button', { name: /^Dispute/ }).first().click();
+      await page.waitForTimeout(400);
+      check(
+        'and one that is a choice is remembered',
+        (await page
+          .getByRole('switch', { name: 'Dispute by Email' })
+          .getAttribute('aria-checked')) === 'false',
+      );
+    }
+
+    // ── language, locking and privacy all write ───────────────────────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Language', exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByLabel('Account Language').selectOption('bn-BD');
+    await page.waitForTimeout(2_000);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: 'Language', exact: true }).click();
+    await page.waitForTimeout(400);
+    check(
+      'the language choice is stored',
+      (await page.getByLabel('Account Language').inputValue()) === 'bn-BD',
+    );
+
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Profile locking', exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole('switch', { name: 'Lock this profile' }).click();
+    await page.waitForTimeout(2_000);
+    check(
+      'locking the profile says what it costs',
+      await visible(page.getByText('Nothing will reach you while this is on')),
+    );
+    await clearToasts(page);
+    await page.getByRole('switch', { name: 'Lock this profile' }).click();
+    await page.waitForTimeout(2_000);
+
+    // ── KYC: submitted, never self-approved ───────────────────────────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'KYC Verification', exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByLabel('Full Legal Name').fill('Ada Byron');
+    await page.getByLabel('Country of Residence').selectOption('BD');
+    await page.getByLabel(/Marketplace Seller Terms/).check();
+    await page.getByRole('button', { name: 'Submit for Review' }).click();
+    await page.waitForTimeout(2_500);
+    const kycText = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+    check(
+      'a KYC submission goes to IDEEZA rather than approving itself',
+      /In review|With IDEEZA/.test(kycText) && !/Approved/.test(kycText),
+      kycText.slice(kycText.indexOf('Verify Your Identity'), kycText.indexOf('Verify Your Identity') + 70),
+    );
+
+    // ── a payout method, and only its last four digits ────────────────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: 'Get Paid', exact: true }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Add method' }).click();
+    const methodForm = page.getByRole('dialog', { name: 'Add method' });
+    check('the payout form opens', await visible(methodForm));
+    if (await visible(methodForm)) {
+      await methodForm.getByLabel('Name on the account').fill('PrecisionCircuit Manufacturing Ltd.');
+      await methodForm.getByLabel('Account number').fill('4321876500991234');
+      await methodForm.getByLabel('Bank', { exact: true }).fill('Bank of China');
+      await methodForm.getByRole('button', { name: 'Add', exact: true }).click();
+      await methodForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(2_000);
+      const paidText = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+      check(
+        'the method is added, showing four digits and no more',
+        /1234/.test(paidText) && !/4321876500991234/.test(paidText),
+      );
+      check('and the first one is the default', /Default/.test(paidText));
+
+      await clearToasts(page);
+      check(
+        'and it can be taken off again',
+        await removeCard(page, page.locator('main ul > li'), '1234'),
+      );
+    }
+
+    // ── tax ───────────────────────────────────────────────────────────────
+    await clearToasts(page);
+    await page.getByRole('button', { name: /Tax Residence/ }).click().catch(() => undefined);
+    const residenceForm = page.getByRole('dialog', { name: 'Tax Residence' });
+    if (await visible(residenceForm, 6_000)) {
+      await residenceForm.getByLabel('Country of tax residence').selectOption('BD');
+      await residenceForm.getByRole('button', { name: 'Save' }).click();
+      await residenceForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
+      await page.waitForTimeout(1_500);
+      check(
+        'the tax residence is stored',
+        (await page.locator('main').innerText()).includes('BD'),
+      );
+    }
+
+    // ── activity is the platform's own events ─────────────────────────────
+    await page.getByRole('button', { name: 'Activity', exact: true }).click();
+    await page.waitForTimeout(400);
+    check(
+      'activity reads the events the platform already writes',
+      (await page.locator('main').innerText()).includes('Actions you have done in IDEEZA'),
+    );
+
+    await page.getByRole('button', { name: 'Dispute', exact: true }).click();
+    await page.waitForTimeout(400);
+    check(
+      'the dispute pane says who may decide one',
+      (await page.locator('main').innerText()).includes('Disputes on your orders'),
+    );
+
     // ------------------------------------------ reporting a problem, end to end
     //
     // The rail's last row used to read "Help and Feedback — n/a". It opens the

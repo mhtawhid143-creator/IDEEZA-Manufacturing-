@@ -28,6 +28,7 @@ export * from './components/stepper.js';
 export * from './components/timeline.js';
 export * from './components/tabs.js';
 export * from './components/breadcrumbs.js';
+export * from './components/accordion.js';
 export * from './components/dropdown-menu.js';
 export * from './components/overlay.js';
 export * from './components/tooltip.js';

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import {
+  Accordion,
   Alert,
   Avatar,
   Badge,
@@ -546,5 +547,49 @@ describe('ChoiceChips', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Pick at least one.');
+  });
+});
+
+describe('Accordion', () => {
+  it('opens and closes a row, and says so to a screen reader', async () => {
+    render(
+      <Accordion
+        label="Notification topics"
+        items={[
+          { id: 'blog', title: 'Blog', description: 'Push, Email & Mobile App', content: <p>Where you receive these</p> },
+          { id: 'other', title: 'Other', content: <p>Second panel</p> },
+        ]}
+      />,
+    );
+
+    const blog = screen.getByRole('button', { name: /Blog/ });
+    expect(blog.getAttribute('aria-expanded')).toBe('false');
+    // Closed rows are hidden rather than unmounted, so the panel keeps whatever
+    // was typed into it while it was open.
+    // Closed rows keep their content in the DOM but hidden, so a panel does not
+    // lose what was typed into it while it was open.
+    expect(screen.getByText('Where you receive these').closest('[role="region"]')?.hasAttribute('hidden')).toBe(true);
+
+    await userEvent.click(blog);
+    expect(blog.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Where you receive these').closest('[role="region"]')?.hasAttribute('hidden')).toBe(false);
+
+    await userEvent.click(blog);
+    expect(blog.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('leaves other rows alone, unless it was asked for one at a time', async () => {
+    const items = [
+      { id: 'a', title: 'First', content: <p>Panel A</p> },
+      { id: 'b', title: 'Second', content: <p>Panel B</p> },
+    ];
+    const { unmount } = render(<Accordion label="Many" items={items} initiallyOpen={['a']} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Second' }));
+    expect(screen.getByRole('button', { name: 'First' }).getAttribute('aria-expanded')).toBe('true');
+    unmount();
+
+    render(<Accordion label="One" items={items} initiallyOpen={['a']} single />);
+    await userEvent.click(screen.getByRole('button', { name: 'Second' }));
+    expect(screen.getByRole('button', { name: 'First' }).getAttribute('aria-expanded')).toBe('false');
   });
 });

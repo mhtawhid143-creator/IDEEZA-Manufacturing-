@@ -843,26 +843,51 @@ sessions, deactivate and delete) and policy and privacy (report, activity).
 | # | Sub-task | State |
 | --- | --- | --- |
 | 14.1 | The section rail and one pane, as the design has it | done |
-| 14.2 | Company information, stored — an order ships to it | done |
-| 14.3 | Your account: who is signed in, and whether they own the shop | done |
-| 14.4 | Notification switches, with the mandatory ones marked as such | prototype — switches held in the screen |
-| 14.5 | Language and region format | prototype — no preferences table |
-| 14.6 | KYC, get paid, and tax details | prototype — no provider, no document upload, stated on each pane |
-| 14.7 | Security: password, two-step verification, login alerts, sessions | prototype — states what the auth package does and does not do |
-| 14.8 | Policy, privacy, activity, and the shop's open cases | done, read from real rows |
+| 14.2 | Company information and social links, stored | done |
+| 14.3 | Profile: name, picture, email and mobile with verification | done |
+| 14.4 | Notification switches — six topics by three channels, mandatory ones locked | done, `NotificationChoice` |
+| 14.5 | Language and date format | done, `UserPreference` |
+| 14.6 | KYC levels 1-3, payout methods, tax residence and identification | done, `KycSubmission`, `PayoutMethod`, `TaxProfile` |
+| 14.7 | Security: password, two-step, security question, login alerts, sessions, deactivate, delete | done, `UserSecurity` |
+| 14.8 | Policy, privacy, activity, and the shop's disputes | done, read from real rows |
 
 **Decisions and corrections made here**
 
-- **Company information is stored, because an order ships to it.** It is the one
-  settings pane that writes, and it validates what a shipment needs.
+- **All ten panes write.** Every switch, choice and form on this screen is a
+  row: the person's name and picture, their password and devices, what they are
+  told about and where, which language they read, what is shared, their identity
+  checks, their payout methods and tax details. Nothing is held in a component
+  with a notice under it any more.
+- **A secret is never stored as itself.** A security answer is scrypt-hashed
+  with the parameters the password uses; an account number and a tax number
+  keep their last four characters and nothing else. What is not stored cannot
+  leak, and four is enough to show somebody which one they gave.
+- **A verification code is shown, not claimed to have been sent.** There is no
+  mail or SMS service in this build, so the dialog says so and prints the code
+  for that address. "Check your inbox" would send a person looking for
+  something that was never posted.
+- **A deletion is a request.** An account may be the counterparty to an order
+  with money in escrow, and the platform cannot honour a delivery for a shop
+  that no longer exists, so ops answers it. A deactivation is dated and
+  reversible, and says that orders in production carry on.
+- **Two-step verification stores the choice and admits the gap.** Signing in
+  still asks for the password alone, because sending the second step needs the
+  service that does not exist. The pane says which half works.
+- **Activity is the platform's own events.** `DomainEvent` is append-only and
+  written in the same transaction as the act it records, so it is read directly
+  rather than kept again for this screen — a second log would be a second
+  story.
+- **Company information is stored, because an order ships to it.** It is also
+  what a buyer reads, and it validates what a shipment needs.
 - **A mandatory notification is marked, not silently forced.** A shop cannot turn
   off "a buyer decides on your quote" — the switch is locked with the reason
   beside it, rather than appearing to be a choice.
-- **Nothing here fakes a verification.** KYC levels, tax residence and payment
-  methods are laid out with what each unlocks, and each pane says no provider is
-  connected and no document can be uploaded in this build. A settings screen that
-  reports "verified" without a verification is the worst possible lie for this
-  platform to tell.
+- **Nothing here fakes a verification.** A shop submits an identity check and
+  IDEEZA answers it; no path in the product marks one approved, and level two
+  refuses to open until level one is. No identity document is uploaded or kept —
+  the submission records the names of what was offered and says so. A settings
+  screen that reports "verified" without a verification is the worst possible
+  lie for this platform to tell.
 - **The dispute and activity panes read real rows.** Open case count comes from
   the same cases as M09, so settings cannot disagree with the order screen.
 

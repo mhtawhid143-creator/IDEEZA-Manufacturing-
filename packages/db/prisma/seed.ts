@@ -137,15 +137,33 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
   const users = [
     { id: ID.buyer, email: 'buyer@example.test', displayName: 'Nova Robotics (Buyer)', role: 'buyer' as const },
     { id: ID.ops, email: 'ops@example.test', displayName: 'IDEEZA Operations', role: 'ops_admin' as const },
-    { id: ID.memberA, email: 'ops@precisioncircuit.test', displayName: 'PrecisionCircuit Operator', role: 'manufacturer' as const },
-    { id: ID.memberB, email: 'ops@shenzhenboards.test', displayName: 'Shenzhen Boards Operator', role: 'manufacturer' as const },
+    {
+      id: ID.memberA,
+      email: 'ops@precisioncircuit.test',
+      displayName: 'PrecisionCircuit Operator',
+      // The two halves the Profile pane edits, so the pane is not empty on a
+      // fresh database. `displayName` stays what every other screen reads.
+      firstName: 'PrecisionCircuit',
+      lastName: 'Operator',
+      role: 'manufacturer' as const,
+    },
+    {
+      id: ID.memberB,
+      email: 'ops@shenzhenboards.test',
+      displayName: 'Shenzhen Boards Operator',
+      firstName: 'Shenzhen Boards',
+      lastName: 'Operator',
+      role: 'manufacturer' as const,
+    },
     { id: ID.creatorA, email: 'studio@asterlabs.test', displayName: 'Aster Labs', role: 'buyer' as const },
     { id: ID.creatorB, email: 'studio@kitesystems.test', displayName: 'Kite Systems', role: 'buyer' as const },
   ];
   for (const user of users) {
     await prisma.user.upsert({
       where: { id: user.id },
-      update: { email: user.email, displayName: user.displayName, role: user.role },
+      // Everything but the id, so a field added to a seeded user later is
+      // applied to a database that already has the row.
+      update: (({ id, ...rest }) => rest)(user),
       create: { ...user, createdAt: T.requirementsLocked },
     });
   }

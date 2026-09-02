@@ -52,6 +52,7 @@ describe('migrations apply to a clean database', () => {
       '20260901125643_capability_verification',
       '20260901151917_certifications_and_equipment',
       '20260901154826_member_title',
+      '20260902042510_settings_flows',
     ]);
   });
 
@@ -87,7 +88,10 @@ describe('migrations apply to a clean database', () => {
     // certification tab: the design shows a certificate card with its own
     // standing, and an equipment count that is a different question from what
     // a machine can do.
-    expect(tables).toBe(56);
+    // The settings flows brought UserSecurity, UserPreference,
+    // NotificationChoice, KycSubmission, PayoutMethod and TaxProfile: ten panes
+    // that all write something, and none of them a switch held in a component.
+    expect(tables).toBe(62);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with
@@ -98,7 +102,9 @@ describe('migrations apply to a clean database', () => {
     // CertificationStatus arrived with the same tab: a shop can claim a
     // certificate, IDEEZA can verify one, and IDEEZA can issue one, and those
     // are three different claims.
-    expect(enums).toBe(52);
+    // TwoStepMethod, NotificationTopic, NotificationChannel, KycStatus and
+    // PayoutMethodKind arrived with them.
+    expect(enums).toBe(57);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

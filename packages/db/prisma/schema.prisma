@@ -453,12 +453,23 @@ enum DomainEventKind {
 // ---------------------------------------------------------------------------
 
 model User {
-  id          String    @id
-  email       String    @unique
-  displayName String
-  role        ActorRole
-  createdAt   DateTime  @default(now())
-  suspendedAt DateTime?
+  id              String    @id
+  email           String    @unique
+  displayName     String
+  /// The two halves the Profile pane edits. `displayName` stays the one name
+  /// every other screen shows, and is kept as "first last" when both are set —
+  /// two sources for one name is how a profile ends up disagreeing with itself.
+  firstName       String?
+  lastName        String?
+  phone           String?
+  /// Set when the code sent to that number came back correct.
+  phoneVerifiedAt DateTime?
+  /// One of the preset avatars, by name. Nothing uploads a file yet, so a photo
+  /// of a person is not stored anywhere — a preset is a choice, not a file.
+  avatarPreset    String?
+  role            ActorRole
+  createdAt       DateTime  @default(now())
+  suspendedAt     DateTime?
 
   addresses         PostalAddress[]
   memberships       ManufacturerMember[]
@@ -480,8 +491,192 @@ model User {
   problemReports    ProblemReport[]
   credential        UserCredential?
   sessions          Session[]
+  security          UserSecurity?
+  preference        UserPreference?
+  noticeChoices     NotificationChoice[]
+  kycSubmissions    KycSubmission[]
+  taxProfile        TaxProfile?
 
   @@index([role])
+}
+
+/// How a person has chosen to protect their account.
+///
+/// Separate from `UserCredential`, which holds the password itself: this is the
+/// set of switches the Security pane draws, and none of them may be read as a
+/// permission. What an actor may do is decided by `ActorRole` and the route
+/// rules, as it always was.
+model UserSecurity {
+  userId String @id
+
+  twoStepEnabled Boolean       @default(false)
+  twoStepMethod  TwoStepMethod @default(email)
+
+  /// The question and the answer's hash — never the answer. Same scrypt
+  /// parameters as the password, because an answer is a password with a hint.
+  securityQuestion   String?
+  securityAnswerHash String?
+
+  loginAlerts Boolean @default(false)
+
+  /// A deactivation is reversible and dated; a deletion request is a request,
+  /// because an account with money in escrow cannot simply vanish.
+  deactivatedAt       DateTime?
+  deactivateReason    String?
+  reactivateAfter     DateTime?
+  deletionRequestedAt DateTime?
+  deletionReason      String?
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TwoStepMethod {
+  email
+  sms
+}
+
+/// What a person has chosen about language, formats and what is shared.
+model UserPreference {
+  userId String @id
+
+  /// A BCP 47 tag, so the value is the one `Intl` already understands.
+  language   String @default("en-US")
+  dateLocale String @default("en-US")
+
+  /// The Profile locking pane: nothing else may see this profile while it is on.
+  profileLocked Boolean @default(false)
+
+  shareActivityOnFacebook   Boolean @default(false)
+  publishWishlistOnFacebook Boolean @default(false)
+  linkWithSearchEngine      Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// What a person wants to hear about, and where.
+///
+/// A row per topic and channel rather than a column per pair: the design's
+/// accordions are topics and its toggles are channels, and a new topic should
+/// be a row rather than a migration. `locked` is the design's "at least one is
+/// mandatory" — an order moving is not something a shop may switch off.
+model NotificationChoice {
+  id      String              @id
+  userId  String
+  topic   NotificationTopic
+  channel NotificationChannel
+  enabled Boolean             @default(true)
+  locked  Boolean             @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topic, channel])
+  @@index([userId])
+}
+
+enum NotificationTopic {
+  product
+  message
+  dispute
+  blog
+  policy_community
+  other
+}
+
+enum NotificationChannel {
+  web
+  email
+  mobile
+}
+
+/// Where IDEEZA's identity check has got to, per level.
+///
+/// Three levels, as the design has them: level 1 activates selling, level 2
+/// unlocks at a transaction total, level 3 above that again. IDEEZA decides;
+/// a shop submits. No document is stored — only the names of what was offered,
+/// because holding somebody's passport scan is not something this build does.
+model KycSubmission {
+  id     String @id
+  userId String
+  level  Int
+
+  status       KycStatus @default(not_submitted)
+  rejectReason String?
+
+  fullLegalName       String?
+  contactEmail        String?
+  mobileNumber        String?
+  countryOfResidence  String?
+  agreedToTerms       Boolean   @default(false)
+  dateOfBirth         DateTime?
+  residentialAddress  String?
+  taxResidencyCountry String?
+  documentNames       String[]  @default([])
+
+  submittedAt DateTime?
+  decidedAt   DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, level])
+  @@index([userId])
+}
+
+enum KycStatus {
+  not_submitted
+  in_review
+  approved
+  rejected
+}
+
+/// Where a shop's balance is paid out to.
+///
+/// Only the last four digits of an account number are kept. The rest is not
+/// needed to show a shop which account it chose, and what is not stored cannot
+/// leak.
+model PayoutMethod {
+  id             String @id
+  manufacturerId String
+
+  kind         PayoutMethodKind
+  label        String
+  accountName  String
+  accountLast4 String           @db.VarChar(4)
+  bankName     String?
+  swiftCode    String?
+  countryCode  String           @db.Char(2)
+  isDefault    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+
+  manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  @@index([manufacturerId, isDefault])
+}
+
+enum PayoutMethodKind {
+  direct_bank
+  swift
+}
+
+/// What IDEEZA needs to know before it withholds tax from a payout.
+model TaxProfile {
+  userId String @id
+
+  residenceCountry String? @db.Char(2)
+  /// The design asks this before it asks for a number, because the form after
+  /// it is a different form.
+  isUsPerson       Boolean @default(false)
+  taxIdKind        String?
+  taxIdLast4       String? @db.VarChar(4)
+
+  submittedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// Sign-in secret for a user. Kept out of the User row so that reading a user
@@ -590,6 +785,7 @@ model ManufacturerProfile {
 
   capability       ManufacturerCapability?
   machines         ShopMachine[]
+  payoutMethods    PayoutMethod[]
   certificates     ShopCertification[]
   equipment        ShopEquipment[]
   capabilitySheets ShopCapabilitySheet[]
