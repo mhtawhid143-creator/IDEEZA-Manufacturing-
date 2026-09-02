@@ -3,6 +3,7 @@ import {
   asId,
   assertAcceptableRefundAmount,
   disputeMachine,
+  orderMachine,
   refundMachine,
   type ManufacturerId,
   type OrderId,
@@ -333,7 +334,7 @@ export const challengeRefund = async (
       currency: true,
       reason: true,
       requestedAmountMinor: true,
-      order: { select: { buyerId: true } },
+      order: { select: { buyerId: true, status: true } },
     },
   });
   if (refund === null) return { ok: false, message: 'That claim is not on your order.' };
@@ -383,6 +384,22 @@ export const challengeRefund = async (
         currency: refund.currency,
         claimedAmountMinor: refund.requestedAmountMinor,
         createdAt: now,
+      },
+    });
+    // The order carries the dispute too, in the same transaction that opens it.
+    //
+    // Without this a case is open while the order still reads "delivered": the
+    // orders list cannot be filtered to find it, the counter that says how many
+    // orders need attention counts none, and two records disagree about the
+    // same order. The transition is the order machine's own, so an order that
+    // may not be disputed from where it stands refuses rather than being
+    // quietly forced.
+    await transaction.manufacturingOrder.update({
+      where: { id: refund.orderId },
+      data: {
+        status: applyTransition(orderMachine, refund.order.status, 'disputed', {
+          actorRole: 'manufacturer',
+        }),
       },
     });
     await transaction.evidence.create({
