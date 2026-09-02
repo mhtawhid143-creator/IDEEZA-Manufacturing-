@@ -145,6 +145,8 @@ const OrdersPage = async ({
               productName: row.productName,
               buyerName: row.buyerName,
               status: row.status,
+              disputeId: row.disputeId,
+              disputeStatus: row.disputeStatus,
               quantity: row.quantity,
               currency: row.currency,
               unitPriceMajor: major(row.unitPriceMinor),

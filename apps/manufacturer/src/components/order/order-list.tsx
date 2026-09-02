@@ -5,6 +5,7 @@ import { orderReference } from '@ideeza/domain';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
+  Badge,
   DataTable,
   EmptyState,
   FormField,
@@ -23,6 +24,8 @@ export interface OrderListRow {
   readonly productName: string;
   readonly buyerName: string;
   readonly status: string;
+  readonly disputeId: string | null;
+  readonly disputeStatus: string | null;
   readonly quantity: number;
   readonly currency: string;
   readonly unitPriceMajor: string;
@@ -196,6 +199,17 @@ export const OrderList = ({
             cell: (row) => (
               <div className="flex flex-col items-start gap-1">
                 <StatusChip status={row.status} />
+                {/*
+                  A dispute is not always the order's status: one can be raised
+                  and answered while production carries on, so the order chip
+                  alone would not say a case exists. This does, and says which
+                  half of its life it is in.
+                */}
+                {row.disputeId !== null && (
+                  <Badge tone={row.disputeStatus === 'resolved' ? 'neutral' : 'danger'}>
+                    {row.disputeStatus === 'resolved' ? 'Dispute closed' : 'Dispute open'}
+                  </Badge>
+                )}
                 {row.openAlerts > 0 && <Tag tone="danger">Shortage</Tag>}
                 {!row.fundingSecured && row.status === 'awaiting_payment' && (
                   <Text tone="muted" size="xs">
@@ -253,9 +267,23 @@ export const OrderList = ({
               <RowMenu
                 label={`Actions for ${row.productName}`}
                 items={[
+                  // The open case first, because it is the only row action that
+                  // is waiting on the shop rather than merely available to it.
+                  ...(row.disputeId === null
+                    ? []
+                    : [
+                        {
+                          id: 'dispute',
+                          label:
+                            row.disputeStatus === 'resolved'
+                              ? 'Read the closed dispute'
+                              : 'Open dispute',
+                          href: `/orders/${row.orderId}/disputes/${row.disputeId}`,
+                        },
+                      ]),
                   {
                     id: 'production',
-                    label: 'Production stages',
+                    label: 'View order details',
                     href: `/orders/${row.orderId}`,
                   },
                   {

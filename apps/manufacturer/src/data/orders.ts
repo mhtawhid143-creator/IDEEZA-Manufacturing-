@@ -35,6 +35,16 @@ export interface OrderRow {
   readonly completedStages: number;
   readonly totalStages: number;
   readonly openAlerts: number;
+  /**
+   * The case on this order, when there is one.
+   *
+   * An order carries its own status, but a dispute is not always the order's
+   * status — one can be raised and answered while production continues. So the
+   * row says whether a case exists and where it stands, and the list can act on
+   * it without a second query per row.
+   */
+  readonly disputeId: string | null;
+  readonly disputeStatus: string | null;
   readonly createdAt: Date;
   readonly confirmedAt: Date | null;
   readonly estimatedShipAt: Date | null;
@@ -87,6 +97,10 @@ const orderInclude = {
   payment: { select: { status: true } },
   stages: { orderBy: { position: 'asc' as const } },
   _count: { select: { alerts: true } },
+  disputes: {
+    orderBy: { createdAt: 'desc' as const },
+    select: { id: true, status: true, resolvedAt: true },
+  },
 } as const;
 
 /**
@@ -185,6 +199,14 @@ export const listOrders = async (
       totalStages: Math.max(stages.length, CANONICAL_STAGES.length),
       openAlerts:
         openAlertCounts.find((row) => row.orderId === order.id)?._count._all ?? 0,
+      // Open first: an unanswered case is the one a shop has to act on, and a
+      // resolved one is a record it may still want to read.
+      disputeId:
+        (order.disputes.find((entry) => entry.resolvedAt === null) ?? order.disputes[0])?.id ??
+        null,
+      disputeStatus:
+        (order.disputes.find((entry) => entry.resolvedAt === null) ?? order.disputes[0])
+          ?.status ?? null,
       createdAt: order.createdAt,
       confirmedAt: order.confirmedAt,
       estimatedShipAt: schedule?.estimatedShipAt ?? null,
@@ -512,6 +534,12 @@ export const getOrder = async (
     completedStages: stages.filter((stage) => stage.status === 'completed').length,
     totalStages: stages.length,
     openAlerts,
+    disputeId:
+      (order.disputes.find((entry) => entry.resolvedAt === null) ?? order.disputes[0])?.id ??
+      null,
+    disputeStatus:
+      (order.disputes.find((entry) => entry.resolvedAt === null) ?? order.disputes[0])?.status ??
+      null,
     stages,
     evidence: evidence.map((record) => ({
       id: record.id,

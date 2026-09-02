@@ -943,6 +943,196 @@ const refundClaimForShopA = async (): Promise<void> => {
   });
 };
 
+/**
+ * An order with a dispute nobody has answered yet.
+ *
+ * Its own order rather than a dispute hung on somebody else's, because a
+ * dispute moves the order it is on to `disputed` — putting one on the delivered
+ * order or the one in production would leave a status that contradicts the case
+ * beside it, and the panels read both.
+ *
+ * The buyer opened it, so it is `open` rather than `responded`: that is the
+ * state a shop has to act on, and the only one that shows the dashboard's
+ * banner, the row's marker and the case's reply form.
+ */
+const disputedOrderForShopA = async (): Promise<void> => {
+  const day = 24 * 60 * 60 * 1000;
+  const openedAt = hoursAgo(20);
+  const confirmedAt = hoursAgo(30 * 24);
+  const quantity = 200;
+  const unitPriceMinor = 41_000n / 200n;
+  const total = 41_000n;
+
+  // The same package and requirements as the beacon board, sent again as its
+  // own request. A buyer ordering a repeat build does exactly that, and it
+  // saves inventing a second product to argue about.
+  await prisma.rfq.upsert({
+    where: { id: 'mfrfix_rfq_disputed' },
+    update: { status: 'closed' },
+    create: {
+      id: 'mfrfix_rfq_disputed',
+      buyerId: BUYER,
+      packageId: 'mfrfix_package_beacon',
+      requirementsId: 'mfrfix_requirements_beacon',
+      status: 'closed',
+      quantity,
+      requestedServices: ['pcb_fabrication', 'parts_sourcing', 'pcb_assembly'],
+      volumeTiers: [],
+      currency: 'USD',
+      shipToLine1: '20/3, Sector 9',
+      shipToCity: 'Dhaka',
+      shipToPostalCode: '1230',
+      shipToCountryCode: 'BD',
+      neededBy: new Date(confirmedAt.getTime() + 30 * day),
+      submittedAt: new Date(confirmedAt.getTime() - 5 * day),
+      closedAt: confirmedAt,
+      createdAt: new Date(confirmedAt.getTime() - 5 * day),
+      recipients: {
+        create: [
+          {
+            id: 'mfrfix_recipient_disputed',
+            manufacturerId: MANUFACTURER_A,
+            status: 'quoted',
+            viewedAt: new Date(confirmedAt.getTime() - 4 * day),
+            quotedAt: new Date(confirmedAt.getTime() - 3 * day),
+            createdAt: new Date(confirmedAt.getTime() - 4 * day),
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.quote.upsert({
+    where: { id: 'mfrfix_quote_disputed' },
+    update: { status: 'accepted' },
+    create: {
+      id: 'mfrfix_quote_disputed',
+      rfqId: 'mfrfix_rfq_disputed',
+      manufacturerId: MANUFACTURER_A,
+      status: 'accepted',
+      version: 1,
+      acceptedForRfqId: 'mfrfix_rfq_disputed',
+      quantity,
+      currency: 'USD',
+      unitPriceMinor,
+      totalPriceMinor: total,
+      shippingEstimateMinor: 5_200n,
+      toolingSetupCostMinor: 0n,
+      leadTimeDays: 21,
+      materialProcessNotes: 'FR-4 TG150, ENIG, SMT both sides, AOI on 100%.',
+      warrantyTerms: '12 months against manufacturing defects.',
+      terms: '100% on confirmation. Ex-works Dhaka.',
+      expiresAt: new Date(confirmedAt.getTime() + 30 * day),
+      submittedAt: new Date(confirmedAt.getTime() - 3 * day),
+      acceptedAt: confirmedAt,
+      createdAt: new Date(confirmedAt.getTime() - 3 * day),
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { id: 'mfrfix_payment_disputed' },
+    update: { status: 'secured' },
+    create: {
+      id: 'mfrfix_payment_disputed',
+      quoteId: 'mfrfix_quote_disputed',
+      buyerId: BUYER,
+      status: 'secured',
+      method: 'card',
+      currency: 'USD',
+      goodsAmountMinor: total,
+      shippingAmountMinor: 5_200n,
+      taxAmountMinor: 0n,
+      platformFeeMinor: (total / 100n) * 3n,
+      discountAmountMinor: 0n,
+      totalChargedMinor: total + 5_200n + (total / 100n) * 3n,
+      securedAt: confirmedAt,
+      createdAt: confirmedAt,
+    },
+  });
+
+  await prisma.manufacturingOrder.upsert({
+    where: { id: 'mfrfix_order_disputed' },
+    update: { status: 'disputed' },
+    create: {
+      id: 'mfrfix_order_disputed',
+      rfqId: 'mfrfix_rfq_disputed',
+      acceptedQuoteId: 'mfrfix_quote_disputed',
+      buyerId: BUYER,
+      manufacturerId: MANUFACTURER_A,
+      paymentId: 'mfrfix_payment_disputed',
+      // The case is open, so the order is disputed. Two records that disagree
+      // about the same order would each be evidence against the other.
+      status: 'disputed',
+      shipToLine1: '20/3, Sector 9',
+      shipToCity: 'Dhaka',
+      shipToPostalCode: '1230',
+      shipToCountryCode: 'BD',
+      shippingChoice: 'standard',
+      confirmedAt,
+      deliveredAt: hoursAgo(3 * 24),
+      createdAt: confirmedAt,
+    },
+  });
+
+  await prisma.acceptedQuoteSnapshot.upsert({
+    where: { orderId: 'mfrfix_order_disputed' },
+    update: {},
+    create: {
+      orderId: 'mfrfix_order_disputed',
+      quoteId: 'mfrfix_quote_disputed',
+      quoteVersion: 1,
+      manufacturerId: MANUFACTURER_A,
+      quantity,
+      currency: 'USD',
+      unitPriceMinor,
+      totalPriceMinor: total,
+      shippingEstimateMinor: 5_200n,
+      toolingSetupCostMinor: 0n,
+      leadTimeDays: 21,
+      materialProcessNotes: 'FR-4 TG150, ENIG, SMT both sides, AOI on 100%.',
+      warrantyTerms: '12 months against manufacturing defects.',
+      terms: '100% on confirmation. Ex-works Dhaka.',
+      requirements: { quantity, material: 'FR-4 TG150', revision: 'D' },
+      approvedSubstitutionIds: [],
+      checksum: 'mfrfixchecksum_disputed',
+      capturedAt: confirmedAt,
+    },
+  });
+
+  await prisma.dispute.upsert({
+    where: { id: 'mfrfix_dispute_open' },
+    update: { status: 'open' },
+    create: {
+      id: 'mfrfix_dispute_open',
+      orderId: 'mfrfix_order_disputed',
+      openedById: BUYER,
+      status: 'open',
+      reason: 'wrong_specification',
+      currency: 'USD',
+      claimedAmountMinor: 18_000n,
+      createdAt: openedAt,
+    },
+  });
+
+  await prisma.evidence.upsert({
+    where: { id: 'mfrfix_dispute_open_statement' },
+    update: {},
+    create: {
+      id: 'mfrfix_dispute_open_statement',
+      contextKind: 'dispute',
+      kind: 'buyer_statement',
+      title: 'The silkscreen is the wrong revision',
+      disputeId: 'mfrfix_dispute_open',
+      payload: {
+        detail:
+          'The boards carry revision C on the silkscreen. The requirements we sent, and the specification the quote was accepted against, are revision D — the change was the connector footprint, and D is what our enclosure is cut for.\n\nThe boards themselves look well made. We cannot use them in this enclosure, and we would rather agree a rework than argue about whose drawing was current.',
+      },
+      submittedById: BUYER,
+      capturedAt: openedAt,
+    },
+  });
+};
+
 const main = async (): Promise<void> => {
   await boardRequest();
   await printedRequest();
@@ -950,8 +1140,9 @@ const main = async (): Promise<void> => {
   await liveOrder();
   await notificationsForShopA();
   await refundClaimForShopA();
+  await disputedOrderForShopA();
   process.stdout.write(
-    'manufacturer fixtures: two unanswered requests in shop A’s inbox — one board with assembly, one printed housing — stock that covers one line, is short on another and misses two, one funded order in production, three notifications for its member, and one unanswered refund claim\n',
+    'manufacturer fixtures: two unanswered requests in shop A’s inbox — one board with assembly, one printed housing — stock that covers one line, is short on another and misses two, one funded order in production, one disputed order with a case nobody has answered, three notifications for its member, and one unanswered refund claim\n',
   );
 };
 

@@ -1340,7 +1340,7 @@ const main = async () => {
     for (const list of [
       { path: '/rfqs', item: 'View details', lands: /\/rfqs\/[^/]+$/ },
       { path: '/quotes', item: 'Quote details', lands: /\/quotes\/[^/]+$/ },
-      { path: '/orders', item: 'Production stages', lands: /\/orders\/[^/]+$/ },
+      { path: '/orders', item: 'View order details', lands: /\/orders\/[^/]+$/ },
       { path: '/inventory', item: 'View details and history', lands: /\/inventory\/[^/]+$/ },
     ]) {
       let target = null;
@@ -2207,6 +2207,71 @@ const main = async () => {
     // The dispute pane has a section of its own below, which opens it and
     // reads both halves; checking the heading twice would only mean two
     // failures for one cause.
+
+    // ------------------------- managing an open dispute: banner, status, actions
+    //
+    // Three things carry an open case to the shop, and none of them is a page
+    // it has to remember to visit: it is said on the dashboard, marked on the
+    // order row, and reachable from that row's own menu. The fixtures leave one
+    // case unanswered so all three have something to say.
+    await page.goto(`${base}/dashboard`, { waitUntil: 'networkidle' });
+    const dashboardText = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+    check(
+      'the dashboard says a dispute is open, at the top',
+      /dispute is open|disputes are open/i.test(dashboardText),
+      dashboardText.slice(0, 110),
+    );
+    check(
+      'and says what ignoring it costs',
+      /payout stays held/i.test(dashboardText),
+    );
+    const answerIt = page.getByRole('link', { name: /Answer it|Open the case/ }).first();
+    check('and offers the case itself', (await answerIt.count()) > 0);
+    if ((await answerIt.count()) > 0) {
+      const href = await answerIt.first().getAttribute('href');
+      check(
+        'the banner points at a case rather than a list',
+        /\/orders\/[^/]+\/disputes\/[^/]+$/.test(String(href)),
+        String(href),
+      );
+    }
+
+    // The order row: a dispute is not always the order's own status, so the row
+    // says a case exists whatever the order is doing.
+    await page.goto(`${base}/orders`, { waitUntil: 'networkidle' });
+    const disputedRow = page.locator('tbody tr').filter({ hasText: 'Dispute open' }).first();
+    const marked = await visible(disputedRow, 15_000);
+    check('the order row is marked as having an open dispute', marked);
+
+    if (marked) {
+      await clearToasts(page);
+      await disputedRow.getByRole('button', { name: /Actions for/ }).click();
+      await page.waitForTimeout(400);
+      const menuItems = await page.getByRole('menuitem').allInnerTexts();
+      check(
+        'its menu opens the dispute and the order details',
+        menuItems.some((item) => /Open dispute/.test(item)) &&
+          menuItems.some((item) => /View order details/.test(item)),
+        menuItems.join(' · '),
+      );
+      // The waiting action is first: everything else on that menu is merely
+      // available, this one is owed.
+      check('and the case is the first of them', /Open dispute/.test(menuItems[0] ?? ''));
+
+      await page.getByRole('menuitem', { name: 'Open dispute' }).click();
+      await page.waitForURL(/\/disputes\//, { timeout: 20_000 }).catch(() => undefined);
+      const caseText = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+      check(
+        'an open case carries the buyer’s account and a way to answer it',
+        /silkscreen is the wrong revision/.test(caseText) &&
+          (await page.getByRole('button', { name: /Add to the case|Submit/ }).count()) > 0,
+        caseText.slice(0, 100),
+      );
+      check(
+        'and says who decides it',
+        /Neither side decides this/.test(caseText),
+      );
+    }
 
     // ------------------------------------- the dispute, open and after the answer
     //
