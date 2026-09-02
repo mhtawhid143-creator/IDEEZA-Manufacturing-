@@ -2127,7 +2127,7 @@ const main = async () => {
     if (await visible(methodForm)) {
       await methodForm.getByLabel('Name on the account').fill('PrecisionCircuit Manufacturing Ltd.');
       await methodForm.getByLabel('Account number').fill('4321876500991234');
-      await methodForm.getByLabel('Bank', { exact: true }).fill('Bank of China');
+      await methodForm.getByLabel('Bank name').fill('Bank of China');
       await methodForm.getByRole('button', { name: 'Add', exact: true }).click();
       await methodForm.waitFor({ state: 'detached', timeout: 20_000 }).catch(() => {});
       await page.waitForTimeout(2_000);

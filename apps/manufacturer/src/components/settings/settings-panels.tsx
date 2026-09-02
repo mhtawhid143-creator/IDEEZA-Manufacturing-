@@ -2667,7 +2667,7 @@ export const SettingsPanels = ({ data }: { readonly data: SettingsData }) => {
             />
           </FormField>
           {payout.kind === 'direct_bank' ? (
-            <FormField label="Bank" required>
+            <FormField label="Bank name" required>
               <Input
                 value={payout.bankName}
                 maxLength={120}
