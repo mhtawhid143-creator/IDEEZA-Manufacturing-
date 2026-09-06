@@ -17,7 +17,7 @@ import {
   type SubstitutionStatus,
   type UserId,
 } from '@ideeza/domain';
-import { toDatabaseEventKind } from '@ideeza/db';
+import { ensureRecordThread, postEventCard, toDatabaseEventKind } from '@ideeza/db';
 import { database } from '@/lib/db.js';
 
 export interface QuoteLineView {
@@ -571,13 +571,14 @@ export const acceptQuote = async (
       },
     });
 
-    for (const [kind, subjectKind, subjectId] of [
-      ['quote.accepted', 'quote', quote.id],
-      ['order.created', 'order', orderId],
+    const acceptedEventId = identifier('evt');
+    for (const [id, kind, subjectKind, subjectId] of [
+      [acceptedEventId, 'quote.accepted', 'quote', quote.id],
+      [identifier('evt'), 'order.created', 'order', orderId],
     ] as const) {
       await transaction.domainEvent.create({
         data: {
-          id: identifier('evt'),
+          id,
           kind: toDatabaseEventKind(kind),
           actorRole: 'buyer',
           actorUserId: buyerId,
@@ -589,6 +590,19 @@ export const acceptQuote = async (
         },
       });
     }
+
+    // The shop hears it in the conversation it opened by quoting. Only the
+    // acceptance is announced, not the order row it creates: the order is not
+    // yet a fact for the shop — nothing is owed until the payment is secured,
+    // and saying so twice would promise the job before the money exists.
+    await postEventCard(transaction, {
+      threadId: await ensureRecordThread(transaction, {
+        rfqId: quote.rfqId,
+        manufacturerId: quote.manufacturerId,
+      }),
+      eventId: acceptedEventId,
+      at: now,
+    });
   });
 
   return { orderId: asId<OrderId>(orderId) };

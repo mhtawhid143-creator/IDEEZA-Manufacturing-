@@ -19,7 +19,7 @@ import {
   type ShippingChoice,
   type UserId,
 } from '@ideeza/domain';
-import { toDatabaseEventKind } from '@ideeza/db';
+import { ensureRecordThread, postEventCard, promoteThreadToOrder, toDatabaseEventKind } from '@ideeza/db';
 
 /** The print rows apply only to a package with a printed part in it. */
 const PRINTS: Readonly<Record<PackageKind, boolean>> = {
@@ -599,15 +599,16 @@ export const payOrder = async (
       ),
     });
 
+    const confirmedEventId = identifier('evt-order-confirmed');
     await transaction.domainEvent.createMany({
       data: (
         [
-          ['payment.initiated', 'payment', paymentId],
-          ['payment.secured', 'payment', paymentId],
-          ['order.confirmed', 'order', orderId],
+          [identifier('evt-payment-initiated'), 'payment.initiated', 'payment', paymentId],
+          [identifier('evt-payment-secured'), 'payment.secured', 'payment', paymentId],
+          [confirmedEventId, 'order.confirmed', 'order', orderId],
         ] as const
-      ).map(([kind, subjectKind, subjectId]) => ({
-        id: identifier(`evt-${kind}`),
+      ).map(([id, kind, subjectKind, subjectId]) => ({
+        id,
         kind: toDatabaseEventKind(kind),
         actorRole: 'buyer' as const,
         actorUserId: buyerId,
@@ -622,6 +623,18 @@ export const payOrder = async (
         occurredAt: now,
       })),
     });
+
+    // The conversation follows the record: the thread the shop opened by
+    // quoting becomes this order's thread, history and all. A second thread
+    // here would split one job's conversation in two at the moment it starts
+    // mattering most, and the shop would answer the question in whichever half
+    // it happened to have open.
+    const threadId = await ensureRecordThread(transaction, {
+      rfqId: order.rfqId,
+      manufacturerId: order.manufacturerId,
+    });
+    await promoteThreadToOrder(transaction, threadId, orderId);
+    await postEventCard(transaction, { threadId, eventId: confirmedEventId, at: now });
   });
 
   return { paid: true, paymentId, totalChargedMinor: checkout.totalMinor };

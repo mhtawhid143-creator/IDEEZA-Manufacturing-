@@ -128,14 +128,23 @@ export const Conversation = ({
           </li>
         )}
 
-        {messages.map((message) => (
+        {messages
+          .filter(
+            // Words or a card. Neither means an event with no card in this
+            // panel yet, and a bare timestamp says nothing worth a row.
+            (message) =>
+              (message.body !== null && message.body !== '') || message.card !== null,
+          )
+          .map((message) => (
           <li
             key={message.id}
             className={cn('flex flex-col gap-1', message.mine ? 'items-end' : 'items-start')}
           >
-            <Text tone="muted" size="xs">
-              {message.mine ? 'You' : message.authorName} · {message.when}
-            </Text>
+            {message.card === null && (
+              <Text tone="muted" size="xs">
+                {message.mine ? 'You' : message.authorName} · {message.when}
+              </Text>
+            )}
 
             {message.body !== null && message.body !== '' && (
               <p
@@ -153,7 +162,7 @@ export const Conversation = ({
             {message.card !== null && (
               <div className="w-full max-w-[36rem] rounded-xl border border-border-subtle bg-bg-surface p-4">
                 <Text tone="muted" size="xs">
-                  From the order record
+                  Recorded by the platform · {message.when}
                 </Text>
                 <p className="text-sm font-semibold text-text-primary">{message.card.title}</p>
                 <dl className="mt-3 flex flex-col gap-1.5">
@@ -189,7 +198,7 @@ export const Conversation = ({
               </Text>
             )}
           </li>
-        ))}
+          ))}
         <div ref={endRef} />
       </ol>
 

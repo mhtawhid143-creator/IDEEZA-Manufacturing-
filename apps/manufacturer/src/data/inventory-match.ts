@@ -10,7 +10,7 @@ import {
   type RfqId,
   type SubstitutionStatus,
 } from '@ideeza/domain';
-import { toDatabaseEventKind } from '@ideeza/db';
+import { ensureRecordThread, postEventCard, toDatabaseEventKind } from '@ideeza/db';
 import { database } from '@/lib/db.js';
 
 /**
@@ -422,6 +422,13 @@ export const saveSubstituteSuggestions = async (
       await transaction.substitution.delete({ where: { id } });
     }
 
+    // Opened once for the whole act rather than per part: it is one
+    // conversation however many replacements this visit suggests.
+    const threadId =
+      writes.length === 0
+        ? null
+        : await ensureRecordThread(transaction, { rfqId, manufacturerId });
+
     for (const write of writes) {
       const existing = write.line.suggestion;
       const data = {
@@ -447,9 +454,10 @@ export const saveSubstituteSuggestions = async (
 
       // The subject is the substitution itself, which is what the buyer's
       // activity feed reads it back by.
+      const eventId = identifier('evt');
       await transaction.domainEvent.create({
         data: {
-          id: identifier('evt'),
+          id: eventId,
           kind: toDatabaseEventKind('substitution.suggested'),
           actorRole: 'manufacturer',
           actorManufacturerId: manufacturerId,
@@ -465,6 +473,13 @@ export const saveSubstituteSuggestions = async (
           occurredAt: now,
         },
       });
+
+      // A card per replacement, not one for the batch: each part is a separate
+      // decision the buyer has to make, and a single card saying "three parts"
+      // would name none of them.
+      if (threadId !== null) {
+        await postEventCard(transaction, { threadId, eventId, at: now });
+      }
     }
   });
 

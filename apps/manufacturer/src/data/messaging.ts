@@ -1,4 +1,5 @@
 import { asId, type UserId, majorAmount } from '@ideeza/domain';
+import { toDomainEventKind } from '@ideeza/db';
 import { database } from '@/lib/db.js';
 
 const identifier = (prefix: string): string =>
@@ -21,6 +22,23 @@ export interface ThreadMessage {
   readonly body: string | null;
   readonly sentAt: Date;
   readonly attachments: readonly string[];
+  /**
+   * What the platform is reporting, when this message reports something.
+   *
+   * A message either carries a person's words or points at a recorded event.
+   * Never both: the card is drawn from the event, so words beside it would be a
+   * second copy of the same facts, free to disagree with the first.
+   */
+  readonly card: EventCardView | null;
+}
+
+/** A recorded event, told in the shop's words and pointing at the shop's screens. */
+export interface EventCardView {
+  readonly kind: string;
+  readonly title: string;
+  readonly tone: 'neutral' | 'brand' | 'success';
+  readonly rows: readonly { readonly label: string; readonly value: string }[];
+  readonly actions: readonly { readonly label: string; readonly href: string }[];
 }
 
 export interface ThreadFactCard {
@@ -65,6 +83,9 @@ const threadInclude = {
   order: {
     select: {
       id: true,
+      rfqId: true,
+      status: true,
+      snapshot: { select: { currency: true, totalPriceMinor: true } },
       rfq: { select: { package: { select: { product: { select: { name: true } } } } } },
     },
   },
@@ -127,13 +148,37 @@ const counterpartOf = (
   row.participants.find((participant) => participant.userId !== readerId)?.user
     .displayName ?? 'IDEEZA';
 
+/**
+ * What the thread list shows for a card, which has no words of its own.
+ *
+ * Without this, every conversation whose latest entry is an event — which is
+ * most of them, since the platform speaks more often than the two sides do —
+ * showed a blank line where the preview goes.
+ */
+const EVENT_PREVIEW: Readonly<Record<string, string>> = {
+  quote_submitted: 'You sent a quote',
+  quote_revised: 'You revised the quote',
+  quote_withdrawn: 'You withdrew the quote',
+  substitution_suggested: 'You suggested a replacement part',
+  quote_accepted: 'The buyer accepted your quote',
+  order_confirmed: 'The money is held — you can start',
+  payment_secured: 'The money is held — you can start',
+};
+
 /** Every conversation this member takes part in, newest first. */
 export const listThreads = async (
   readerId: UserId,
 ): Promise<readonly ThreadSummary[]> => {
   const rows = await database().messageThread.findMany({
     where: { participants: { some: { userId: readerId } } },
-    include: { ...threadInclude, messages: { orderBy: { sentAt: 'desc' }, take: 1 } },
+    include: {
+      ...threadInclude,
+      messages: {
+        orderBy: { sentAt: 'desc' },
+        take: 1,
+        include: { referencedEvent: { select: { kind: true } } },
+      },
+    },
     orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
   });
 
@@ -157,11 +202,126 @@ export const listThreads = async (
         contextHref: context.href,
         counterpartName: counterpartOf(row, readerId),
         lastMessageAt: row.lastMessageAt,
-        lastMessagePreview: row.messages[0]?.body ?? null,
+        lastMessagePreview:
+          row.messages[0]?.body ??
+          EVENT_PREVIEW[row.messages[0]?.referencedEvent?.kind ?? ''] ??
+          null,
         unreadCount,
       };
     }),
   );
+};
+
+/**
+ * The cards the design puts inside a conversation, from this side of it.
+ *
+ * The buyer's panel draws the same events with the same numbers; only the words
+ * and the links differ, because the two panels have different screens and the
+ * two readers did different things. "Quote received" over there is "You sent
+ * the quote" here — one event, two honest accounts of it.
+ *
+ * Nothing is decided from a card. Accepting, revising and paying carry
+ * invariants and a confirmation, so a card links to the screen that owns the
+ * act rather than performing it in a chat.
+ */
+const cardFor = (
+  kind: string,
+  payload: Record<string, unknown>,
+  context: { readonly rfqId: string | null; readonly orderId: string | null },
+): EventCardView | null => {
+  const money = (value: unknown): string =>
+    typeof value === 'number' ? majorAmount(value) : '—';
+  const count = (value: unknown): string =>
+    typeof value === 'number' ? String(value) : '—';
+
+  const quoteHref =
+    typeof payload['quoteId'] === 'string'
+      ? `/quotes/${payload['quoteId']}`
+      : context.rfqId === null
+        ? null
+        : `/rfqs/${context.rfqId}`;
+
+  if (kind === 'quote.submitted' || kind === 'quote.revised') {
+    return {
+      kind,
+      title: kind === 'quote.submitted' ? 'You sent the quote' : 'You revised the quote',
+      tone: 'brand',
+      rows: [
+        { label: 'Quantity', value: count(payload['quantity']) },
+        { label: 'Unit price', value: money(payload['unitPriceMinor']) },
+        { label: 'Total', value: money(payload['totalPriceMinor']) },
+        {
+          label: 'Lead time',
+          value:
+            typeof payload['leadTimeDays'] === 'number'
+              ? `${String(payload['leadTimeDays'])} days`
+              : '—',
+        },
+      ],
+      actions: quoteHref === null ? [] : [{ label: 'Open the quote', href: quoteHref }],
+    };
+  }
+
+  if (kind === 'quote.withdrawn') {
+    return {
+      kind,
+      title: 'You withdrew the quote',
+      tone: 'neutral',
+      rows: [{ label: 'Now', value: 'The buyer can no longer accept these terms' }],
+      actions:
+        context.rfqId === null
+          ? []
+          : [{ label: 'The request', href: `/rfqs/${context.rfqId}` }],
+    };
+  }
+
+  if (kind === 'substitution.suggested') {
+    return {
+      kind,
+      title: 'You suggested a replacement part',
+      tone: 'neutral',
+      rows: [
+        { label: 'Asked for', value: String(payload['reference'] ?? '—') },
+        { label: 'You offered', value: String(payload['suggestedPartName'] ?? '—') },
+        { label: 'Price impact', value: money(payload['priceImpactMinor']) },
+      ],
+      actions:
+        context.rfqId === null
+          ? []
+          : [{ label: 'The parts on this request', href: `/rfqs/${context.rfqId}/bom` }],
+    };
+  }
+
+  if (kind === 'quote.accepted') {
+    return {
+      kind,
+      title: 'The buyer accepted your quote',
+      tone: 'success',
+      rows: [
+        { label: 'Next', value: 'IDEEZA secures the payment before the order opens' },
+        { label: 'Build now?', value: 'No — wait for the order' },
+      ],
+      actions: quoteHref === null ? [] : [{ label: 'The quote they took', href: quoteHref }],
+    };
+  }
+
+  if (kind === 'order.confirmed' || kind === 'payment.secured') {
+    return {
+      kind,
+      title: 'The money is held — you can start',
+      tone: 'success',
+      rows: [
+        { label: 'Held by IDEEZA', value: money(payload['totalChargedMinor']) },
+        { label: 'Released on', value: 'Delivery the buyer confirms' },
+      ],
+      actions:
+        context.orderId === null
+          ? []
+          : [{ label: 'Open the order', href: `/orders/${context.orderId}` }],
+    };
+  }
+
+  return null;
 };
 
 const major = (minor: bigint | null): string =>
@@ -186,6 +346,7 @@ export const getThread = async (
         orderBy: { sentAt: 'asc' },
         include: {
           author: { select: { id: true, displayName: true, role: true } },
+          referencedEvent: true,
           attachments: { include: { file: { select: { name: true } } } },
         },
       },
@@ -194,8 +355,47 @@ export const getThread = async (
   if (row === null) return null;
 
   const context = contextOf(row);
+  // A conversation that has been promoted carries both: it began on the request
+  // and it is now about the order, and a card may need to point at either.
+  const rfqId = row.rfqId ?? row.quote?.rfqId ?? row.order?.rfqId ?? null;
+  const orderId = row.orderId ?? row.dispute?.orderId ?? null;
 
-  const card: ThreadFactCard | null =
+  /**
+   * The record this conversation is about, at the top of it.
+   *
+   * An order takes precedence over the request it grew out of: once the job is
+   * running, what a shop needs in front of it is the order and its money, not
+   * the deadline for a quote it has already sent. Before that, the request. A
+   * conversation with neither says so rather than opening with a blank frame.
+   */
+  const orderCard: ThreadFactCard | null =
+    row.order === null
+      ? null
+      : {
+          title: `Order ${row.order.id.slice(-8).toUpperCase()} · ${row.order.rfq.package.product.name}`,
+          rows: [
+            { label: 'State', value: row.order.status.replace(/_/g, ' ') },
+            {
+              label: 'Agreed value',
+              value:
+                row.order.snapshot === null
+                  ? '—'
+                  : `${row.order.snapshot.currency} ${major(row.order.snapshot.totalPriceMinor)}`,
+            },
+            ...(row.rfq === null
+              ? []
+              : [{ label: 'Quantity', value: `${row.rfq.quantity} units` }]),
+          ],
+          actions: [
+            { label: 'Open the order', href: `/orders/${row.order.id}` },
+            { label: 'Production stages', href: `/orders/${row.order.id}` },
+            ...(rfqId === null
+              ? []
+              : [{ label: 'The original request', href: `/rfqs/${rfqId}` }]),
+          ],
+        };
+
+  const requestCard: ThreadFactCard | null =
     row.rfq === null || row.rfqId === null
       ? null
       : {
@@ -230,20 +430,38 @@ export const getThread = async (
           ],
         };
 
+  const card = orderCard ?? requestCard;
+
   return {
     threadId: row.id,
     contextLabel: context.label,
     contextHref: context.href,
     counterpartName: counterpartOf(row, readerId),
     card,
-    messages: row.messages.map((message) => ({
-      id: message.id,
-      authorName: message.author?.displayName ?? 'IDEEZA',
-      mine: message.authorId === readerId,
-      body: message.body,
-      sentAt: message.sentAt,
-      attachments: message.attachments.map((attachment) => attachment.file.name),
-    })),
+    messages: row.messages.map((message) => {
+      const kind =
+        message.referencedEvent === null
+          ? null
+          : toDomainEventKind(message.referencedEvent.kind);
+      return {
+        id: message.id,
+        // A card is the platform reporting, so it is nobody's message. The
+        // author falls back to IDEEZA for the few rows that predate this.
+        authorName: message.author?.displayName ?? 'IDEEZA',
+        mine: message.authorId === readerId,
+        body: message.body,
+        sentAt: message.sentAt,
+        card:
+          kind === null
+            ? null
+            : cardFor(
+                kind,
+                (message.referencedEvent?.payload as Record<string, unknown> | null) ?? {},
+                { rfqId, orderId },
+              ),
+        attachments: message.attachments.map((attachment) => attachment.file.name),
+      };
+    }),
   };
 };
 

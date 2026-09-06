@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import {
-  Alert,
   Button,
   Card,
   EmptyState,
   FormField,
+  Icon,
   SearchInput,
   Text,
   Textarea,
   buttonAppearance,
   cn,
   useToast,
+  type IconName,
 } from '@ideeza/ui';
 import { markReadAction, sendMessageAction } from '@/app/(app)/messages/actions.js';
 
@@ -33,8 +34,41 @@ export interface MessageRow {
   readonly mine: boolean;
   readonly body: string | null;
   readonly at: string;
+  /** The day it was said, for the separators between them. */
+  readonly on: string;
   readonly attachments: readonly string[];
+  /** Set when the platform is reporting an event rather than a person talking. */
+  readonly card: EventCard | null;
 }
+
+export interface EventCard {
+  readonly kind: string;
+  readonly title: string;
+  readonly tone: 'neutral' | 'brand' | 'success';
+  readonly rows: readonly { readonly label: string; readonly value: string }[];
+  readonly actions: readonly { readonly label: string; readonly href: string }[];
+}
+
+/**
+ * An event card is the platform speaking, so it is neither side's bubble: it
+ * runs the width of the column, and its icon says which kind of thing happened
+ * without the reader having to parse the title first.
+ */
+const CARD_ICON: Readonly<Record<string, IconName>> = {
+  'quote.submitted': 'send',
+  'quote.revised': 'send',
+  'quote.withdrawn': 'close',
+  'substitution.suggested': 'parts',
+  'quote.accepted': 'check',
+  'order.confirmed': 'payouts',
+  'payment.secured': 'payouts',
+};
+
+const CARD_TONE: Readonly<Record<EventCard['tone'], string>> = {
+  neutral: 'bg-bg-subtle text-icon-secondary',
+  brand: 'bg-bg-brand-subtle text-icon-brand',
+  success: 'bg-bg-success-subtle text-icon-success',
+};
 
 export interface FactCard {
   readonly title: string;
@@ -199,12 +233,12 @@ export const Conversation = ({
                   </Text>
                 </div>
               </div>
-              {contextHref !== null && (
+              {contextHref !== null && card === null && (
                 <Link
                   href={contextHref}
                   className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
                 >
-                  Open it
+                  Open the record
                 </Link>
               )}
             </div>
@@ -237,38 +271,127 @@ export const Conversation = ({
 
               {messages.length === 0 ? (
                 <Text tone="muted" size="sm">
-                  Nothing said yet.
+                  Nothing said yet. What happens to this record will appear here as it
+                  happens, and anything you type goes to the buyer.
                 </Text>
               ) : (
-                <ul aria-label="Messages" className="flex flex-col gap-3">
-                  {messages.map((message) => (
-                    <li
-                      key={message.id}
-                      className={cn(
-                        'flex flex-col gap-1',
-                        message.mine ? 'items-end' : 'items-start',
-                      )}
-                    >
-                      <span className="text-xs text-text-tertiary">
-                        {message.authorName} · {message.at}
-                      </span>
-                      <span
-                        className={cn(
-                          'max-w-[80%] rounded-2xl px-3 py-2 text-sm',
-                          message.mine
-                            ? 'bg-bg-brand text-text-on-brand'
-                            : 'bg-bg-surface-raised text-text-secondary',
+                <ul aria-label="Messages" className="flex flex-col gap-4">
+                  {messages.map((message, index) => {
+                    // A new day gets a separator: without one, a conversation that
+                    // ran over three weeks reads as one afternoon.
+                    const newDay = message.on !== messages[index - 1]?.on;
+                    // Consecutive lines from one person repeat the name for no
+                    // reason. After the first, the bubble itself says who.
+                    // Words or a card. Neither means an event this panel has
+                    // no card for yet; the row is dropped rather than drawn empty.
+                    const empty =
+                      message.card === null &&
+                      (message.body === null || message.body === '');
+                    const sameSpeaker =
+                      !newDay &&
+                      message.card === null &&
+                      messages[index - 1]?.card === null &&
+                      messages[index - 1]?.mine === message.mine;
+
+                    if (empty) return null;
+
+                    return (
+                      <li key={message.id} className="flex flex-col gap-1">
+                        {newDay && (
+                          <div className="flex items-center gap-3 pb-1">
+                            <span aria-hidden className="h-px flex-1 bg-border-subtle" />
+                            <span className="text-2xs font-medium text-text-tertiary">
+                              {message.on}
+                            </span>
+                            <span aria-hidden className="h-px flex-1 bg-border-subtle" />
+                          </div>
                         )}
-                      >
-                        {message.body ?? ''}
-                      </span>
-                      {message.attachments.length > 0 && (
-                        <span className="text-xs text-text-tertiary">
-                          {message.attachments.join(', ')}
-                        </span>
-                      )}
-                    </li>
-                  ))}
+
+                        {message.card !== null ? (
+                          <div className="rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-1">
+                            <div className="flex items-start gap-3">
+                              <span
+                                aria-hidden
+                                className={cn(
+                                  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                                  CARD_TONE[message.card.tone],
+                                )}
+                              >
+                                <Icon name={CARD_ICON[message.card.kind] ?? 'info'} size={16} />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-2xs text-text-tertiary">
+                                  Recorded by the platform · {message.at}
+                                </p>
+                                <p className="text-sm font-semibold text-text-primary">
+                                  {message.card.title}
+                                </p>
+                              </div>
+                            </div>
+
+                            <dl className="mt-3 flex flex-col gap-1.5">
+                              {message.card.rows.map((row) => (
+                                <div
+                                  key={row.label}
+                                  className="flex justify-between gap-4 text-sm"
+                                >
+                                  <dt className="text-text-tertiary">{row.label}</dt>
+                                  <dd className="text-right font-medium text-text-secondary">
+                                    {row.value}
+                                  </dd>
+                                </div>
+                              ))}
+                            </dl>
+
+                            {message.card.actions.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {message.card.actions.map((action, position) => (
+                                  <Link
+                                    key={action.href}
+                                    href={action.href}
+                                    className={buttonAppearance({
+                                      variant: position === 0 ? 'primary' : 'secondary',
+                                      size: 'sm',
+                                    })}
+                                  >
+                                    {action.label}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div
+                            className={cn(
+                              'flex flex-col gap-1',
+                              message.mine ? 'items-end' : 'items-start',
+                            )}
+                          >
+                            {!sameSpeaker && (
+                              <span className="text-xs text-text-tertiary">
+                                {message.mine ? 'You' : message.authorName} · {message.at}
+                              </span>
+                            )}
+                            <span
+                              className={cn(
+                                'max-w-[80%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm',
+                                message.mine
+                                  ? 'bg-bg-brand text-text-on-brand'
+                                  : 'border border-border-subtle bg-bg-surface-raised text-text-secondary',
+                              )}
+                            >
+                              {message.body ?? ''}
+                            </span>
+                            {message.attachments.length > 0 && (
+                              <span className="text-xs text-text-tertiary">
+                                {message.attachments.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
               <div ref={bottom} />
@@ -281,18 +404,27 @@ export const Conversation = ({
                   placeholder="Type your message…"
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
+                  onKeyDown={(event) => {
+                    // Enter sends, Shift+Enter starts a line. Every chat works
+                    // this way, and a composer that needs the mouse for the one
+                    // thing it does gets used less than it should be.
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      if (body.trim() !== '') send();
+                    }
+                  }}
                 />
               </FormField>
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <Text tone="muted" size="xs">
-                  Anything you agree here still has to be recorded on the request, the
-                  quote or the order to count.
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <Text tone="muted" size="xs" className="max-w-measure">
+                  Anything agreed here still has to be recorded on the request, the quote
+                  or the order to count. Files travel with those, not with a message.
                 </Text>
                 <Button
                   variant="primary"
                   size="sm"
                   loading={pending || !hydrated}
-                  disabled={!hydrated}
+                  disabled={!hydrated || body.trim() === ''}
                   onClick={send}
                 >
                   Send
@@ -303,13 +435,6 @@ export const Conversation = ({
         )}
       </Card>
 
-      <div className="lg:col-span-2">
-        <Alert tone="info" title="No file attachments in this build">
-          The design has an image and a paperclip on the composer. The platform records a
-          file&rsquo;s name and hash rather than its bytes, so attaching one here would
-          lose it — the files that matter travel with the request and the order instead.
-        </Alert>
-      </div>
     </div>
   );
 };

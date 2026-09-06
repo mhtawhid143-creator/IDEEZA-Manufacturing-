@@ -727,7 +727,18 @@ Figma: `3:39549`–`3:40994`, `4:48745` withdrawal history.
 
 ## M11 — Messages and notifications
 
-Figma: `4:50147`–`4:50834`.
+Figma: file `sllidYJj8I2nf4bUB9eTu1` ("Manufacturer V3"), page `1:8` Message,
+section `4:50146` — four frames of 1440×1002:
+
+| Node | Frame |
+| --- | --- |
+| `4:50147` | the thread when the buyer's request arrives |
+| `4:50390` | when the shop has submitted its quotation |
+| `4:50611` | when the buyer has then accepted the quote |
+| `4:50834` | a second request-state frame |
+
+They are four moments of **one conversation**, not four screens: what changes
+between them is the card inside the thread as the record moves on.
 
 | # | Sub-task | State |
 | --- | --- | --- |
@@ -736,6 +747,7 @@ Figma: `4:50147`–`4:50834`.
 | 11.3 | Sending a message, marking a thread read, and the unread count | done |
 | 11.4 | Notifications for this manufacturer | done |
 | 11.5 | Tests: a message sent here is read there, in one thread | done |
+| 11.6 | The conversation is opened by the record's own events, and narrated by them | done |
 
 **Decisions and corrections made here**
 
@@ -749,9 +761,48 @@ Figma: `4:50147`–`4:50834`.
 - **Unread is per member, not per shop.** Two agents in one shop do not clear each
   other's unread counts.
 
+**What a recheck against the design found, and what it cost to fix**
+
+Three things were wrong, and the third is the one that mattered.
+
+- **No act ever created a conversation.** Every thread in the build came from the
+  seed or a fixture; no code outside them wrote one. A shop could quote a real
+  request and the buyer had nowhere to answer it. The screen worked and the flow
+  behind it did not exist.
+- **The design's event cards were never written.** The buyer's panel could draw
+  "Quote received", "Quote accepted", "Order confirmed" from a message's
+  `referencedEventId` — and nothing ever set that field, so the code was dead and
+  the frames it was written for could not happen.
+- **This side had no event cards at all**, and its one fact card rendered only
+  when the thread carried an `rfqId`, so an order's conversation opened with a
+  blank space where the record should be.
+
+The fix is `packages/db/src/conversation.ts` — `ensureRecordThread`,
+`postEventCard`, `promoteThreadToOrder` — shared by both panels because both
+write it, and two copies would drift into two conversations. Four acts now call
+it inside the transaction that records their event: submitting a quote, revising
+one, suggesting a replacement part, and (from the buyer) accepting a quote and
+paying for it.
+
+- **A thread per (request, shop), never per request.** A request goes to several
+  shops and their quotes are confidential from each other; the participant list
+  is the whole of that guarantee, so putting two shops in one thread would end
+  the confidentiality with nothing else standing between them.
+- **The conversation follows the record into the order** rather than restarting:
+  the request thread gains the `orderId` and keeps its history. What was agreed
+  while the quote was on the table is the context for the job.
+- **A card carries no words of its own.** It points at the `DomainEvent`, and
+  each panel draws it in its own reader's language — "You sent the quote" here,
+  "Quote received" there, the same numbers under both. A price cannot drift from
+  the record, and the two sides cannot disagree.
+- **The thread list says what a card says.** A card has no body, so every
+  conversation whose latest entry was an event showed a blank preview until the
+  list learned to read the event kind.
+
 **Design deviations (data, not layout)**
 
 - *The design's attachment control* is not offered: no file bytes in this build.
+  Said once beside the composer rather than as a banner across the screen.
 - *"Typing…" and read receipts* are dropped rather than faked; there is no realtime
   channel yet, and a fake presence indicator is a lie about who is at the desk.
 - *The design's contact list of buyers* becomes the list of records, because a

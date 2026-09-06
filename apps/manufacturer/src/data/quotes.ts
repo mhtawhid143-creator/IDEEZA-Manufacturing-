@@ -16,7 +16,7 @@ import {
   type RfqId,
   type SubstitutionStatus,
 } from '@ideeza/domain';
-import { toDatabaseEventKind } from '@ideeza/db';
+import { ensureRecordThread, postEventCard, toDatabaseEventKind } from '@ideeza/db';
 import { database } from '@/lib/db.js';
 
 const identifier = (prefix: string): string =>
@@ -624,9 +624,10 @@ export const submitQuote = async (
       });
     }
 
+    const eventId = identifier('evt');
     await transaction.domainEvent.create({
       data: {
-        id: identifier('evt'),
+        id: eventId,
         kind: toDatabaseEventKind('quote.submitted'),
         actorRole: 'manufacturer',
         actorManufacturerId: manufacturerId,
@@ -634,12 +635,23 @@ export const submitQuote = async (
         subjectId: quoteId,
         payload: {
           rfqId,
+          quantity,
           unitPriceMinor: input.unitPriceMinor,
           totalPriceMinor: goods,
           leadTimeDays: input.leadTimeDays,
         },
         occurredAt: now,
       },
+    });
+
+    // The conversation about this request with this buyer, opened by the act
+    // that first gives them something to answer, and in the same transaction as
+    // the event it announces: a card about a quote that was rolled back would
+    // be a card about nothing.
+    await postEventCard(transaction, {
+      threadId: await ensureRecordThread(transaction, { rfqId, manufacturerId }),
+      eventId,
+      at: now,
     });
   });
 
@@ -795,17 +807,32 @@ export const reviseQuote = async (
       });
     }
 
+    const eventId = identifier('evt');
     await transaction.domainEvent.create({
       data: {
-        id: identifier('evt'),
+        id: eventId,
         kind: toDatabaseEventKind('quote.revised'),
         actorRole: 'manufacturer',
         actorManufacturerId: manufacturerId,
         subjectKind: 'quote',
         subjectId: quoteId,
-        payload: { version, unitPriceMinor: input.unitPriceMinor, totalPriceMinor: goods },
+        payload: {
+          version,
+          quantity: row.quantity,
+          unitPriceMinor: input.unitPriceMinor,
+          totalPriceMinor: goods,
+          leadTimeDays: input.leadTimeDays,
+        },
         occurredAt: now,
       },
+    });
+
+    // A buyer who was told the price once has to be told it changed. Same
+    // conversation, because it is the same request with the same shop.
+    await postEventCard(transaction, {
+      threadId: await ensureRecordThread(transaction, { rfqId: row.rfqId, manufacturerId }),
+      eventId,
+      at: now,
     });
   });
 

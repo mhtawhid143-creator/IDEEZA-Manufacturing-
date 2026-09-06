@@ -147,7 +147,11 @@ export const listThreads = async (
     where: { participants: { some: { userId: readerId } } },
     include: {
       ...threadInclude,
-      messages: { orderBy: { sentAt: 'desc' }, take: 1 },
+      messages: {
+        orderBy: { sentAt: 'desc' },
+        take: 1,
+        include: { referencedEvent: { select: { kind: true } } },
+      },
     },
     orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
   });
@@ -173,11 +177,31 @@ export const listThreads = async (
         contextHref: context.href,
         counterpartName: counterpartOf(row as unknown as ThreadRow, readerId),
         lastMessageAt: row.lastMessageAt,
-        lastMessagePreview: row.messages[0]?.body ?? null,
+        lastMessagePreview:
+          row.messages[0]?.body ??
+          EVENT_PREVIEW[row.messages[0]?.referencedEvent?.kind ?? ''] ??
+          null,
         unreadCount,
       };
     }),
   );
+};
+
+/**
+ * What the thread list shows for a card, which has no words of its own.
+ *
+ * Without this, every conversation whose latest entry is an event — which is
+ * most of them, since the platform speaks more often than the two sides do —
+ * showed a blank line where the preview goes.
+ */
+const EVENT_PREVIEW: Readonly<Record<string, string>> = {
+  quote_submitted: 'A quote came back',
+  quote_revised: 'A quote was revised',
+  quote_withdrawn: 'A quote was withdrawn',
+  substitution_suggested: 'A replacement part was suggested',
+  quote_accepted: 'You accepted the quote',
+  order_confirmed: 'The order is confirmed',
+  payment_secured: 'The payment is held',
 };
 
 /**
@@ -196,11 +220,23 @@ const cardFor = (
   const money = (value: unknown): string =>
     typeof value === 'number' ? majorAmount(value) : '—';
 
-  if (kind === 'quote.submitted') {
+  if (kind === 'quote.withdrawn') {
+    return {
+      kind,
+      title: 'The quote was withdrawn',
+      rows: [{ label: 'Now', value: 'These terms are off the table' }],
+      actions:
+        context.rfqId === null
+          ? []
+          : [{ label: 'Other quotes', href: `/manufacturing/rfq/${context.rfqId}/quotes` }],
+    };
+  }
+
+  if (kind === 'quote.submitted' || kind === 'quote.revised') {
     const quoteId = typeof payload['quoteId'] === 'string' ? payload['quoteId'] : null;
     return {
       kind,
-      title: 'Quote received',
+      title: kind === 'quote.submitted' ? 'Quote received' : 'The quote was revised',
       rows: [
         { label: 'Quantity', value: String(payload['quantity'] ?? '—') },
         { label: 'Unit price', value: money(payload['unitPriceMinor']) },

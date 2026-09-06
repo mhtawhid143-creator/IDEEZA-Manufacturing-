@@ -137,6 +137,14 @@ const removeCard = async (page, cards, text) => {
       await item.click({ timeout: 15_000 });
     } catch (error) {
       why = String(error).split('\n')[0].slice(0, 90);
+      // A picture of the moment it failed. These timeouts are always "the
+      // click did not reach the control", and the only useful question is what
+      // was over it — which the message never says and a screenshot always does.
+      await page
+        .screenshot({
+          path: join(shotDir, `stuck-${text.replace(/[^a-z0-9]+/gi, '-').slice(0, 24)}.png`),
+        })
+        .catch(() => undefined);
       continue;
     }
     // The profile page is a wide read — machines, sheets, certificates,
@@ -854,6 +862,69 @@ const main = async () => {
       (await visible(page.getByText('You quoted USD', { exact: false }))) &&
         (await page.getByRole('button', { name: 'Submit Quote' }).count()) === 0,
     );
+
+    // --------------------------------- M11: the conversation the quote opened
+    //
+    // The quote sent a few checks ago is the act that opens the conversation.
+    // Before this existed, a shop could quote a real request and the buyer had
+    // nowhere to answer: no code outside the seed ever created a thread. So
+    // what is checked is that the act made one, that the card in it is the
+    // recorded quote rather than typed text, and that a person can still talk.
+    await page.goto(`${base}/messages`, { waitUntil: 'networkidle' });
+    const conversations = page.locator('ul[aria-label="Conversations"] > li');
+    check(
+      'quoting opened a conversation about that request',
+      (await conversations.count()) > 0,
+      `${await conversations.count()} conversations`,
+    );
+
+    const quoted = conversations.filter({ hasText: 'Rover Motor Driver v3' }).first();
+    check('and it names the request it is about', (await quoted.count()) > 0);
+
+    if ((await quoted.count()) > 0) {
+      // A card carries no words of its own, so the list would show a blank
+      // preview unless it says what the card says.
+      check(
+        'the list says what the card says, since a card has no words',
+        /You (sent|revised) the quote|You (sent|revised) a quote/.test(
+          await quoted.innerText(),
+        ),
+        (await quoted.innerText()).split('\n').join(' | ').slice(0, 90),
+      );
+
+      await quoted.click();
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
+
+      check(
+        'the conversation opens with the record it is about',
+        await visible(page.getByText('Rover Motor Driver v3').first()),
+      );
+      check(
+        'and the quote is in it as a card, from the record',
+        (await visible(page.getByText(/You (sent|revised) the quote/))) &&
+          (await visible(page.getByText('Recorded by the platform', { exact: false }).first())),
+      );
+      check(
+        'the card offers the screen that owns the act, not the act itself',
+        (await page.getByRole('link', { name: 'Open the quote' }).count()) > 0,
+      );
+
+      // A composer that will send nothing should not look ready to.
+      const send = page.getByRole('button', { name: 'Send' });
+      check('an empty message cannot be sent', await send.isDisabled());
+
+      await page.getByPlaceholder('Type your message…').fill('Panels are on the line tomorrow.');
+      await page.waitForTimeout(200);
+      check('typing something enables it', await send.isEnabled());
+      await send.click();
+      await page.waitForTimeout(1500);
+      check(
+        'and the message lands in the conversation',
+        await visible(page.getByText('Panels are on the line tomorrow.')),
+      );
+      await page.screenshot({ path: join(shotDir, 'messages.png'), fullPage: false });
+    }
 
     // ------------------------------------------------- M06: inventory management
     await page

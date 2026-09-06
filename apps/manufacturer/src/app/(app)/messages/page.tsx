@@ -59,10 +59,13 @@ const MessagesPage = async ({
           authorName: message.authorName,
           mine: message.mine,
           body: message.body,
-          at: `${message.sentAt.toISOString().slice(0, 10)} ${message.sentAt
-            .toISOString()
-            .slice(11, 16)}`,
+          // The day is separate from the time: the stream puts a separator
+          // between days, and repeating the date on every line inside one day
+          // is noise the reader has to skip.
+          on: message.sentAt.toISOString().slice(0, 10),
+          at: message.sentAt.toISOString().slice(11, 16),
           attachments: message.attachments,
+          card: message.card,
         }))}
       />
     </div>
