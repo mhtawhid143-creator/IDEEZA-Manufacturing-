@@ -769,7 +769,7 @@ const DashboardPage = async ({
                     href={`/rfqs/${request.rfqId}`}
                     className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
                   >
-                    Send quote
+                    Submit quote
                   </Link>
                 </li>
               ))}

@@ -459,7 +459,7 @@ const main = async () => {
         (await visible(
           page
             .locator('ul[aria-label="Requests needing an answer"]')
-            .getByRole('link', { name: 'Send quote' })
+            .getByRole('link', { name: 'Submit quote' })
             .first(),
         )),
     );
@@ -556,7 +556,7 @@ const main = async () => {
     check(
       'the brief opens with the decision on the right',
       (await visible(page.getByRole('heading', { name: 'Rover Motor Driver v3' }))) &&
-        (await visible(page.getByText('Submit Quote'))) &&
+        (await visible(page.getByText('Submit quote'))) &&
         (await visible(page.getByRole('button', { name: 'Decline' }))),
     );
     check(
@@ -779,7 +779,7 @@ const main = async () => {
 
     // ----------------------------------------------------------- M05: quoting
     await page.goto(`${base}/rfqs/mfrfix_rfq_driver`, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Submit Quote' }).click();
+    await page.getByRole('button', { name: 'Submit quote' }).click();
     const quoteModal = page.getByRole('dialog', { name: 'Submit quote' });
     check(
       'the quote form opens with the buyer’s ask beside it',
@@ -876,7 +876,7 @@ const main = async () => {
 
     // ------------------------------------------------------- M05: the revision
     await page.goto(quoteUrl, { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'Revise Quote' }).click();
+    await page.getByRole('button', { name: 'Revise quote' }).click();
     const reviseModal = page.getByRole('dialog', { name: 'Revise quote' });
     check(
       'revising opens with what the quote says now',
@@ -930,7 +930,7 @@ const main = async () => {
     check(
       'a request that has been quoted shows the quote instead of the form',
       (await visible(page.getByText('You quoted USD', { exact: false }))) &&
-        (await page.getByRole('button', { name: 'Submit Quote' }).count()) === 0,
+        (await page.getByRole('button', { name: 'Submit quote' }).count()) === 0,
     );
 
     // ----- UIUX-113/108/111 (MFG-08/03/06): one production panel, four stages

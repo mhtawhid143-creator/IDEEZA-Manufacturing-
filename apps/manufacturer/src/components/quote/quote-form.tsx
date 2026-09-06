@@ -168,7 +168,7 @@ export const QuoteForm = ({
         className="w-full justify-center"
         onClick={() => setOpen(true)}
       >
-        {trigger ?? (mode === 'submit' ? 'Submit Quote' : 'Revise Quote')}
+        {trigger ?? (mode === 'submit' ? 'Submit quote' : 'Revise quote')}
       </Button>
 
       <Modal
