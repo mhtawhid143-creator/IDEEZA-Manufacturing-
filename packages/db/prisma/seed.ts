@@ -893,7 +893,7 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
 
   // -- inventory (manufacturer owned) ------------------------------------
   const inventory = [
-    { id: ID.inventoryA1, manufacturerId: ID.manufacturerA, partName: 'STM32F405 MCU', sku: 'MCU-STM32F405', category: 'Electronics', stockQuantity: 1_200, reservedQuantity: 500, unitCostMinor: 620n, leadTimeDays: 7 },
+    { id: ID.inventoryA1, manufacturerId: ID.manufacturerA, partName: 'STM32F405 MCU', sku: 'MCU-STM32F405', category: 'Electronics', description: 'LQFP64, 1MB flash. The 100-pin variant will not fit this footprint.', stockQuantity: 1_200, reservedQuantity: 500, unitCostMinor: 620n, leadTimeDays: 7 },
     { id: ID.inventoryA2, manufacturerId: ID.manufacturerA, partName: 'SiK telemetry radio 868MHz', sku: 'RF-SIK868', category: 'Electronics', stockQuantity: 300, reservedQuantity: 0, unitCostMinor: 1_850n, leadTimeDays: 10 },
     { id: ID.inventoryB1, manufacturerId: ID.manufacturerB, partName: 'STM32F405 MCU', sku: 'MCU-STM32F405', category: 'Electronics', stockQuantity: 400, reservedQuantity: 0, unitCostMinor: 660n, leadTimeDays: 12 },
   ];

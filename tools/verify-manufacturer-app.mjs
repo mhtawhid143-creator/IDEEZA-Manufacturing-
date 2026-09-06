@@ -468,6 +468,18 @@ const main = async () => {
       (await visible(page.getByText('Inventory health'))) &&
         (await visible(page.getByRole('table', { name: 'Inventory health' }))),
     );
+    // ------------------ UIUX-119 / UIUX-121: the code, and the rule in words
+    check(
+      'each stock row names the code a shop would reorder against',
+      (await page
+        .getByRole('table', { name: 'Inventory health' })
+        .getByText(/MCU-STM32F405|RF-SIK868/)
+        .count()) >= 1,
+    );
+    check(
+      'the panel says what separates the three stock states',
+      await visible(page.getByText(/what is on the shelf less what is already/i)),
+    );
     check(
       'the money panel separates what is held from what was released',
       (await visible(page.getByText('Recent payouts'))) &&
@@ -1141,6 +1153,24 @@ const main = async () => {
       (await visible(page.getByText('on the shelf').first())) &&
         (await visible(page.getByRole('link', { name: 'DRV8353 gate driver' }))),
     );
+    // ------------------------------ UIUX-218: the money, and the severity
+    check(
+      'the summary says what the shelf is worth, not only how many parts there are',
+      (await visible(page.getByText('Stock at cost'))) &&
+        (await visible(page.getByText(/USD [\d,]+\.\d\d/).first())),
+    );
+    check(
+      'the urgent card does not look like the calm one',
+      await page
+        .getByText('Out of stock')
+        .first()
+        .locator('..')
+        .evaluate((card) => {
+          const rule = getComputedStyle(card).borderColor;
+          return rule !== '' && rule !== 'rgba(0, 0, 0, 0)';
+        })
+        .catch(() => false),
+    );
     await page.screenshot({ path: join(shotDir, 'inventory.png'), fullPage: false });
 
     // Filtering is a real query over two columns.
@@ -1165,8 +1195,33 @@ const main = async () => {
         (await visible(partDrawer.getByLabel('Lead time (days)'))) &&
         (await visible(partDrawer.getByText('deliberately does not do'))),
     );
+    // -------------------- UIUX-222 / UIUX-223: category first, and the gate
+    check(
+      'the category is the first question, and the part can be described',
+      (await visible(partDrawer.getByLabel('Description'))) &&
+        // The first field control in the drawer is the category select.
+        (await partDrawer
+          .locator('select, input, textarea')
+          .first()
+          .evaluate((field) => field.getAttribute('id') ?? '')
+          .then(async (id) =>
+            id === ''
+              ? false
+              : (await partDrawer.getByLabel('Category').getAttribute('id')) === id,
+          )
+          .catch(() => false)),
+    );
+    check(
+      'a new part starts switched off, and the form says so',
+      (await partDrawer.getByLabel('Enable for order matching').inputValue()) ===
+        'disabled' &&
+        (await visible(partDrawer.getByText('A new part starts off', { exact: false }))),
+    );
 
     await partDrawer.getByLabel('Part name').fill('Shunt resistor 1mR');
+    await partDrawer
+      .getByLabel('Description')
+      .fill('2W, 1% — the current-sense shunt, not the pull-down.');
     await partDrawer.getByLabel('SKU / part code').fill('RES-1MR-2W');
     await partDrawer.getByLabel('Category').selectOption('Passives');
     await partDrawer.getByLabel('Stock quantity').fill('1200');
@@ -1189,6 +1244,11 @@ const main = async () => {
         (await visible(page.getByText('Movement history'))) &&
         (await visible(page.getByText('Opening stock when the part was added'))),
       page.url(),
+    );
+    check(
+      'the part carries the words the shop wrote about it, and is not yet matched',
+      (await visible(page.getByText('the current-sense shunt', { exact: false }))) &&
+        (await visible(page.getByText('Not matched'))),
     );
     const partUrl = page.url();
 

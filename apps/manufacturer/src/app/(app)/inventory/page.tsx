@@ -1,4 +1,4 @@
-import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
+import { Card, PageHeader, Text, cn, majorAmount as major } from '@ideeza/ui';
 import { STOCK_STATES, type StockLevel } from '@ideeza/domain';
 import { PartForm } from '@/components/inventory/part-form.js';
 import { PartList } from '@/components/inventory/part-list.js';
@@ -23,27 +23,49 @@ const pageNumber = (value: string | undefined): number => {
   return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
 };
 
+/**
+ * How urgent a number is, said in the same colour language the table's own
+ * Status column uses (UIUX-218).
+ *
+ * The complaint was that the most urgent figure on the page looked exactly like
+ * the least urgent one. A card only takes a tone when the number is non-zero:
+ * "0 out of stock" is good news and must not be painted as an alarm.
+ */
+const COUNTER_TONE = {
+  neutral: { rule: 'border-border', value: 'text-text-primary' },
+  warning: { rule: 'border-border-warning', value: 'text-text-warning' },
+  danger: { rule: 'border-border-error', value: 'text-text-error' },
+} as const;
+
 const Counter = ({
   value,
   label,
   note,
+  tone = 'neutral',
 }: {
-  readonly value: number;
+  readonly value: string | number;
   readonly label: string;
   readonly note: string;
-}) => (
-  <Card>
-    <p data-numeric className="text-3xl font-semibold tracking-near text-text-primary">
-      {value}
-    </p>
-    <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
-      {label}
-    </Text>
-    <Text tone="muted" size="xs" className="mt-0.5 block">
-      {note}
-    </Text>
-  </Card>
-);
+  readonly tone?: keyof typeof COUNTER_TONE;
+}) => {
+  const paint = COUNTER_TONE[value === 0 ? 'neutral' : tone];
+  return (
+    <Card className={paint.rule}>
+      <p
+        data-numeric
+        className={cn('text-3xl font-semibold tracking-near', paint.value)}
+      >
+        {value}
+      </p>
+      <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
+        {label}
+      </Text>
+      <Text tone="muted" size="xs" className="mt-0.5 block">
+        {note}
+      </Text>
+    </Card>
+  );
+};
 
 /**
  * Inventory management: what this shop holds.
@@ -94,7 +116,7 @@ const InventoryPage = async ({
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Counter
           value={counters.totalSkus}
           label="Parts held"
@@ -104,15 +126,27 @@ const InventoryPage = async ({
               : `${counters.disabled} not matched to requests`
           }
         />
+        {/*
+          What the shelf is worth (UIUX-218). A count of parts says nothing
+          about the capital standing still in the store, which is the number a
+          shop plans around. At cost, because unsold stock has earned nothing.
+        */}
+        <Counter
+          value={`${counters.currency} ${major(counters.inventoryValueMinor)}`}
+          label="Stock at cost"
+          note="Everything on the shelf, at what you paid"
+        />
         <Counter
           value={counters.lowStock}
           label="Low stock"
           note="Availability at or below your threshold"
+          tone="warning"
         />
         <Counter
           value={counters.outOfStock}
           label="Out of stock"
           note="Nothing free to promise"
+          tone="danger"
         />
         <Counter
           value={counters.reservedParts}

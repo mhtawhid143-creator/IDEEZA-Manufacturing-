@@ -22,6 +22,7 @@ const part = {
   partName: 'Bulk capacitor 470uF 100V',
   sku: 'CAP-470U100V',
   category: 'Electrolytic capacitors',
+  description: 'Low-ESR, 105C. Rated above the bus so it survives a brown-out.',
   stockQuantity: 500,
   lowStockThreshold: 100,
   unitCostMinor: 210,
@@ -369,5 +370,62 @@ describe('deleting a part', () => {
     const deleted = await inventory.deletePart(SHOP, fresh.partId);
     expect(deleted.ok).toBe(true);
     expect(await inventory.getPart(SHOP, fresh.partId)).toBeNull();
+  });
+});
+
+/**
+ * UIUX-218 through UIUX-223. The inventory summary and the part record, checked
+ * against what those tickets actually ask for rather than against the screen.
+ */
+describe('what the inventory summary reports', () => {
+  it('values the shelf at what the shop paid for it', async () => {
+    const counters = await inventory.inventoryCounters(SHOP);
+
+    // Everything on the shelf, at cost — not what is free to promise, because
+    // reserved stock is still the shop's money standing still (UIUX-218).
+    const page = await inventory.listParts(SHOP, { pageSize: 200 });
+    const expected = page.rows.reduce(
+      (total, row) => total + row.unitCostMinor * row.stockQuantity,
+      0,
+    );
+    expect(counters.inventoryValueMinor).toBe(expected);
+    expect(counters.currency).toHaveLength(3);
+  });
+
+  it('keeps the shop’s own words about a part, and hands them back', async () => {
+    // UIUX-222: with names as generic as "SMD resistor", the description is
+    // often the only thing that tells two SKUs apart.
+    const result = await inventory.addPart(SHOP, MEMBER, {
+      ...part,
+      sku: 'CAP-DESCRIBED',
+      description: 'Two of these look alike. This is the 105C one.',
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const detail = await inventory.getPart(SHOP, result.partId);
+    expect(detail?.description).toBe('Two of these look alike. This is the 105C one.');
+  });
+
+  it('reads a part with every unit promised as out of stock, not in stock', async () => {
+    // UIUX-219: the reported blind spot is a part whose stock is entirely
+    // committed still showing green. Availability here is stock less reserved,
+    // so it cannot happen — this pins it.
+    const result = await inventory.addPart(SHOP, MEMBER, {
+      ...part,
+      sku: 'CAP-COMMITTED',
+      stockQuantity: 120,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    await prisma.inventoryItem.update({
+      where: { id: result.partId },
+      data: { reservedQuantity: 120 },
+    });
+
+    const detail = await inventory.getPart(SHOP, result.partId);
+    expect(detail?.available).toBe(0);
+    expect(detail?.level).toBe('out_of_stock');
   });
 });

@@ -1502,6 +1502,10 @@ model InventoryItem {
   partName             String
   sku                  String
   category             String
+  /// What the part actually is, in the shop's own words: how it differs from a
+  /// similar SKU, what condition it is in, anything a reader would need that a
+  /// name and a code cannot carry.
+  description          String?
   stockQuantity        Int       @default(0)
   reservedQuantity     Int       @default(0)
   lowStockThreshold    Int       @default(0)

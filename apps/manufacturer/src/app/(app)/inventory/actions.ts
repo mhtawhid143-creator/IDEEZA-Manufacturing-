@@ -39,6 +39,7 @@ export interface AddPartPayload {
   readonly partName: string;
   readonly sku: string;
   readonly category: string;
+  readonly description: string;
   readonly stockQuantity: string;
   readonly lowStockThreshold: string;
   readonly unitPriceMajor: string;
@@ -82,6 +83,7 @@ export const addPartAction = async (
       partName: payload.partName,
       sku: payload.sku,
       category: payload.category,
+      description: optional(payload.description),
       stockQuantity: stock,
       lowStockThreshold: threshold,
       unitCostMinor: price,
@@ -103,6 +105,7 @@ export interface EditPartPayload {
   readonly partId: string;
   readonly partName: string;
   readonly category: string;
+  readonly description: string;
   readonly lowStockThreshold: string;
   readonly leadTimeDays: string;
   readonly minimumOrderQuantity: string;
@@ -133,6 +136,7 @@ export const editPartAction = async (
     const result = await editPart(actor.manufacturerId, payload.partId, {
       partName: payload.partName,
       category: payload.category,
+      description: optional(payload.description),
       lowStockThreshold: threshold,
       leadTimeDays: leadTime,
       minimumOrderQuantity: moq,

@@ -19,6 +19,7 @@ export interface PartRow {
   readonly partName: string;
   readonly sku: string;
   readonly category: string;
+  readonly description: string | null;
   readonly stockQuantity: number;
   readonly reservedQuantity: number;
   readonly available: number;
@@ -40,6 +41,15 @@ export interface InventoryCounters {
   readonly outOfStock: number;
   readonly disabled: number;
   readonly reservedParts: number;
+  /**
+   * What the shelf is worth, at what the shop paid for it (UIUX-218).
+   *
+   * A count of parts says nothing about the capital standing in the store, and
+   * that is the number a shop plans around. Valued at cost rather than at the
+   * selling price, because unsold stock has not earned a margin yet.
+   */
+  readonly inventoryValueMinor: number;
+  readonly currency: string;
 }
 
 export interface InventoryFilters {
@@ -65,6 +75,7 @@ const toRow = (item: {
   readonly partName: string;
   readonly sku: string;
   readonly category: string;
+  readonly description: string | null;
   readonly stockQuantity: number;
   readonly reservedQuantity: number;
   readonly lowStockThreshold: number;
@@ -81,6 +92,7 @@ const toRow = (item: {
   partName: item.partName,
   sku: item.sku,
   category: item.category,
+  description: item.description,
   stockQuantity: item.stockQuantity,
   reservedQuantity: item.reservedQuantity,
   available: availableStock(item),
@@ -171,6 +183,8 @@ export const inventoryCounters = async (
       reservedQuantity: true,
       lowStockThreshold: true,
       enabledForMatching: true,
+      unitCostMinor: true,
+      currency: true,
     },
   });
 
@@ -180,6 +194,13 @@ export const inventoryCounters = async (
     outOfStock: items.filter((item) => stockLevelOf(item) === 'out_of_stock').length,
     disabled: items.filter((item) => !item.enabledForMatching).length,
     reservedParts: items.reduce((total, item) => total + item.reservedQuantity, 0),
+    // Everything on the shelf, not what is free to promise: reserved stock is
+    // still the shop's until it ships, and it is still money standing still.
+    inventoryValueMinor: items.reduce(
+      (total, item) => total + Number(item.unitCostMinor) * item.stockQuantity,
+      0,
+    ),
+    currency: items[0]?.currency ?? 'USD',
   };
 };
 
@@ -259,6 +280,11 @@ export interface PartInput {
   readonly partName: string;
   readonly sku: string;
   readonly category: string;
+  /**
+   * What the part is, in words (UIUX-222). Often the only way to tell two
+   * similarly named SKUs apart, and it belongs to every category alike.
+   */
+  readonly description: string | null;
   readonly stockQuantity: number;
   readonly lowStockThreshold: number;
   readonly unitCostMinor: number;
@@ -314,6 +340,7 @@ export const addPart = async (
         partName: input.partName.trim(),
         sku,
         category: input.category.trim(),
+        description: input.description,
         stockQuantity: input.stockQuantity,
         reservedQuantity: 0,
         lowStockThreshold: input.lowStockThreshold,
@@ -349,6 +376,7 @@ export const addPart = async (
 export interface PartEdit {
   readonly partName?: string;
   readonly category?: string;
+  readonly description?: string | null;
   readonly lowStockThreshold?: number;
   readonly leadTimeDays?: number;
   readonly minimumOrderQuantity?: number | null;
@@ -400,6 +428,7 @@ export const editPart = async (
     data: {
       ...(edit.partName === undefined ? {} : { partName: edit.partName.trim() }),
       ...(edit.category === undefined ? {} : { category: edit.category.trim() }),
+      ...(edit.description === undefined ? {} : { description: edit.description }),
       ...(edit.lowStockThreshold === undefined
         ? {}
         : { lowStockThreshold: edit.lowStockThreshold }),

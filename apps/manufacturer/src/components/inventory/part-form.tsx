@@ -10,6 +10,7 @@ import {
   Input,
   Select,
   Text,
+  Textarea,
   useToast,
 } from '@ideeza/ui';
 import { addPartAction, editPartAction } from '@/app/(app)/inventory/actions.js';
@@ -20,6 +21,7 @@ export interface PartFormDefaults {
   readonly partName: string;
   readonly sku: string;
   readonly category: string;
+  readonly description: string;
   readonly lowStockThreshold: string;
   readonly leadTimeDays: string;
   readonly minimumOrderQuantity: string;
@@ -75,14 +77,24 @@ export const PartForm = ({
   const [partName, setPartName] = useState(defaults?.partName ?? '');
   const [sku, setSku] = useState(defaults?.sku ?? '');
   const [category, setCategory] = useState(defaults?.category ?? '');
+  const [description, setDescription] = useState(defaults?.description ?? '');
   const [stock, setStock] = useState('');
   const [threshold, setThreshold] = useState(defaults?.lowStockThreshold ?? '');
   const [price, setPrice] = useState('');
   const [leadTime, setLeadTime] = useState(defaults?.leadTimeDays ?? '');
   const [moq, setMoq] = useState(defaults?.minimumOrderQuantity ?? '');
   const [location, setLocation] = useState(defaults?.storageLocation ?? '');
+  /*
+   * A new part starts switched off (UIUX-223).
+   *
+   * It used to default to matched, which meant a part a shop had just typed in
+   * could be counted towards answering a real request before anybody had looked
+   * at it. Off is the safe default and the honest one: the shop turns it on when
+   * it is satisfied the part is right, and the form says so rather than leaving
+   * it to be discovered.
+   */
   const [matching, setMatching] = useState(
-    defaults === undefined ? 'enabled' : defaults.enabledForMatching ? 'enabled' : 'disabled',
+    defaults === undefined ? 'disabled' : defaults.enabledForMatching ? 'enabled' : 'disabled',
   );
 
   useEffect(() => setHydrated(true), []);
@@ -100,6 +112,7 @@ export const PartForm = ({
               partName,
               sku,
               category,
+              description,
               stockQuantity: stock,
               lowStockThreshold: threshold,
               unitPriceMajor: price,
@@ -113,6 +126,7 @@ export const PartForm = ({
               partId: defaults?.partId ?? '',
               partName,
               category,
+              description,
               lowStockThreshold: threshold,
               leadTimeDays: leadTime,
               minimumOrderQuantity: moq,
@@ -173,15 +187,33 @@ export const PartForm = ({
         <div className="flex flex-col gap-4">
           <p className="text-sm font-semibold text-text-primary">Basic information</p>
 
-          <FormField label="Part name" required>
-            <Input
-              placeholder="eg. SMD Resistor"
-              value={partName}
-              onChange={(event) => setPartName(event.target.value)}
+          {/*
+            Category is asked first (UIUX-222). It is the question the rest of
+            the form depends on — what a substitute may be looked for among, and
+            what category-specific detail would branch off — so answering it
+            after the quantities have already been filled in has it backwards.
+          */}
+          <FormField
+            label="Category"
+            required
+            hint="Substitutes are looked for in the same category."
+          >
+            <Select
+              options={options}
+              placeholder="Select a category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
             />
           </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Part name" required>
+              <Input
+                placeholder="eg. SMD Resistor"
+                value={partName}
+                onChange={(event) => setPartName(event.target.value)}
+              />
+            </FormField>
             <FormField
               label="SKU / part code"
               required
@@ -199,19 +231,24 @@ export const PartForm = ({
                 onChange={(event) => setSku(event.target.value)}
               />
             </FormField>
-            <FormField
-              label="Category"
-              required
-              hint="Substitutes are looked for in the same category."
-            >
-              <Select
-                options={options}
-                placeholder="Select a category"
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-              />
-            </FormField>
           </div>
+
+          {/*
+            Every other field here is a structured value. This is the one place
+            to say what the part actually is — and with names as generic as "SMD
+            resistor" it is often the only thing that tells two SKUs apart.
+          */}
+          <FormField
+            label="Description"
+            hint="How this part differs from a similar SKU, and anything a reader would need that a name and a code cannot carry."
+          >
+            <Textarea
+              rows={3}
+              placeholder="eg. 10k 1% 0402 thin film. Tighter tolerance than RES-10K-0603, for the feedback divider."
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </FormField>
 
           {mode === 'add' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -285,7 +322,11 @@ export const PartForm = ({
             <FormField
               className="mt-3"
               label="Enable for order matching"
-              hint="Off means this part is never counted when a buyer's bill of materials is matched against your stock."
+              hint={
+                mode === 'add'
+                  ? 'A new part starts off. Nothing is counted towards answering a request until you switch it on.'
+                  : "Off means this part is never counted when a buyer's bill of materials is matched against your stock."
+              }
             >
               <Select
                 options={[

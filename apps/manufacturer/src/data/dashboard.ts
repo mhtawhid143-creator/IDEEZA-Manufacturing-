@@ -195,6 +195,11 @@ export interface DashboardRequestRow {
 export interface DashboardPartRow {
   readonly id: string;
   readonly partName: string;
+  /**
+   * The code a shop would actually reorder against (UIUX-121). Two rows can
+   * carry the same generic name — "SMD resistor" — and mean different parts.
+   */
+  readonly sku: string;
   readonly minimumOrderQuantity: number | null;
   readonly available: number;
   readonly level: string;
@@ -526,6 +531,7 @@ export const getDashboardSections = async (
     inventoryHealth: parts.map((item) => ({
       id: item.id,
       partName: item.partName,
+      sku: item.sku,
       minimumOrderQuantity: item.minimumOrderQuantity,
       available: available(item),
       level:

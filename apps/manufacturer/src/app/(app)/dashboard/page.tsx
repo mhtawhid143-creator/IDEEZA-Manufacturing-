@@ -43,6 +43,26 @@ const WORK_SCOPES = [
   { value: 'module_3d', label: '3D printing' },
 ] as const;
 
+/**
+ * What a stock level looks like, and what it is called — one map, not two
+ * parallel ternaries (UIUX-120).
+ *
+ * The reported defect was a pill whose colour said one thing and whose words
+ * said another. Reading both out of the same key is what makes that impossible
+ * rather than merely unlikely.
+ */
+const STOCK_TONE: Readonly<Record<string, 'success' | 'warning' | 'danger'>> = {
+  in_stock: 'success',
+  low_stock: 'warning',
+  out_of_stock: 'danger',
+};
+
+const STOCK_WORDS: Readonly<Record<string, string>> = {
+  in_stock: 'In stock',
+  low_stock: 'Low stock',
+  out_of_stock: 'Out of stock',
+};
+
 const day = (at: Date): string =>
   at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -807,32 +827,45 @@ const DashboardPage = async ({
                         >
                           {part.partName}
                         </Link>
+                        {/*
+                          The code the shop would reorder against (UIUX-121).
+                          Two rows can share a generic name and be different
+                          parts, and a name alone cannot be acted on.
+                        */}
+                        <Text tone="muted" size="xs">
+                          {part.sku}
+                        </Text>
                       </td>
                       <td className="px-4 py-2.5 text-text-secondary">
                         {part.minimumOrderQuantity ?? '—'}
                       </td>
                       <td className="px-4 py-2.5 text-text-secondary">{part.available}</td>
                       <td className="px-4 py-2.5">
-                        <Tag
-                          tone={
-                            part.level === 'in_stock'
-                              ? 'success'
-                              : part.level === 'low_stock'
-                                ? 'warning'
-                                : 'danger'
-                          }
-                        >
-                          {part.level === 'in_stock'
-                            ? 'In stock'
-                            : part.level === 'low_stock'
-                              ? 'Low stock'
-                              : 'Out of stock'}
+                        {/*
+                          One map, so the pill's colour and its words come from
+                          the same value and cannot disagree (UIUX-120).
+                        */}
+                        <Tag tone={STOCK_TONE[part.level] ?? 'neutral'}>
+                          {STOCK_WORDS[part.level] ?? part.level}
                         </Tag>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {/*
+                What separates the three states, written down (UIUX-119). The
+                pill is derived from this rule and from nothing else, so the
+                legend cannot describe one thing while the column shows another.
+              */}
+              <p className="border-t border-border-subtle px-4 py-3 text-xs text-text-tertiary md:px-6">
+                Availability is what is on the shelf less what is already
+                promised. <strong className="font-semibold">Out of stock</strong> is
+                nothing free to promise,{' '}
+                <strong className="font-semibold">low stock</strong> is at or below the
+                threshold you set on the part, and{' '}
+                <strong className="font-semibold">in stock</strong> is above it.
+              </p>
             </div>
           )}
         </Card>

@@ -9,7 +9,7 @@ import {
   Text,
   majorAmount as major,
 } from '@ideeza/ui';
-import type { StockMovement } from '@ideeza/domain';
+import { orderReference, type StockMovement } from '@ideeza/domain';
 import { Crumbs } from '@/components/crumbs.js';
 import { PartForm } from '@/components/inventory/part-form.js';
 import { StockControls } from '@/components/inventory/stock-controls.js';
@@ -34,10 +34,20 @@ const MOVEMENT_WORDS: Readonly<Record<StockMovement, string>> = {
   released: 'Released from an order',
 };
 
+/**
+ * What a stock level is called, and what colour it takes — one map, so a pill's
+ * words and its colour come from the same key and cannot disagree (UIUX-120).
+ */
 const LEVEL_WORDS: Readonly<Record<string, string>> = {
   in_stock: 'In stock',
   low_stock: 'Low stock',
   out_of_stock: 'Out of stock',
+};
+
+const LEVEL_TONE: Readonly<Record<string, 'success' | 'warning' | 'danger'>> = {
+  in_stock: 'success',
+  low_stock: 'warning',
+  out_of_stock: 'danger',
 };
 
 /**
@@ -75,15 +85,7 @@ const PartDetailPage = async ({
               </Text>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Tag
-                tone={
-                  part.level === 'in_stock'
-                    ? 'success'
-                    : part.level === 'low_stock'
-                      ? 'warning'
-                      : 'danger'
-                }
-              >
+              <Tag tone={LEVEL_TONE[part.level] ?? 'neutral'}>
                 {LEVEL_WORDS[part.level] ?? part.level}
               </Tag>
               {!part.enabledForMatching && <Tag tone="neutral">Not matched</Tag>}
@@ -95,6 +97,16 @@ const PartDetailPage = async ({
               title="What this part is"
               description="Everything here is what a request is matched against."
             />
+            {/*
+              The shop's own words about the part (UIUX-222), above the
+              structured values: with names as generic as "SMD resistor" this is
+              often the only thing that tells two SKUs apart.
+            */}
+            {part.description !== null && part.description !== '' && (
+              <Text size="sm" className="mt-4 block">
+                {part.description}
+              </Text>
+            )}
             <DefinitionList
               className="mt-4"
               columns={2}
@@ -160,7 +172,14 @@ const PartDetailPage = async ({
                         left {movement.resultingStock} on the shelf ·{' '}
                         {movement.resultingReserved} reserved
                         {movement.actorName === null ? '' : ` · ${movement.actorName}`}
-                        {movement.orderId === null ? '' : ` · order ${movement.orderId}`}
+                        {/*
+                          The order a reservation is held for, as a person would
+                          quote it (UIUX-220) — a raw row id told the shop
+                          nothing it could act on.
+                        */}
+                        {movement.orderId === null
+                          ? ''
+                          : ` · ${orderReference(movement.orderId)}`}
                       </Text>
                       {movement.note !== null && (
                         <Text size="sm" className="mt-1 block">
@@ -204,6 +223,7 @@ const PartDetailPage = async ({
                 partName: part.partName,
                 sku: part.sku,
                 category: part.category,
+                description: part.description ?? '',
                 lowStockThreshold: String(part.lowStockThreshold),
                 leadTimeDays: String(part.leadTimeDays),
                 minimumOrderQuantity:
