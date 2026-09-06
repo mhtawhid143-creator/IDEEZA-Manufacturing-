@@ -32,6 +32,24 @@ export const assertProductionMayStart = (check: ProductionStartCheck): void => {
       `the order is "${check.orderStatus}"`,
     );
   }
+  /*
+   * A case freezes the work as well as the money.
+   *
+   * While a dispute is open, operations may decide the whole amount goes back
+   * to the buyer. A shop that keeps advancing stages in the meantime is
+   * spending materials and labour on an order it may not be paid for — and it
+   * was doing exactly that: the order read "disputed" and every stage control
+   * still worked. The claim before it is different, and deliberately not
+   * blocked: an unanswered claim is still the shop's own decision to pay or to
+   * challenge, and a line that is running should not be stopped by an
+   * accusation the shop may be about to disprove.
+   */
+  if (check.orderStatus === 'disputed') {
+    throw new InvariantViolationError(
+      'production-held-by-open-case',
+      'a case is open on this order, so production is held until it is decided',
+    );
+  }
 };
 
 /**

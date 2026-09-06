@@ -12,12 +12,14 @@ import {
   Text,
   majorAmount as major,
 } from '@ideeza/ui';
+import { issueReasonLabel } from '@ideeza/domain';
 import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
-import { listDisputes } from '@/data/resolution.js';
+import { listDisputes, listRefundClaims } from '@/data/resolution.js';
 import { getShopContext } from '@/data/shop.js';
 import { linkIfBuilt } from '@/lib/navigation.js';
 import { readProgress } from '@/data/tour.js';
 import { stopHref, TOURS } from '@/data/tours.js';
+import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +30,10 @@ const percent = (rate: number | null): string =>
 
 const day = (at: Date): string =>
   at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+/** A deadline, written out — the one date on this screen with money behind it. */
+const deadline = (at: Date): string =>
+  at.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 /**
  * How long ago, in the shortest true form.
@@ -250,17 +256,26 @@ const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
  */
 const DashboardPage = async () => {
   const actor = await requireManufacturer('/dashboard');
-  const [shop, tiles, sections, disputes, walked] = await Promise.all([
+  const [shop, tiles, sections, disputes, walked, claims] = await Promise.all([
     getShopContext(actor.manufacturerId, actor.userId),
     getHeadlineTiles(actor.manufacturerId),
     getDashboardSections(actor.manufacturerId),
     listDisputes(actor.manufacturerId),
     readProgress(actor.userId),
+    listRefundClaims(actor.manufacturerId),
   ]);
 
   // A dispute is the one thing on this panel that is waiting on the shop and
   // costs it money to ignore: the payout stays held until the case is decided.
   // So it is said at the top of the first screen rather than left to be found.
+  // UIUX-212 / UIUX-211: a claim nobody has answered has a deadline, and past
+  // it IDEEZA decides on the record — which will be the buyer's account alone.
+  // A shop that only meets the claim by opening the right order can lose the
+  // money to a calendar. So it is said here, with the amount and the reason,
+  // which is what the decision actually turns on.
+  const unansweredClaims = claims.filter((claim) => claim.status === 'requested');
+  const firstClaim = unansweredClaims[0];
+
   const openDisputes = disputes.filter((dispute) => dispute.status !== 'resolved');
   const unanswered = openDisputes.filter((dispute) => dispute.status === 'open');
 
@@ -300,6 +315,38 @@ const DashboardPage = async () => {
           </div>
         }
       />
+
+      {firstClaim !== undefined && (
+        <div data-tour="dashboard-claim">
+          <Alert
+            tone="danger"
+            title={
+              unansweredClaims.length === 1
+                ? `${firstClaim.buyerName} has claimed ${firstClaim.currency} ${major(firstClaim.requestedAmountMinor)} back on ${firstClaim.productName}`
+                : `${String(unansweredClaims.length)} refund claims are waiting on your answer`
+            }
+            actions={
+              <Link
+                href={`/orders/${firstClaim.orderId}`}
+                className={buttonAppearance({ variant: 'primary', size: 'sm' })}
+              >
+                Answer it
+              </Link>
+            }
+          >
+            {issueReasonLabel(firstClaim.reason)} — {firstClaim.description}
+            <span className="mt-1 block font-medium text-text-primary">
+              Answer by{' '}
+              {deadline(
+                new Date(firstClaim.createdAt.getTime() + REVIEW_WINDOW_DAYS * 86_400_000),
+              )}
+              .
+              If you do not, IDEEZA decides on what is on the record, and that will be
+              their account alone.
+            </span>
+          </Alert>
+        </div>
+      )}
 
       {openDisputes.length > 0 && (
         <div data-tour="dashboard-notice">

@@ -408,6 +408,15 @@ export const getOrder = async (
           : 'The platform moves this one.';
     } else if (stage.status === 'completed') {
       blockedReason = 'Already completed. A completed stage is never reopened.';
+    } else if (order.status === 'disputed') {
+      // UIUX-213: the case freezes the work as well as the money. A shop was
+      // able to advance every remaining stage of a disputed order, spending
+      // materials and labour on a job that may be refunded in full. The domain
+      // now refuses it (assertProductionMayStart); this is the same fact said
+      // where the shop is looking, because a control that fails on being
+      // pressed is worse than one that is honestly shut.
+      blockedReason =
+        'A case is open on this order. Production is held until IDEEZA decides it.';
     } else if (!funded) {
       blockedReason = 'Not funded yet, so nothing on the shop floor can move.';
     } else if (openAlerts > 0) {

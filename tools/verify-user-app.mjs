@@ -1629,16 +1629,21 @@ const main = async () => {
         (await visible(page.getByText(/^Request · /))),
     );
 
-    await page
+    const withQuote = page
       .getByRole('list', { name: 'Conversations' })
       .getByRole('link')
-      .first()
-      .click();
+      .filter({ hasText: /quote came back|Quote/ })
+      .first();
+    await (
+      (await withQuote.count()) > 0
+        ? withQuote
+        : page.getByRole('list', { name: 'Conversations' }).getByRole('link').first()
+    ).click();
     await page.waitForURL(/\/messages\/[^/]+/, { timeout: 20_000 }).catch(() => undefined);
     check(
       'a conversation shows what was said and the record it is about',
       (await visible(page.getByRole('list', { name: 'Messages' }))) &&
-        (await visible(page.getByText('From the order record'))) &&
+        (await visible(page.getByText(/Recorded by the platform/))) &&
         (await visible(page.getByText('Quote received'))),
       page.url(),
     );

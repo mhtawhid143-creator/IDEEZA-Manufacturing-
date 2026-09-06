@@ -204,7 +204,7 @@ export const RefundBanner = ({
               disabled={!hydrated || !accepted || acceptReason === ''}
               onClick={approve}
             >
-              Give refund
+              Approve refund
             </Button>
           </div>
         }
@@ -215,6 +215,18 @@ export const RefundBanner = ({
             claim is fair; the payout on this order is reduced by whatever operations
             releases to them.
           </Text>
+
+          {/* What the buyer said, as they said it, and not editable. A shop
+              agreeing to a claim has to be able to read the claim. */}
+          <div className="rounded-lg border border-border-subtle bg-bg-page p-3">
+            <p className="text-2xs text-text-tertiary">Their claim</p>
+            <p className="mt-0.5 text-sm font-medium text-text-primary">
+              {issueReasonLabel(reason)}
+            </p>
+            <Text tone="muted" size="xs" className="mt-1 block">
+              {description}
+            </Text>
+          </div>
 
           <FormField label="Select Reason" required>
             <Select
@@ -262,7 +274,7 @@ export const RefundBanner = ({
             <Textarea
               rows={3}
               value={note}
-              placeholder="If you didn’t complete something, explain why not and if the client changed requirement."
+              placeholder="Optional. Anything operations should know about how you settled this."
               onChange={(event) => setNote(event.target.value)}
             />
           </FormField>

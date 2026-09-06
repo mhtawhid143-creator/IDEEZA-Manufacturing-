@@ -80,6 +80,9 @@ const OrderProductionPage = async ({
 
   const claim = claims.find((row) => row.orderId === order.orderId) ?? null;
   const openCases = disputes.filter((row) => row.orderId === order.orderId);
+  // The case that has the work stopped, if any. Unresolved only: a decided case
+  // is history, and history does not hold a line.
+  const holding = openCases.find((row) => row.status !== 'resolved') ?? null;
 
   return (
     <OrderShell
@@ -149,6 +152,9 @@ const OrderProductionPage = async ({
       <ProductionTimeline
         orderId={order.orderId}
         live={order.fundingSecured && order.completedStages < order.totalStages}
+        {...(holding === null
+          ? {}
+          : { heldByCase: { disputeId: holding.id, reason: holding.reason } })}
         stages={order.stages.map((stage) => ({
           id: stage.id,
           key: stage.key,

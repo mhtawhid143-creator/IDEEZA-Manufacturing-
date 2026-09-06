@@ -400,7 +400,12 @@ describe('the order status only moves through its machine', () => {
     try {
       const moved = await orders.moveStage(SHOP, MEMBER, ORDER, 'delivered', 'completed', undefined);
       expect(moved.ok).toBe(false);
-      if (!moved.ok) expect(moved.message).toMatch(/disputed/);
+      // The refusal now comes from `assertProductionMayStart` rather than from
+      // the order machine's own rejection, because UIUX-213 asked for the whole
+      // line to be held by an open case and not merely this one stage. So the
+      // wording names the case instead of the status: what is pinned is that
+      // the refusal explains itself, which was the point of the assertion.
+      if (!moved.ok) expect(moved.message).toMatch(/case is open/);
 
       const after = await prisma.manufacturingOrder.findUniqueOrThrow({ where: { id: ORDER } });
       expect(after.status).toBe('disputed');

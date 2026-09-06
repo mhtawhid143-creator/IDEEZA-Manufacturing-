@@ -132,6 +132,30 @@ describe('production cannot start before funding is secured', () => {
     ).toThrow(InvariantViolationError);
   });
 
+  /*
+   * UIUX-213 (MFG-113): a shop could advance every remaining stage of an order
+   * whose dispute was still open — spending materials and labour on work that
+   * may be refunded in full before the case is decided. The money is frozen
+   * while operations weighs the case; the work has to be frozen with it, and by
+   * the invariant rather than by the shop remembering to stop.
+   */
+  it('refuses production while a case is open on the order', () => {
+    expect(() =>
+      assertProductionMayStart({ orderStatus: 'disputed', paymentStatus: 'secured' }),
+    ).toThrow(InvariantViolationError);
+  });
+
+  /*
+   * A claim is not a case. The shop still holds that decision — it can pay the
+   * claim or challenge it — and an unanswered claim from a buyer who may be
+   * mistaken is not a reason to stop a line that is running.
+   */
+  it('allows production while a refund is only claimed, not disputed', () => {
+    expect(() =>
+      assertProductionMayStart({ orderStatus: 'refund_requested', paymentStatus: 'secured' }),
+    ).not.toThrow();
+  });
+
   it('allows production once funding is secured', () => {
     expect(() =>
       assertProductionMayStart({ orderStatus: 'confirmed', paymentStatus: 'secured' }),

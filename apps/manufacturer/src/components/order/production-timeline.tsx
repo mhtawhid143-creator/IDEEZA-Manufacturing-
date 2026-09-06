@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import {
@@ -8,6 +9,7 @@ import {
   Card,
   DropdownMenu,
   FormField,
+  Icon,
   Input,
   Modal,
   Select,
@@ -15,8 +17,10 @@ import {
   Text,
   Textarea,
   Tooltip,
+  buttonAppearance,
   useToast,
 } from '@ideeza/ui';
+import { issueReasonLabel } from '@ideeza/domain';
 import {
   attachEvidenceAction,
   moveStageAction,
@@ -51,6 +55,15 @@ export interface ProductionTimelineProps {
   readonly orderId: string;
   readonly stages: readonly TimelineStage[];
   readonly live: boolean;
+  /**
+   * The case holding this order, when one is.
+   *
+   * UIUX-213: the panel showed a pulsing "Live" on an order whose dispute was
+   * open, with every stage control working. A held order is not live, and the
+   * timeline is where the shop is looking when it decides whether to keep
+   * building.
+   */
+  readonly heldByCase?: { readonly disputeId: string; readonly reason: string } | undefined;
 }
 
 const EVIDENCE_OPTIONS = [
@@ -72,6 +85,7 @@ const EVIDENCE_OPTIONS = [
  */
 export const ProductionTimeline = ({
   orderId,
+  heldByCase,
   stages,
   live,
 }: ProductionTimelineProps) => {
@@ -162,16 +176,44 @@ export const ProductionTimeline = ({
               is your own work.
             </Text>
           </div>
-          {live && (
-            <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-error">
-              <span
-                aria-hidden
-                className="inline-block h-2 w-2 animate-pulse rounded-full bg-bg-error"
-              />
-              Live
+          {heldByCase !== undefined ? (
+            <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-warning">
+              <Icon name="alert" size={14} />
+              Held
             </span>
+          ) : (
+            live && (
+              <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-error">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 animate-pulse rounded-full bg-bg-error"
+                />
+                Live
+              </span>
+            )
           )}
         </div>
+
+        {heldByCase !== undefined && (
+          <div className="border-t border-border-subtle px-4 py-4 md:px-6">
+            <Alert
+              tone="warning"
+              title="Production is held while this case is open"
+              actions={
+                <Link
+                  href={`/orders/${orderId}/disputes/${heldByCase.disputeId}`}
+                  className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+                >
+                  Open the case
+                </Link>
+              }
+            >
+              {issueReasonLabel(heldByCase.reason)}. IDEEZA may decide the whole amount
+              goes back to the buyer, so no stage moves until it has — spending more on
+              this order now is spending money you may not be paid.
+            </Alert>
+          </div>
+        )}
 
         <ol aria-label="Production stages" className="border-t border-border-subtle">
           {stages.map((stage) => (

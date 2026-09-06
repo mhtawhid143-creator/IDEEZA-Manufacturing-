@@ -863,6 +863,60 @@ const main = async () => {
         (await page.getByRole('button', { name: 'Submit Quote' }).count()) === 0,
     );
 
+    // --------------- UIUX-213 (MFG-113): an open case holds the line
+    //
+    // The finding: production tracking showed a pulsing "Live" on an order
+    // whose dispute was open, and every stage control still worked — a shop
+    // could spend materials and labour on a job that may be refunded in full.
+    await page.goto(`${base}/orders/mfrfix_order_disputed`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(700);
+    const timeline = page.locator('[data-tour="production-stages"]');
+    check(
+      'a disputed order does not claim to be live',
+      (await timeline.getByText('Held').count()) > 0 &&
+        (await timeline.getByText('Live').count()) === 0,
+    );
+    check(
+      'and the timeline says why, with the way to the case',
+      (await visible(page.getByText('Production is held while this case is open'))) &&
+        (await page.getByRole('link', { name: 'Open the case' }).count()) > 0,
+    );
+    check(
+      'no stage can be moved while the case is open',
+      (await timeline.getByRole('button', { name: /^Move / }).count()) === 0,
+      `${await timeline.getByRole('button', { name: /^Move / }).count()} movable stages`,
+    );
+
+    // ------------- UIUX-215 (MFG-115): approving is a real answer to a claim
+    await page.goto(`${base}/orders/verify_order_delivered`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    if ((await page.getByRole('button', { name: 'Approve' }).count()) > 0) {
+      await page.getByRole('button', { name: 'Approve' }).click();
+      const approve = page.getByRole('dialog', { name: 'Refund Request' });
+      if (await visible(approve)) {
+        const words = await approve.innerText();
+        check(
+          'the approve form shows the buyer’s own reason, not a blank one',
+          /Their claim/.test(words),
+          words.replace(/s+/g, ' ').slice(0, 110),
+        );
+        check(
+          'and names the amount it is agreeing to',
+          /The full USD/.test(words),
+        );
+        check(
+          'the terms box is not pre-agreed',
+          !(await approve.getByLabel('I accept the Terms and Conditions').isChecked()),
+        );
+        check(
+          'and the button says the same thing the banner said',
+          (await approve.getByRole('button', { name: 'Approve refund' }).count()) > 0 &&
+            (await approve.getByRole('button', { name: 'Give refund' }).count()) === 0,
+        );
+        await page.keyboard.press('Escape');
+      }
+    }
+
     // ------------------------- UIUX-224 (MFG-126): a held payout says why
     //
     // The finding: a row reading "Disputed" showed the same fields as every
@@ -1321,14 +1375,14 @@ const main = async () => {
     // and neither is saying why.
     check(
       'and refuses to give a refund until the reason and the terms are answered',
-      await approveModal.getByRole('button', { name: 'Give refund' }).isDisabled(),
+      await approveModal.getByRole('button', { name: 'Approve refund' }).isDisabled(),
     );
 
     await approveModal.getByLabel('Select Reason').selectOption('spec_ambiguous');
     await approveModal.getByRole('checkbox', { name: /Terms and Conditions/ }).check();
     check(
       'answering both arms it',
-      !(await approveModal.getByRole('button', { name: 'Give refund' }).isDisabled()),
+      !(await approveModal.getByRole('button', { name: 'Approve refund' }).isDisabled()),
     );
 
     await approveModal.getByRole('radio', { name: /An amount of your own/ }).check();
@@ -1337,14 +1391,14 @@ const main = async () => {
       await visible(approveModal.getByLabel(/Amount you accept/)),
     );
     await approveModal.getByLabel(/Amount you accept/).fill('999999');
-    await approveModal.getByRole('button', { name: 'Give refund' }).click();
+    await approveModal.getByRole('button', { name: 'Approve refund' }).click();
     await page.waitForTimeout(2_000);
     check(
       'more than the claim is refused rather than recorded',
       await visible(page.getByText('cannot accept more than the buyer claimed', { exact: false })),
     );
     await approveModal.getByLabel(/Amount you accept/).fill('120.00');
-    await approveModal.getByRole('button', { name: 'Give refund' }).click();
+    await approveModal.getByRole('button', { name: 'Approve refund' }).click();
     await page.waitForTimeout(2_500);
     await page.goto(`${base}/orders/verify_order_delivered`, { waitUntil: 'networkidle' });
     const answered = ((await page.locator('main').innerText()) ?? '').replace(/\s+/g, ' ');
