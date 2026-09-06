@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { orderReference } from '@ideeza/domain';
+import {orderReference, counted } from '@ideeza/domain';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -208,7 +208,7 @@ export const OrderList = ({
           {
             id: 'quantity',
             header: 'Quantity',
-            cell: (row) => `${row.quantity} units`,
+            cell: (row) => counted(row.quantity, 'unit'),
           },
           {
             id: 'unit',

@@ -7,7 +7,7 @@ import { listManufacturers } from '@/data/requests.js';
 import { requireBuyer } from '@/lib/auth.js';
 import { openRequestHref } from '@/lib/routes.js';
 import { PACKAGE_COPY, parseSelection } from '@/lib/rfq-copy.js';
-import { asId, type QuotedService, type RfqId } from '@ideeza/domain';
+import {asId, type QuotedService, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +89,7 @@ const SelectManufacturerPage = async ({
           items={[
             { label: 'Board', value: draft.productName },
             { label: 'Package', value: PACKAGE_COPY[draft.kind] },
-            { label: 'Volume', value: `${draft.quantity} units` },
+            { label: 'Volume', value: counted(draft.quantity, 'unit') },
             { label: 'Lead time asked for', value: `${draft.leadTimeDays} days` },
             { label: 'Material', value: draft.material },
             { label: 'Files', value: String(draft.includedFileIds.length) },

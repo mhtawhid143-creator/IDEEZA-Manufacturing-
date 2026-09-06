@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Tag, Text } from '@ideeza/ui';
-import { asId, briefRows, type RfqId } from '@ideeza/domain';
+import {asId, briefRows, type RfqId, counted } from '@ideeza/domain';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getRoutedRequest, markRequestViewed } from '@/data/rfqs.js';
@@ -83,13 +83,13 @@ const BriefPage = async ({
                   ? 'Not stated'
                   : request.serviceLabels.join(', '),
             },
-            { label: 'Quantity', value: `${request.quantity} units` },
+            { label: 'Quantity', value: counted(request.quantity, 'unit') },
             {
               label: 'Also price for',
               value:
                 request.volumeTiers.length === 0
                   ? 'This volume only'
-                  : request.volumeTiers.map((tier) => `${tier} units`).join(', '),
+                  : request.volumeTiers.map((tier) => counted(tier, 'unit')).join(', '),
             },
             { label: 'BOM lines', value: String(request.bomLines.length) },
             { label: 'Attached files', value: String(request.files.length) },

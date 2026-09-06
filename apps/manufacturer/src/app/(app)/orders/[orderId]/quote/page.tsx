@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
-import { asId, type OrderId } from '@ideeza/domain';
+import {asId, type OrderId, counted } from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
 import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
 import { getClientProfile } from '@/data/clients.js';
@@ -57,7 +57,7 @@ const OrderTermsPage = async ({
             { label: 'Order', value: order.orderId },
             { label: 'Quote', value: order.quoteId },
             { label: 'Request', value: order.rfqId },
-            { label: 'Quantity', value: `${order.quantity} units` },
+            { label: 'Quantity', value: counted(order.quantity, 'unit') },
             {
               label: 'Unit price',
               value: `${order.currency} ${major(order.unitPriceMinor)}`,

@@ -5,6 +5,7 @@ import {
   asId,
   type CoverageState,
   type RfqId,
+  counted,
 } from '@ideeza/domain';
 import { MissingParts, type ShortLine } from '@/components/request/missing-parts.js';
 import { RequestShell } from '@/components/request/request-shell.js';
@@ -138,11 +139,13 @@ const BomPage = async ({
         <div className="px-4 py-4 md:px-6">
           <CardHeader
             title={`${request.productName} parts`}
-            description={`${request.bomLines.length} ${
-              request.bomLines.length === 1 ? 'line' : 'lines'
-            } · ${totalParts} ${totalParts === 1 ? 'part' : 'parts'} per unit · ${
-              totalParts * request.quantity
-            } for ${request.quantity} units`}
+            description={`${counted(request.bomLines.length, 'line')} · ${counted(
+              totalParts,
+              'part',
+            )} per unit · ${totalParts * request.quantity} for ${counted(
+              request.quantity,
+              'unit',
+            )}`}
           />
         </div>
 

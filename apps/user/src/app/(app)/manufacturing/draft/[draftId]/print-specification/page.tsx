@@ -15,7 +15,7 @@ import { Crumbs } from '@/components/crumbs.js';
 import { PrintSpecForm } from '@/components/print-spec-form.js';
 import { getPrintSpec, printSpecRows } from '@/data/print-spec.js';
 import { requireBuyer } from '@/lib/auth.js';
-import { asId, usesInfill, type RfqId } from '@ideeza/domain';
+import {asId, usesInfill, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +53,7 @@ const PrintSpecificationPage = async ({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="3D printing specification"
-        description={`${view.productName} · ${view.quantity} units`}
+        description={`${view.productName} · ${counted(view.quantity, 'unit')}`}
         breadcrumbs={
           <Crumbs
             items={[

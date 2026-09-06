@@ -22,7 +22,7 @@ import { getQuote } from '@/data/quotes.js';
 import { getRequest } from '@/data/requests.js';
 import { requireBuyer } from '@/lib/auth.js';
 import { SERVICE_LIST } from '@/lib/rfq-copy.js';
-import { asId, type QuoteId, type RfqId } from '@ideeza/domain';
+import {asId, type QuoteId, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -160,7 +160,7 @@ const QuoteDetailPage = async ({
                   {
                     id: 'volume',
                     header: 'Volume',
-                    cell: (price) => `${price.quantity} units`,
+                    cell: (price) => counted(price.quantity, 'unit'),
                   },
                   {
                     id: 'unit',

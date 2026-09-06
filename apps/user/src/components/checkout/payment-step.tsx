@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
+import { counted } from '@ideeza/domain';
 import {
   Alert,
   Button,
@@ -163,7 +164,7 @@ export const PaymentStep = ({
           <div className="border-b border-border-subtle p-4 md:px-6">
             <CardHeader
               title="Payment method"
-              description={`${productName} · ${quantity} units`}
+              description={`${productName} · ${counted(quantity, 'unit')}`}
             />
           </div>
           <ul aria-label="Payment methods" className="flex flex-col">

@@ -18,6 +18,7 @@ import {
   type ProductionStageKey,
   type ShippingChoice,
   type UserId,
+  counted,
 } from '@ideeza/domain';
 import { toDatabaseEventKind, toDomainEventKind } from '@ideeza/db';
 import type { AnswerInventoryAlertInput } from '@ideeza/types';
@@ -393,7 +394,7 @@ export const getOrderItems = async (
     name: line.description,
     detail:
       line.rfqItem === null
-        ? `${line.quantity} units`
+        ? counted(line.quantity, 'unit')
         : `${line.rfqItem.reference} · ${line.rfqItem.componentName}`,
     quantity: line.quantity,
     unitPriceMinor: Number(line.unitPriceMinor),

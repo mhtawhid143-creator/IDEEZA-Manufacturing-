@@ -10,6 +10,7 @@ import {
   StatusChip,
   Text,
 } from '@ideeza/ui';
+import { counted } from '@ideeza/domain';
 import { RowMenu } from '@/components/row-menu.js';
 
 export interface InboxRow {
@@ -160,8 +161,8 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
               <div className="max-w-[260px]">
                 <p className="truncate text-sm text-text-secondary">{row.description}</p>
                 <Text tone="muted" size="xs">
-                  {row.fileCount} {row.fileCount === 1 ? 'file' : 'files'} ·{' '}
-                  {row.bomLineCount} BOM {row.bomLineCount === 1 ? 'line' : 'lines'}
+                  {counted(row.fileCount, 'file')} ·{' '}
+                  {counted(row.bomLineCount, 'BOM line')}
                 </Text>
               </div>
             ),

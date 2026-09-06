@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Alert, Card, CardHeader, EmptyState, Tag, Text } from '@ideeza/ui';
-import { asId, type RfqId } from '@ideeza/domain';
+import { asId, counted, type RfqId } from '@ideeza/domain';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getRoutedRequest, type RequestFile } from '@/data/rfqs.js';
@@ -51,7 +51,10 @@ const FilesPage = async ({
         <div className="px-4 py-4 md:px-6">
           <CardHeader
             title={request.productName}
-            description={`${counts.pcb} board ${counts.pcb === 1 ? 'file' : 'files'} · ${counts.model_3d} 3D ${counts.model_3d === 1 ? 'model' : 'models'} · ${counts.document} ${counts.document === 1 ? 'document' : 'documents'}`}
+            description={`${counted(counts.pcb, 'board file')} · ${counted(
+              counts.model_3d,
+              '3D model',
+            )} · ${counted(counts.document, 'document')}`}
           />
         </div>
 

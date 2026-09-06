@@ -1,4 +1,4 @@
-import { asId, type UserId, majorAmount } from '@ideeza/domain';
+import {asId, type UserId, majorAmount, counted } from '@ideeza/domain';
 import { toDomainEventKind } from '@ideeza/db';
 import { database } from '@/lib/db.js';
 
@@ -392,7 +392,7 @@ export const getThread = async (
             },
             ...(row.rfq === null
               ? []
-              : [{ label: 'Quantity', value: `${row.rfq.quantity} units` }]),
+              : [{ label: 'Quantity', value: counted(row.rfq.quantity, 'unit') }]),
             /*
              * UIUX-231: a substitution that travels with a live order is the
              * thing most expensive to discover late, so the card names it
@@ -438,7 +438,7 @@ export const getThread = async (
               label: 'Package',
               value: PACKAGE_LABEL[row.rfq.package.kind] ?? row.rfq.package.kind,
             },
-            { label: 'Quantity', value: `${row.rfq.quantity} units` },
+            { label: 'Quantity', value: counted(row.rfq.quantity, 'unit') },
             { label: 'BOM lines', value: String(row.rfq._count.items) },
             {
               label: 'Buyer’s target',

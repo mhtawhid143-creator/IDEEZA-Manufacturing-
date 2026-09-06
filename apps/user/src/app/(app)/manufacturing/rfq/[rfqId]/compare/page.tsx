@@ -6,7 +6,7 @@ import { day, landedTotalMinor, major } from '@/components/rfq/quote-money.js';
 import { listQuotes } from '@/data/quotes.js';
 import { getRequest } from '@/data/requests.js';
 import { requireBuyer } from '@/lib/auth.js';
-import { asId, type RfqId } from '@ideeza/domain';
+import {asId, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +104,7 @@ const CompareQuotesPage = async ({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Compare quotes"
-        description={`${request.productName} · ${request.quantity} units`}
+        description={`${request.productName} · ${counted(request.quantity, 'unit')}`}
         breadcrumbs={
           <Crumbs
             items={[

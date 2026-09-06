@@ -6,7 +6,7 @@ import { AddressForm } from '@/components/checkout/address-form.js';
 import { getCheckout } from '@/data/checkout.js';
 import { requireBuyer } from '@/lib/auth.js';
 import { CHECKOUT_STEPS } from '@/lib/checkout-steps.js';
-import { asId, type OrderId } from '@ideeza/domain';
+import {asId, type OrderId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,7 @@ const CheckoutAddressPage = async ({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Delivery address"
-        description={`${checkout.productName} · ${checkout.quantity} units`}
+        description={`${checkout.productName} · ${counted(checkout.quantity, 'unit')}`}
         breadcrumbs={
           <Crumbs
             items={[

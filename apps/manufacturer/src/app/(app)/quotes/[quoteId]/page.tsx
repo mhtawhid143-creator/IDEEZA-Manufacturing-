@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
-import { asId, type QuoteId } from '@ideeza/domain';
+import {asId, type QuoteId, counted } from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getQuote } from '@/data/quotes.js';
@@ -58,7 +58,7 @@ const QuoteDetailPage = async ({
             { label: 'Request', value: quote.rfqId },
             { label: 'Version', value: String(quote.version) },
             { label: 'Lead time', value: `${quote.leadTimeDays} days` },
-            { label: 'Quantity', value: `${quote.quantity} units` },
+            { label: 'Quantity', value: counted(quote.quantity, 'unit') },
             {
               label: 'Substitutes suggested',
               value:
@@ -91,7 +91,7 @@ const QuoteDetailPage = async ({
               label: 'Unit price',
               value: `${quote.currency} ${major(quote.unitPriceMinor)}`,
             },
-            { label: 'Quantity', value: `${quote.quantity} units` },
+            { label: 'Quantity', value: counted(quote.quantity, 'unit') },
             {
               label: 'Subtotal',
               value: `${quote.currency} ${major(quote.totalPriceMinor)}`,

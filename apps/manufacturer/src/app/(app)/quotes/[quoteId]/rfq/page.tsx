@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Tag, Text, buttonAppearance } from '@ideeza/ui';
-import { asId, briefRows, type QuoteId } from '@ideeza/domain';
+import {asId, briefRows, type QuoteId, counted } from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getQuote } from '@/data/quotes.js';
@@ -86,7 +86,7 @@ const QuoteRequestPage = async ({
                   ? 'Not stated'
                   : request.serviceLabels.join(', '),
             },
-            { label: 'Quantity', value: `${request.quantity} units` },
+            { label: 'Quantity', value: counted(request.quantity, 'unit') },
             {
               label: 'Also priced at',
               value:
@@ -95,7 +95,7 @@ const QuoteRequestPage = async ({
                     ? 'This volume only'
                     : `${request.volumeTiers.join(', ')} — you did not price these`
                   : quote.volumePrices
-                      .map((price) => `${price.quantity} units`)
+                      .map((price) => counted(price.quantity, 'unit'))
                       .join(', '),
             },
             { label: 'BOM lines', value: String(request.bomLines.length) },

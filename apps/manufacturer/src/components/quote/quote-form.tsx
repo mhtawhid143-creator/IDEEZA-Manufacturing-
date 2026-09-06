@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { counted } from '@ideeza/domain';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import {
   Alert,
@@ -349,11 +350,11 @@ export const QuoteForm = ({
                     <div className="flex items-center text-sm font-medium text-text-primary">
                       {tier} units
                     </div>
-                    <FormField label={`Unit price at ${tier} units`} labelHidden>
+                    <FormField label={`Unit price at ${counted(tier, 'unit')}`} labelHidden>
                       <Input
                         inputMode="decimal"
                         placeholder={`Unit price (${overview.currency})`}
-                        aria-label={`Unit price at ${tier} units`}
+                        aria-label={`Unit price at ${counted(tier, 'unit')}`}
                         value={tierPrices[String(tier)] ?? ''}
                         onChange={(event) =>
                           setTierPrices((current) => ({
@@ -363,11 +364,11 @@ export const QuoteForm = ({
                         }
                       />
                     </FormField>
-                    <FormField label={`Lead time at ${tier} units`} labelHidden>
+                    <FormField label={`Lead time at ${counted(tier, 'unit')}`} labelHidden>
                       <Input
                         inputMode="numeric"
                         placeholder="Lead time (days)"
-                        aria-label={`Lead time at ${tier} units`}
+                        aria-label={`Lead time at ${counted(tier, 'unit')}`}
                         value={tierLeadTimes[String(tier)] ?? ''}
                         onChange={(event) =>
                           setTierLeadTimes((current) => ({
@@ -393,7 +394,7 @@ export const QuoteForm = ({
                       ? '—'
                       : `${overview.currency} ${money(unitMinor)}`,
                 },
-                { label: 'Quantity', value: `${overview.quantity} units` },
+                { label: 'Quantity', value: counted(overview.quantity, 'unit') },
                 {
                   label: 'Subtotal',
                   value: `${overview.currency} ${money(totals.goods)}`,

@@ -18,7 +18,7 @@ import {
   requestHref,
   selectHref,
 } from '@/lib/rfq-copy.js';
-import { asId, type RfqId } from '@ideeza/domain';
+import {asId, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +72,7 @@ const CompareManufacturersPage = async ({
       value: (manufacturer) =>
         manufacturer.minimumOrderQuantity === null
           ? '—'
-          : `${manufacturer.minimumOrderQuantity} units`,
+          : counted(manufacturer.minimumOrderQuantity, 'unit'),
     },
     {
       label: 'Standard lead time',

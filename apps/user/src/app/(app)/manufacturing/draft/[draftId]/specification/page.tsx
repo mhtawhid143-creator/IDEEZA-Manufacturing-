@@ -15,7 +15,7 @@ import { BoardSpecForm } from '@/components/board-spec-form.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { boardSpecRows, getBoardSpec } from '@/data/board-spec.js';
 import { requireBuyer } from '@/lib/auth.js';
-import { asId, type RfqId } from '@ideeza/domain';
+import {asId, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +47,7 @@ const SpecificationPage = async ({
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Board specification"
-        description={`${view.productName} · ${view.quantity} units`}
+        description={`${view.productName} · ${counted(view.quantity, 'unit')}`}
         breadcrumbs={
           <Crumbs
             items={[

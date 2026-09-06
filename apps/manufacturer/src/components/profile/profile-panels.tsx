@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
+import { counted } from '@ideeza/domain';
 import { useRouter } from 'next/navigation';
 import {
   Alert,
@@ -1669,7 +1670,7 @@ export const ProfilePanels = ({
                     value:
                       data.minimumOrderQuantity === ''
                         ? 'Not set'
-                        : `${data.minimumOrderQuantity} units`,
+                        : counted(Number(data.minimumOrderQuantity), 'unit'),
                   },
                   {
                     label: 'Standard lead time',
