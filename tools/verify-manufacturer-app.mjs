@@ -974,6 +974,15 @@ const main = async () => {
       'the count column is named rather than a bare number',
       (await page.getByText('Qty', { exact: true }).count()) > 0,
     );
+    // ------------------- UIUX-114: the kind of work is stated, not inferred
+    check(
+      'each order in production says which kind of work it is',
+      (await page.getByRole('columnheader', { name: 'Type' }).count()) >= 1 &&
+        (await page
+          .getByRole('table', { name: 'Orders in production' })
+          .getByText(/^(PCB|3D module|PCB \+ 3D)$/)
+          .count()) >= 1,
+    );
     check(
       'what needs attention is a flag below the four, not one of them',
       (await visible(page.getByText(/needing attention|Nothing flagged/).first())) &&
@@ -1337,6 +1346,12 @@ const main = async () => {
       (await visible(page.getByRole('link', { name: 'Beacon Light Board' }))) &&
         (await visible(page.getByText(/\d\/10/).first())),
     );
+    // ------------------- UIUX-202: where the order came from, on the row
+    check(
+      'each order names the quote it was opened against',
+      (await page.getByText(/QUOTE-[A-Z0-9]+/).count()) >= 1,
+      (await page.getByText(/QUOTE-[A-Z0-9]+/).first().textContent()) ?? '',
+    );
     // ----------------------------- UIUX-116 / UIUX-200: the stage track
     {
       const track = page.locator('[role="img"]').filter({ has: page.locator('[data-step]') });
@@ -1378,6 +1393,12 @@ const main = async () => {
         (await visible(page.getByText('In production').first())) &&
         (await page.locator('ol[aria-label="Production stages"] > li').count()) === 10,
       page.url(),
+    );
+    // -------- UIUX-205: how far along, without counting the ticks by hand
+    check(
+      'the production panel says how many stages are done out of how many',
+      await visible(page.getByText(/\d+\/\d+ complete/)),
+      (await page.getByText(/\d+\/\d+ complete/).first().textContent()) ?? '',
     );
     // ------------------------- UIUX-204: the trail names the record, not the page
     check(

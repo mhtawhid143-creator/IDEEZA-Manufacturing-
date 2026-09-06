@@ -711,6 +711,14 @@ const DashboardPage = async ({
                     <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary">
                       Order
                     </th>
+                    {/*
+                      UIUX-114: the kind of work, stated. It was inferable only
+                      from the stage name, which stops working the moment a
+                      board and a printed part sit in the same table.
+                    */}
+                    <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary">
+                      Type
+                    </th>
                     <th scope="col" className="px-4 py-2.5 text-right font-semibold text-text-primary">
                       Qty
                     </th>
@@ -735,6 +743,9 @@ const DashboardPage = async ({
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-text-tertiary">
                         {order.orderReference}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <Tag tone="neutral">{order.kindLabel}</Tag>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right text-text-secondary">
                         {order.quantity}

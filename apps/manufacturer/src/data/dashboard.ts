@@ -195,6 +195,12 @@ export interface DashboardOrderRow {
   readonly buyerName: string;
   readonly quantity: number;
   readonly stageLabel: string;
+  /**
+   * Which kind of work this order is, stated rather than inferred (UIUX-114).
+   * A reader should not have to recognise "solder mask" as a board word to know
+   * what a row is, and once both kinds sit in one table that inference fails.
+   */
+  readonly kindLabel: string;
   readonly completedStages: number;
   readonly totalStages: number;
   /**
@@ -557,6 +563,7 @@ export const getDashboardSections = async (
         // here and "In production" on the order itself is two names for one
         // thing.
         stageLabel: current === null ? 'Finished' : stageDefinition(current.key).label,
+        kindLabel: PACKAGE_LABEL[order.rfq.package.kind] ?? order.rfq.package.kind,
         completedStages: order.stages.filter((stage) => stage.status === 'completed')
           .length,
         totalStages: Math.max(1, order.stages.length),

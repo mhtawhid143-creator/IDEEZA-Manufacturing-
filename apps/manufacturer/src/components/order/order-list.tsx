@@ -23,6 +23,8 @@ import { RowMenu } from '@/components/row-menu.js';
 
 export interface OrderListRow {
   readonly orderId: string;
+  /** The quote this order was opened against (UIUX-202). */
+  readonly quoteReference: string | null;
   readonly productName: string;
   readonly buyerName: string;
   readonly status: string;
@@ -190,8 +192,15 @@ export const OrderList = ({
                 >
                   {row.productName}
                 </Link>
+                {/*
+                  Where the row came from as well as what it is (UIUX-202):
+                  every order was opened against an accepted quote, and a shop
+                  monitoring one should not have to search Quotes by memory to
+                  find what it agreed to.
+                */}
                 <Text tone="muted" size="xs">
                   {row.buyerName} · {orderReference(row.orderId)}
+                  {row.quoteReference === null ? '' : ` · ${row.quoteReference}`}
                 </Text>
               </div>
             ),

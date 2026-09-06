@@ -263,6 +263,83 @@ Fixed on the way, because the new screen exposed it: the assembly row read "No
 assembly — bare boards" on a print-only request, which has no boards to be bare.
 It reads "No assembly asked for", which is true either way.
 
+## Wave 3 — inventory · done
+
+Eleven tickets. Four had real work, five were already true, and two were held
+behind data this build does not have — recorded on the tickets rather than
+guessed at.
+
+- **UIUX-218** — the shelf reports its value at cost, because a count of parts
+  says nothing about the capital standing still in the store; the low-stock and
+  out-of-stock cards take the table's own severity colours so the most urgent
+  figure no longer looks exactly like the least urgent one. A card only takes
+  its tone when the number is non-zero: zero out of stock is good news, and
+  painting it red teaches a shop to ignore the colour.
+- **UIUX-119 / UIUX-121** — the dashboard's stock panel now carries the SKU a
+  shop would reorder against, and writes down what separates its three states
+  instead of leaving a reader to predict them. The states themselves were
+  already derived from one rule rather than stored, which was the harder half.
+- **UIUX-120** — the audit this ticket asked for found two of our three stock
+  pills built from parallel ternaries: one choosing the colour, one choosing the
+  words. Nothing was wrong with the output, but that shape is the reported
+  defect waiting to happen. Both read from one key now.
+- **UIUX-222 / UIUX-223** — a part can be described in the shop's own words,
+  which with names like "SMD resistor" is often the only thing that tells two
+  SKUs apart; category is the first question the form asks; and a new part
+  starts **switched off**, where it used to go live matched the moment it was
+  typed — countable towards a real request before anyone had looked at it.
+- **Already true**: UIUX-117 (the header reads Part), UIUX-118 (consistent, and
+  sentence case by the convention UIUX-204 settled), UIUX-219 (availability is
+  stock *less* reserved, so the reported "In Stock with nothing free" cannot
+  occur), UIUX-221 (none of the three copy defects exist here).
+- **Held with the dependency named**: Pending Reorders needs a purchase-order
+  model (UIUX-220's own conclusion, and UIUX-218's rec. 4); category-conditional
+  fields need the category to become a defined set rather than free text;
+  attachments need file storage, since this build keeps a file's name and hash
+  and not its bytes; and UIUX-223's auto-enable-after-approval needs the ops
+  review surface, which is not built.
+
+## Wave 4 — dashboard, messages and copy · done
+
+Fourteen tickets, mostly small, and the pattern in them was consistent: a
+control or a word that could not be acted on.
+
+- **UIUX-106 / UIUX-107** — the headline row reads as a funnel now: what came
+  in, what was answered, how often the answer was taken. The win rate counts
+  **decisions rather than submissions**, because a quote still waiting on a
+  buyer is silence and not a loss, and a shop with nothing decided shows no rate
+  at all rather than 0%. And the row finally says what the shop earned —
+  released, not gross, because the difference is the platform's fee and was
+  never theirs. Neither replaced tile was lost: the pending figure sits beside
+  what was released on the payouts panel, and the delayed count moved to the
+  Production Status panel as a second flag next to needing-attention.
+- **UIUX-114** — the kind of work is stated on each row rather than inferred
+  from recognising "solder mask" as a board word. The ticket's colour-by-type
+  recommendation was refused on UIUX-116's reasoning: colour is already spoken
+  for by state, and a hue that means two things means neither.
+- **UIUX-202 / UIUX-205** — an order names the quote it was opened against, and
+  the production panel says how many stages are done out of how many, in the
+  same `X/Y` convention the Orders table and the dashboard panel use.
+- **UIUX-225 / UIUX-230 / UIUX-231** — a withdrawal you can quote and whose
+  status is worded; one action per destination on a thread card, where the
+  request card duplicated the header's own link and the order card had two
+  labels on one href; and an order that carries substitutions says so and points
+  at the terms they were accepted with.
+- **UIUX-229** — one verb for getting a price to a buyer. The dashboard said
+  "Send quote" for what the domain event, the buyer's screens and every other
+  surface call submitting one.
+- **UIUX-122** — a bare name on a panel headed "Recent payouts" reads as
+  whoever is being paid; it is the buyer whose order earned the money, and the
+  row says so in place.
+- **Already true**: UIUX-109 (the trend caption is under its number, and the
+  legend has its subtitle), UIUX-110 (the breakdown is by package kind, so 3D
+  work is a first-class category), UIUX-123 (stage names come from one
+  vocabulary, so the reported casing drift cannot occur), UIUX-228 (no "Submite"
+  anywhere), UIUX-232 (the RFQ context is plain text, not input-shaped).
+- **Not applicable**: UIUX-226 and UIUX-227 describe a Withdraw Funds modal this
+  build does not have, because paying out to a bank is IDEEZA's step here. The
+  wording decisions are recorded on the tickets for when it is built.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |

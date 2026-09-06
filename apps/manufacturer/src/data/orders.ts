@@ -7,6 +7,7 @@ import {
   isFundingSecured,
   orderMachine,
   orderSchedule,
+  quoteReference,
   stageDefinition,
   type ManufacturerId,
   type OrderId,
@@ -23,6 +24,14 @@ const identifier = (prefix: string): string =>
 
 export interface OrderRow {
   readonly orderId: OrderId;
+  /**
+   * The quote this order was opened against (UIUX-202).
+   *
+   * Every order here has a traceable origin — an accepted quote, which traces
+   * back to a request — and a shop monitoring one needs to be able to follow
+   * that chain without searching by memory.
+   */
+  readonly quoteReference: string | null;
   readonly productName: string;
   readonly buyerName: string;
   readonly status: OrderStatus;
@@ -186,6 +195,8 @@ export const listOrders = async (
 
     return {
       orderId: asId<OrderId>(order.id),
+      quoteReference:
+        order.acceptedQuoteId === null ? null : quoteReference(order.acceptedQuoteId),
       productName: order.rfq.package.product.name,
       buyerName: order.rfq.buyer.displayName,
       status: order.status,
@@ -497,6 +508,8 @@ export const getOrder = async (
     orderId: asId<OrderId>(order.id),
     rfqId: order.rfqId,
     quoteId: order.acceptedQuoteId,
+    quoteReference:
+      order.acceptedQuoteId === null ? null : quoteReference(order.acceptedQuoteId),
     productName: order.rfq.package.product.name,
     creatorName: order.rfq.package.product.owner.displayName,
     buyerId: asId<UserId>(order.rfq.buyerId),

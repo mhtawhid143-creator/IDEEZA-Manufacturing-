@@ -176,22 +176,33 @@ export const ProductionTimeline = ({
               is your own work.
             </Text>
           </div>
-          {heldByCase !== undefined ? (
-            <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-warning">
-              <Icon name="alert" size={14} />
-              Held
+          <div className="flex flex-wrap items-center gap-3">
+            {/*
+              How far along, without counting the ticks (UIUX-205). The same
+              convention the Orders table and the dashboard panel use — a count
+              against its own total, not a percentage with no stated scale.
+            */}
+            <span className="text-xs font-semibold text-text-secondary" data-numeric>
+              {stages.filter((stage) => stage.status === 'completed').length}/
+              {stages.length} complete
             </span>
-          ) : (
-            live && (
-              <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-error">
-                <span
-                  aria-hidden
-                  className="inline-block h-2 w-2 animate-pulse rounded-full bg-bg-error"
-                />
-                Live
+            {heldByCase !== undefined ? (
+              <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-warning">
+                <Icon name="alert" size={14} />
+                Held
               </span>
-            )
-          )}
+            ) : (
+              live && (
+                <span className="inline-flex items-center gap-2 text-xs font-semibold text-text-error">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 animate-pulse rounded-full bg-bg-error"
+                  />
+                  Live
+                </span>
+              )
+            )}
+          </div>
         </div>
 
         {heldByCase !== undefined && (

@@ -142,6 +142,7 @@ const OrdersPage = async ({
             }
             rows={orders.rows.map((row) => ({
               orderId: row.orderId,
+              quoteReference: row.quoteReference,
               productName: row.productName,
               buyerName: row.buyerName,
               status: row.status,
