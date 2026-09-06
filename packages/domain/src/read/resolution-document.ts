@@ -88,6 +88,23 @@ export const refundStatusLabel = (status: string): string =>
   REFUND_STATUS_LABEL[status] ?? status.replace(/_/g, ' ');
 
 /**
+ * Where a withdrawal has got to, in words (UIUX-225).
+ *
+ * Its own map rather than an entry in the shared status vocabulary, because
+ * `requested` already means something different on a refund — there it is the
+ * manufacturer who owes an answer, here it is IDEEZA. One word, two waits, and
+ * a shop reading the wrong one would chase the wrong party.
+ */
+export const WITHDRAWAL_STATUS_LABEL: Readonly<Record<string, string>> = Object.freeze({
+  requested: 'With IDEEZA',
+  paid: 'Paid out',
+  rejected: 'Refused',
+});
+
+export const withdrawalStatusLabel = (status: string): string =>
+  WITHDRAWAL_STATUS_LABEL[status] ?? status.replace(/_/g, ' ');
+
+/**
  * The reference both sides quote at each other.
  *
  * A database id is not a reference a person can read down a phone line, and the
@@ -142,6 +159,15 @@ export const payoutReference = (payoutId: string): string => reference('PAYOUT',
 
 /** `PART-1A2B3C4D` — a line in a shop's own inventory. */
 export const partReference = (partId: string): string => reference('PART', partId);
+
+/**
+ * `WD-1A2B3C4D` — one withdrawal a shop has asked for (UIUX-225).
+ *
+ * A withdrawal row with no reference cannot be quoted in a message to IDEEZA or
+ * matched against a bank statement, which is most of what a shop needs it for.
+ */
+export const withdrawalReference = (withdrawalId: string): string =>
+  reference('WD', withdrawalId);
 
 /**
  * Who said it, from the reader's side.

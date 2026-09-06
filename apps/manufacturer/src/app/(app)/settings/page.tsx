@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { PageHeader, majorAmount } from '@ideeza/ui';
+import { withdrawalReference } from '@ideeza/domain';
 import { SettingsPanels } from '@/components/settings/settings-panels.js';
 import { earningsSummary } from '@/data/payouts.js';
 import { getShopProfile } from '@/data/profile.js';
@@ -198,6 +199,9 @@ const SettingsPage = async ({
           payoutMethods,
           withdrawals: withdrawals.map((row) => ({
             id: row.id,
+            // The reference a shop can quote back to IDEEZA or match against a
+            // bank statement (UIUX-225). A row id is not that.
+            reference: withdrawalReference(row.id),
             amount: `${row.currency} ${majorAmount(row.amountMinor)}`,
             status: row.status,
             on: day(row.requestedAt),

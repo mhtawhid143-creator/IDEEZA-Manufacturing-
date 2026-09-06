@@ -104,6 +104,8 @@ export interface SettingsData {
   }[];
   readonly withdrawals: readonly {
     readonly id: string;
+    /** `WD-1A2B3C4D` — quotable back to IDEEZA (UIUX-225). */
+    readonly reference: string;
     readonly amount: string;
     readonly status: string;
     readonly on: string;

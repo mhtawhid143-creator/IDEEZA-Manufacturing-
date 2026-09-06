@@ -1166,7 +1166,7 @@ const main = async () => {
         .first()
         .locator('..')
         .evaluate((card) => {
-          const rule = getComputedStyle(card).borderColor;
+          const rule = card.ownerDocument.defaultView.getComputedStyle(card).borderColor;
           return rule !== '' && rule !== 'rgba(0, 0, 0, 0)';
         })
         .catch(() => false),

@@ -85,7 +85,15 @@ const threadInclude = {
       id: true,
       rfqId: true,
       status: true,
-      snapshot: { select: { currency: true, totalPriceMinor: true } },
+      snapshot: {
+        select: {
+          currency: true,
+          totalPriceMinor: true,
+          // UIUX-231: an order that carries substitutions has to be able to say
+          // so, and to point at where they can be read.
+          approvedSubstitutionIds: true,
+        },
+      },
       rfq: { select: { package: { select: { product: { select: { name: true } } } } } },
     },
   },
@@ -385,10 +393,35 @@ export const getThread = async (
             ...(row.rfq === null
               ? []
               : [{ label: 'Quantity', value: `${row.rfq.quantity} units` }]),
+            /*
+             * UIUX-231: a substitution that travels with a live order is the
+             * thing most expensive to discover late, so the card names it
+             * rather than leaving it to be found on a tab.
+             */
+            ...((row.order.snapshot?.approvedSubstitutionIds.length ?? 0) === 0
+              ? []
+              : [
+                  {
+                    label: 'Substitutions',
+                    value: `${row.order.snapshot?.approvedSubstitutionIds.length} approved, built into these terms`,
+                  },
+                ]),
           ],
+          /*
+           * One action per destination (UIUX-230). "Open the order" and
+           * "Production stages" both pointed at the same screen, which is two
+           * buttons for one place and no way to tell them apart.
+           */
           actions: [
             { label: 'Open the order', href: `/orders/${row.order.id}` },
-            { label: 'Production stages', href: `/orders/${row.order.id}` },
+            ...((row.order.snapshot?.approvedSubstitutionIds.length ?? 0) === 0
+              ? []
+              : [
+                  {
+                    label: 'The substitutions it was accepted with',
+                    href: `/orders/${row.order.id}/quote`,
+                  },
+                ]),
             ...(rfqId === null
               ? []
               : [{ label: 'The original request', href: `/rfqs/${rfqId}` }]),
@@ -423,8 +456,13 @@ export const getThread = async (
                   : row.rfq.responseDeadline.toISOString().slice(0, 10),
             },
           ],
+          /*
+           * The request itself is not repeated here (UIUX-230): the thread
+           * header already links to it by name and stays put as the reader
+           * scrolls, so a second link to the same screen earns nothing. What is
+           * left are the two places the header cannot reach.
+           */
           actions: [
-            { label: 'View request', href: `/rfqs/${row.rfqId}` },
             { label: 'Specification', href: `/rfqs/${row.rfqId}/specification` },
             { label: 'BOM / parts', href: `/rfqs/${row.rfqId}/bom` },
           ],

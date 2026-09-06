@@ -21,14 +21,15 @@ import {
   Modal,
   Select,
   Switch,
-  Tag,
   Text,
   Textarea,
   buttonAppearance,
   cn,
   majorAmount as major,
+  StatusChip,
   useToast,
 } from '@ideeza/ui';
+import { withdrawalStatusLabel } from '@ideeza/domain';
 import { saveCompanyAction } from '@/app/(app)/profile/actions.js';
 import {
   addPayoutMethodAction,
@@ -1142,7 +1143,7 @@ export const SettingsPanels = ({
                 size="sm"
                 onClick={() => setDialog('withdrawals')}
               >
-                View Withdraw History
+                View withdrawal history
               </Button>
             </div>
 
@@ -2899,7 +2900,7 @@ export const SettingsPanels = ({
       <Modal
         open={dialog === 'withdrawals'}
         onClose={() => setDialog(null)}
-        title="Withdraw history"
+        title="Withdrawal history"
         description="Every withdrawal this shop has asked for."
         size="md"
         footer={
@@ -2911,7 +2912,7 @@ export const SettingsPanels = ({
         {data.withdrawals.length === 0 ? (
           <EmptyState
             title="Nothing withdrawn yet"
-            description="A released payout can be withdrawn from Payouts & Earnings."
+            description="Released payouts build up as your available balance. Paying it out to your bank is IDEEZA's step, and each one appears here with its own reference once it is asked for."
           />
         ) : (
           <ul className="flex flex-col rounded-xl border border-border-subtle">
@@ -2924,21 +2925,21 @@ export const SettingsPanels = ({
                   <p className="text-sm font-medium text-text-primary" data-numeric>
                     {row.amount}
                   </p>
+                  {/*
+                    The reference and the date (UIUX-225). A withdrawal a shop
+                    cannot quote is one it cannot ask IDEEZA about, or match
+                    against what landed in its bank.
+                  */}
                   <Text tone="muted" size="xs">
-                    {row.on}
+                    {row.reference} · {row.on}
                   </Text>
                 </div>
-                <Tag
-                  tone={
-                    row.status === 'paid'
-                      ? 'success'
-                      : row.status === 'rejected'
-                        ? 'danger'
-                        : 'warning'
-                  }
-                >
-                  {row.status}
-                </Tag>
+                {/*
+                  The status in words (UIUX-225), and its colour from the same
+                  key — it printed as the bare stored token, "requested", in a
+                  portal where every other pill is worded.
+                */}
+                <StatusChip status={row.status} label={withdrawalStatusLabel(row.status)} />
               </li>
             ))}
           </ul>
