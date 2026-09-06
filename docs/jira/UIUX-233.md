@@ -141,17 +141,62 @@ twice. The stage names never change with the scope — that is the whole point o
 a universal set, and a test pins it. A full product counts under both scopes,
 because it is both.
 
+**UIUX-116 and UIUX-200 (MFG-11/97) — the stage track.**
+
+A first pass over these two recorded them as already satisfied because the bar's
+fill was computed from real counts rather than fixed. Reading the tickets against
+the code properly showed that was only half of what each asks, and the other half
+was genuinely missing: the bar was a single continuous fill, and it drew a
+cancelled order, an order with a case open on it and a healthy one exactly alike.
+
+Both are now one shared component, `StageTrack` in `packages/ui`, built from the
+design system's own **M33 Stepper · Horizontal Dotted** variant — one dot per
+stage in that order's own pipeline, the connectors filled behind it, the current
+one marked, and the `X/Y` count written beside it because a length has no scale
+of its own. The Orders table and the dashboard's "Orders in production" panel
+both draw it, which is MFG-97's third recommendation — audit the same control
+wherever it is reused — done by there being only one of it.
+
+State is written down, not left to a colour: an order past the quoted date reads
+`late`, one with an open case reads `held`, and a cancelled or refunded one reads
+`stopped`, each in the accessible name as well as the caption. A held order with
+no stage in hand says "Not started · 0/10 · held" rather than the "Finished" the
+first build of this produced.
+
+Where these two tickets contradict each other, MFG-97 wins and MFG-11's third
+point is not implemented: MFG-11 asks for the dots to be coloured by manufacturer
+type, MFG-97 asks for colour to distinguish stopped and held orders. Colour can
+carry one meaning. The order's state is the one with money behind it, so work
+type belongs in the Type column MFG-09 asks for instead. The reasoning is on the
+ticket.
+
+**UIUX-204 (MFG-101) — the casing, and the breadcrumbs.**
+
+Also recorded as already satisfied on the first pass, also wrong. The status
+chips read sentence case from `packages/ui/src/components/status.tsx`, but the
+canonical production stages in `packages/domain` read Title Case — so one order
+said "In production" as a status and "In Production" as a stage, which is the
+ticket's finding exactly. The dashboard had a third spelling, "in production",
+because it named the stage by rubbing the underscores out of its key.
+
+The stage list is now sentence case, the dashboard reads the domain's own label,
+and a test holds every canonical stage to sentence case so the two lists cannot
+drift apart again.
+
+Its breadcrumb point is the fourth sighting of one defect, and it is fixed once:
+the order, quote and request shells now end their trail with the record's own
+name, matching the heading beneath it, instead of "Order details" / "Quote
+Details" / "View Details" — page kinds the reader could already see.
+
+Its remaining points were already true here: the milestone under a stage is named
+"Inventory check", not "Inventory Check Completed", and there is no malformed
+"IN progress" pill — the progress words come from the same one map.
+
 Already true of this build, checked rather than assumed:
 
-- **UIUX-200 / UIUX-116 (MFG-97/11)** — the Current Stage bar is computed from
-  the order's own completed and total stages and prints them as text beside it
-  ("in production · 4/10"). The reported identical fill on every row does not
-  reproduce.
 - **UIUX-201 (MFG-98)** — the Orders table leads each row with the product name,
-  with the buyer and the order reference beneath it.
-- **UIUX-204 (MFG-101)** — every status label in the portal comes from one map in
-  `packages/ui/src/components/status.tsx`, in one casing. There is no
-  "In production" / "In Production" split to fix, and no malformed pill.
+  with the buyer and the order reference beneath it. Only the header was vague,
+  and it now reads "Product", matching the dashboard's.
 - **UIUX-152 (MFG-48)** — the specification grid is built from typed rows that
   each carry their own label and value, so a value cannot land under another
   field's label.

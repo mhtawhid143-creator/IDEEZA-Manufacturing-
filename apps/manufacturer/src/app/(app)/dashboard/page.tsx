@@ -8,6 +8,7 @@ import {
   CardHeader,
   cn,
   PageHeader,
+  StageTrack,
   StatusChip,
   Tag,
   Text,
@@ -685,19 +686,18 @@ const DashboardPage = async ({
                         {order.quantity}
                       </td>
                       <td className="px-4 py-3 md:px-6">
-                        <span className="block h-1.5 w-full min-w-24 overflow-hidden rounded-full bg-bg-subtle">
-                          <span
-                            className="block h-full bg-bg-success"
-                            style={{
-                              width: `${Math.round(
-                                (order.completedStages / order.totalStages) * 100,
-                              )}%`,
-                            }}
-                          />
-                        </span>
-                        <Text tone="muted" size="xs" className="mt-1 block">
-                          {order.stageLabel} · {order.completedStages}/{order.totalStages}
-                        </Text>
+                        {/*
+                          The same track the Orders page draws (UIUX-116/200),
+                          from the same component — a shop reading the dashboard
+                          and then the list must not be shown two different
+                          pictures of one order.
+                        */}
+                        <StageTrack
+                          total={order.totalStages}
+                          completed={order.completedStages}
+                          stageLabel={order.stageLabel}
+                          state={order.late ? 'late' : 'running'}
+                        />
                       </td>
                     </tr>
                   ))}

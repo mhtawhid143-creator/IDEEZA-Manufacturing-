@@ -4,6 +4,7 @@ import {
   orderReference,
   quoteReference,
   requestReference,
+  stageDefinition,
   type ManufacturerId,
 } from '@ideeza/domain';
 import { database } from '@/lib/db.js';
@@ -173,6 +174,12 @@ export interface DashboardOrderRow {
   readonly stageLabel: string;
   readonly completedStages: number;
   readonly totalStages: number;
+  /**
+   * Past the date this shop's own accepted lead time promised (UIUX-200): the
+   * track has to be able to say so, because a row that is behind and a row that
+   * is on time must not look alike.
+   */
+  readonly late: boolean;
 }
 
 export interface DashboardRequestRow {
@@ -279,7 +286,7 @@ export const getDashboardSections = async (
     database().manufacturingOrder.findMany({
       where: { manufacturerId },
       include: {
-        snapshot: { select: { quantity: true } },
+        snapshot: { select: { quantity: true, leadTimeDays: true } },
         stages: { orderBy: { position: 'asc' } },
         rfq: {
           select: {
@@ -487,16 +494,25 @@ export const getDashboardSections = async (
         order.stages.find((stage) => stage.status === 'in_progress') ??
         order.stages.find((stage) => stage.status === 'pending') ??
         null;
+      const due =
+        order.confirmedAt === null || order.snapshot === null
+          ? null
+          : order.confirmedAt.getTime() + order.snapshot.leadTimeDays * DAY;
       return {
         orderId: order.id,
         orderReference: orderReference(order.id),
         productName: order.rfq.package.product.name,
         buyerName: order.rfq.buyer.displayName,
         quantity: order.snapshot?.quantity ?? 0,
-        stageLabel: current === null ? 'Finished' : current.key.replace(/_/g, ' '),
+        // The stage's own name from the domain, not the key with its
+        // underscores rubbed out (UIUX-204): a stage that reads "in production"
+        // here and "In production" on the order itself is two names for one
+        // thing.
+        stageLabel: current === null ? 'Finished' : stageDefinition(current.key).label,
         completedStages: order.stages.filter((stage) => stage.status === 'completed')
           .length,
         totalStages: Math.max(1, order.stages.length),
+        late: due !== null && order.status !== 'shipped' && due < Date.now(),
       };
     }),
     requestsNeedingAction: requests.map((recipient) => ({

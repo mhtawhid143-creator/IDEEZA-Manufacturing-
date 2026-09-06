@@ -13,6 +13,8 @@ import {
   Pagination,
   SearchInput,
   Select,
+  StageTrack,
+  type StageTrackState,
   StatusChip,
   Tag,
   Text,
@@ -56,6 +58,23 @@ const STATUS_OPTIONS = [
   { value: 'refund_requested', label: 'Refund requested' },
   { value: 'disputed', label: 'Disputed' },
 ];
+
+/**
+ * What the order's own state does to its stage track (UIUX-200).
+ *
+ * Order matters. An order that has stopped has stopped whatever else is true of
+ * it; a case being open outranks being behind, because nothing will move until
+ * the case is decided; and being behind outranks ordinary progress. Without this
+ * the track drew a cancelled order exactly like a healthy one.
+ */
+const trackState = (row: OrderListRow): StageTrackState => {
+  if (row.status === 'cancelled' || row.status === 'refunded') return 'stopped';
+  if (row.status === 'disputed' || (row.disputeId !== null && row.disputeStatus !== 'resolved'))
+    return 'held';
+  if (row.late) return 'late';
+  if (row.currentStageLabel === null) return 'finished';
+  return 'running';
+};
 
 /**
  * The orders this shop is building, with where each one has got to.
@@ -162,7 +181,7 @@ export const OrderList = ({
         columns={[
           {
             id: 'order',
-            header: 'Order',
+            header: 'Product',
             cell: (row) => (
               <div className="min-w-0">
                 <Link
@@ -223,26 +242,12 @@ export const OrderList = ({
             id: 'stage',
             header: 'Current stage',
             cell: (row) => (
-              <div className="min-w-[140px]">
-                <div
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle"
-                  role="img"
-                  aria-label={`${row.completedStages} of ${row.totalStages} stages completed`}
-                >
-                  <div
-                    className={row.late ? 'h-full bg-bg-error' : 'h-full bg-bg-success'}
-                    style={{
-                      width: `${Math.round(
-                        (row.completedStages / Math.max(1, row.totalStages)) * 100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-                <Text tone="muted" size="xs" className="mt-1 block">
-                  {row.currentStageLabel ?? 'Finished'} · {row.completedStages}/
-                  {row.totalStages}
-                </Text>
-              </div>
+              <StageTrack
+                total={row.totalStages}
+                completed={row.completedStages}
+                stageLabel={row.currentStageLabel}
+                state={trackState(row)}
+              />
             ),
           },
           {

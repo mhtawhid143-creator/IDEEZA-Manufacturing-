@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PrismaClient } from '@ideeza/db';
-import { asId, type ManufacturerId } from '@ideeza/domain';
+import { asId, CANONICAL_STAGES, type ManufacturerId } from '@ideeza/domain';
 import type * as Dashboard from '../src/data/dashboard.js';
 import { seedDatabase } from '../../../packages/db/prisma/seed.js';
 import {
@@ -89,5 +89,35 @@ describe('the production status panel', () => {
     expect(sum(boards.production) + sum(printed.production)).toBeGreaterThanOrEqual(
       sum(all.production),
     );
+  });
+});
+
+/**
+ * UIUX-204 (MFG-101) and UIUX-200 (MFG-97), on the dashboard's side.
+ *
+ * The panel used to name the stage by rubbing the underscores out of its key,
+ * which produced a third spelling of a word the rest of the platform already
+ * had two of. And a row that was behind schedule was drawn exactly like one that
+ * was on time, so the track could not say what the shop most needed to see.
+ */
+describe('orders in production, on the dashboard', () => {
+  it('names each stage the way the domain names it, not by unpicking its key', async () => {
+    const sections = await dashboard.getDashboardSections(SHOP);
+    const labels = CANONICAL_STAGES.map((stage) => stage.label);
+
+    expect(sections.ordersInProduction.length).toBeGreaterThan(0);
+    for (const order of sections.ordersInProduction) {
+      // Either a real stage's own label or the word for having run out of them.
+      expect([...labels, 'Finished']).toContain(order.stageLabel);
+      // No key ever reaches the screen: a key has no capital and no spaces.
+      expect(order.stageLabel).not.toMatch(/^[a-z]/);
+    }
+  });
+
+  it('says of each row whether it is behind the date the shop quoted', async () => {
+    const sections = await dashboard.getDashboardSections(SHOP);
+    for (const order of sections.ordersInProduction) {
+      expect(typeof order.late).toBe('boolean');
+    }
   });
 });

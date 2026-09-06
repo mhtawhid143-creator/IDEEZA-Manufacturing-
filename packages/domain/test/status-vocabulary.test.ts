@@ -122,16 +122,32 @@ describe('status vocabulary', () => {
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
     ]);
     expect(CANONICAL_STAGES.map((stage) => stage.label)).toEqual([
-      'Quote Accepted',
-      'Payment Secured',
-      'Files Under Review',
-      'Materials / Parts Confirmed',
-      'In Production',
-      'Quality Check',
-      'Ready to Ship',
+      'Quote accepted',
+      'Payment secured',
+      'Files under review',
+      'Materials / parts confirmed',
+      'In production',
+      'Quality check',
+      'Ready to ship',
       'Shipped',
       'Delivered',
       'Completed',
     ]);
+  });
+
+  /**
+   * UIUX-204 (MFG-101). The same stage was reaching a reader in two casings one
+   * click apart — "In Production" as a stage, "In production" as the order's
+   * status chip — because two lists spelled the same word differently. One
+   * status must read the same everywhere it appears, and this repository writes
+   * sentence case, so the stage list is held to it here rather than left to
+   * whoever edits it next.
+   */
+  it('spells every stage in sentence case, so no screen can disagree with another', () => {
+    for (const stage of CANONICAL_STAGES) {
+      expect(stage.label).toBe(
+        stage.label.charAt(0).toUpperCase() + stage.label.slice(1).toLowerCase(),
+      );
+    }
   });
 });

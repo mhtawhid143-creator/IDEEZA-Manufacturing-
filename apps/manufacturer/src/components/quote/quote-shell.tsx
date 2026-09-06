@@ -59,7 +59,8 @@ export const QuoteShell = ({
   children,
 }: QuoteShellProps) => (
   <div className="flex flex-col gap-6">
-    <Crumbs items={[{ label: 'Quotes', href: '/quotes' }, { label: 'Quote Details' }]} />
+    {/* The record's own name, matching the heading below it (UIUX-204). */}
+    <Crumbs items={[{ label: 'Quotes', href: '/quotes' }, { label: quote.productName }]} />
 
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-6">

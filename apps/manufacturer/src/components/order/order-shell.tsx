@@ -54,8 +54,13 @@ export const OrderShell = ({
 
   return (
     <div className="flex flex-col gap-6">
+      {/*
+        The trail ends with this order's own name, matching the heading below it
+        (UIUX-204). "Order details" told a reader which kind of page they were
+        on, which they could already see, and nothing about which record.
+      */}
       <Crumbs
-        items={[{ label: 'My Orders', href: '/orders' }, { label: 'Order details' }]}
+        items={[{ label: 'My Orders', href: '/orders' }, { label: order.productName }]}
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">

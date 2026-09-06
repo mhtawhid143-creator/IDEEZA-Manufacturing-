@@ -62,10 +62,11 @@ export const RequestShell = ({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* The record's own name, matching the heading below it (UIUX-204). */}
       <Crumbs
         items={[
           { label: 'Request Quote', href: '/rfqs' },
-          { label: 'View Details' },
+          { label: request.productName },
         ]}
       />
 

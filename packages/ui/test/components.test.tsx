@@ -24,6 +24,7 @@ import {
   RadioGroup,
   Select,
   Spotlight,
+  StageTrack,
   StatusChip,
   Switch,
   TabPanel,
@@ -661,5 +662,85 @@ describe('Spotlight', () => {
     await userEvent.click(screen.getByRole('button', { name: 'The control' }));
     expect(clicked).toHaveBeenCalledTimes(1);
     restore();
+  });
+});
+
+/**
+ * UIUX-116 (MFG-11) and UIUX-200 (MFG-97). A continuous bar cannot say where an
+ * order has got to — the same fill length means different things once pipelines
+ * have different lengths — and it says nothing at all about an order that has
+ * stopped. So the track is stepped, it carries its own scale in words, and its
+ * state is written down rather than left to a colour.
+ */
+describe('StageTrack', () => {
+  it('draws one step per stage and says which stage of how many', () => {
+    render(<StageTrack total={10} completed={5} stageLabel="In production" />);
+
+    const track = screen.getByRole('img', {
+      name: 'In production, stage 5 of 10',
+    });
+    expect(track.querySelectorAll('[data-step]')).toHaveLength(10);
+    expect(screen.getByText('In production · 5/10')).toBeTruthy();
+  });
+
+  it('scales to the order’s own pipeline, not to a fixed ten', () => {
+    render(<StageTrack total={6} completed={2} stageLabel="Printing" />);
+
+    const track = screen.getByRole('img', { name: 'Printing, stage 2 of 6' });
+    expect(track.querySelectorAll('[data-step]')).toHaveLength(6);
+    expect(screen.getByText('Printing · 2/6')).toBeTruthy();
+  });
+
+  it('says an order has stopped instead of showing it as progressing', () => {
+    render(
+      <StageTrack total={10} completed={4} stageLabel="Quality check" state="stopped" />,
+    );
+
+    expect(
+      screen.getByRole('img', { name: 'Quality check, stage 4 of 10, work has stopped' }),
+    ).toBeTruthy();
+    expect(screen.getByText('Quality check · 4/10 · stopped')).toBeTruthy();
+  });
+
+  it('says an order is held rather than leaving it to a colour', () => {
+    render(<StageTrack total={10} completed={6} stageLabel="Shipped" state="held" />);
+
+    expect(
+      screen.getByRole('img', { name: 'Shipped, stage 6 of 10, held while a case is open' }),
+    ).toBeTruthy();
+    expect(screen.getByText('Shipped · 6/10 · held')).toBeTruthy();
+  });
+
+  it('marks the current step as current, and only that one', () => {
+    render(<StageTrack total={4} completed={2} stageLabel="Assembly" />);
+
+    const steps = Array.from(
+      screen.getByRole('img', { name: /Assembly/ }).querySelectorAll('[data-step]'),
+    );
+    // Two stages behind it, so two dots read done and the third is the one it
+    // is on — the count beside the track says the same thing in words.
+    expect(steps.map((step) => step.getAttribute('data-step'))).toEqual([
+      'done',
+      'done',
+      'current',
+      'upcoming',
+    ]);
+  });
+
+  it('survives a finished order and nonsense counts without dividing by zero', () => {
+    const { rerender } = render(<StageTrack total={10} completed={10} stageLabel={null} />);
+    expect(screen.getByText('Finished · 10/10')).toBeTruthy();
+
+    rerender(<StageTrack total={0} completed={4} stageLabel="Somehow" />);
+    // Nothing can be past the end of a pipeline that has no stages.
+    expect(screen.getByText('Somehow · 0/0')).toBeTruthy();
+  });
+
+  it('does not call an order finished when it has simply not begun', () => {
+    // A held order has no stage in hand, and reading "Finished · 0/10" beside a
+    // case that has stopped the work is exactly the false reassurance the
+    // stepped track exists to remove.
+    render(<StageTrack total={10} completed={0} stageLabel={null} state="held" />);
+    expect(screen.getByText('Not started · 0/10 · held')).toBeTruthy();
   });
 });

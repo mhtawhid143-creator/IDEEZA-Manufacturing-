@@ -1213,6 +1213,37 @@ const main = async () => {
       (await visible(page.getByRole('link', { name: 'Beacon Light Board' }))) &&
         (await visible(page.getByText(/\d\/10/).first())),
     );
+    // ----------------------------- UIUX-116 / UIUX-200: the stage track
+    {
+      const track = page.locator('[role="img"]').filter({ has: page.locator('[data-step]') });
+      const first = track.first();
+      const steps = await first.locator('[data-step]').count();
+      const current = await first.locator('[data-step="current"]').count();
+      check(
+        'the stage track is stepped to the order’s own pipeline, not one bar',
+        steps === 10 && current <= 1,
+        `steps: ${steps}, current markers: ${current}`,
+      );
+      // The row that has a case open on it must not read like a running one.
+      const held = page
+        .getByRole('row')
+        .filter({ hasText: 'Dispute open' })
+        .locator('[role="img"][aria-label*="held"]');
+      const stopped = page
+        .getByRole('row')
+        .filter({ hasText: 'Cancelled' })
+        .locator('[role="img"][aria-label*="stopped"]');
+      check(
+        'an order that is held or has stopped says so, in words, not only in colour',
+        (await held.count()) + (await stopped.count()) >= 1,
+        `held rows: ${await held.count()}, stopped rows: ${await stopped.count()}`,
+      );
+      check(
+        'the stage cell names the stage and carries its own scale',
+        /[A-Z][a-z].* · \d+\/\d+/.test((await first.locator('..').textContent()) ?? ''),
+        (await first.locator('..').textContent()) ?? '',
+      );
+    }
     await page.screenshot({ path: join(shotDir, 'orders.png'), fullPage: false });
 
     // ------------------------------------------ M08: what the platform owns
@@ -1220,14 +1251,24 @@ const main = async () => {
     check(
       'the order opens on its production stages, all ten of them',
       (await visible(page.getByText('Production tracking'))) &&
-        (await visible(page.getByText('In Production').first())) &&
+        (await visible(page.getByText('In production').first())) &&
         (await page.locator('ol[aria-label="Production stages"] > li').count()) === 10,
       page.url(),
+    );
+    // ------------------------- UIUX-204: the trail names the record, not the page
+    check(
+      'the breadcrumb ends with this order’s own name, matching the heading',
+      (await page
+        .getByRole('navigation', { name: /breadcrumb/i })
+        .getByText('Beacon Light Board')
+        .count()) >= 1 &&
+        (await page.getByText('Order details', { exact: true }).count()) === 0,
+      (await page.getByRole('navigation', { name: /breadcrumb/i }).textContent()) ?? '',
     );
     check(
       'a stage the platform owns is not offered to the shop, and says so',
       (await visible(page.getByText('The platform moves this one').first())) &&
-        (await page.getByText(/Waiting for In Production to finish/).count()) >= 1,
+        (await page.getByText(/Waiting for In production to finish/).count()) >= 1,
       (await page.locator('ol[aria-label="Production stages"] > li').nth(5).textContent()) ?? '',
     );
     check(
@@ -1240,9 +1281,9 @@ const main = async () => {
     // --------------------------------------------- M08: attaching a record
     const productionRow = page
       .getByRole('listitem')
-      .filter({ hasText: 'In Production' })
+      .filter({ hasText: 'In production' })
       .first();
-    await productionRow.getByRole('button', { name: /Move In Production/ }).click();
+    await productionRow.getByRole('button', { name: /Move In production/ }).click();
     await page.getByRole('menuitem', { name: 'Attach a record' }).click();
     const recordModal = page.getByRole('dialog', { name: /Attach a record/ });
     await recordModal.getByLabel('Title').fill('AOI report, batch 1 of 2');
@@ -1257,7 +1298,7 @@ const main = async () => {
     );
 
     // ------------------------------------------------- M08: moving the line
-    await productionRow.getByRole('button', { name: /Move In Production/ }).click();
+    await productionRow.getByRole('button', { name: /Move In production/ }).click();
     await page.getByRole('menuitem', { name: 'Complete' }).click();
     await page.waitForTimeout(2_500);
     await page.goto(`${base}/orders/mfrfix_order_beacon`, { waitUntil: 'networkidle' });
@@ -1265,14 +1306,14 @@ const main = async () => {
       'completing a stage completes the tasks under it',
       (await page
         .getByRole('listitem')
-        .filter({ hasText: 'In Production' })
+        .filter({ hasText: 'In production' })
         .first()
         .getByText('Completed')
         .count()) >= 1,
     );
 
     // ------------------------------------------- M08: shipping and delivery
-    for (const label of ['Quality Check', 'Ready to Ship']) {
+    for (const label of ['Quality check', 'Ready to ship']) {
       const row = page.getByRole('listitem').filter({ hasText: label }).first();
       await row.getByRole('button', { name: new RegExp(`Move ${label}`) }).click();
       await page.getByRole('menuitem', { name: 'Complete' }).click();
