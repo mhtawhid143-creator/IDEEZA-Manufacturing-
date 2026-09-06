@@ -423,10 +423,25 @@ const main = async () => {
       'the dashboard shows the six numbers a shop plans on',
       (await visible(page.getByText('Open RFQs'))) &&
         (await visible(page.getByText('Quotes awaiting a decision'))) &&
-        (await visible(page.getByText('Delayed orders'))) &&
+        // UIUX-106: the row reads as a funnel now, and what came in and what
+        // was answered are followed by how often the answer was taken.
+        (await visible(page.getByText('Quote win rate'))) &&
         (await visible(page.getByText('On-time delivery'))) &&
         (await visible(page.getByText('Low stock items'))) &&
-        (await visible(page.getByText('Pending payouts'))),
+        // UIUX-107: what the shop has earned, not only what is in transit.
+        (await visible(page.getByText('Released to you'))),
+    );
+    check(
+      'the win rate counts decisions rather than submissions',
+      /taken of \d+ decided|No buyer has decided/.test(
+        (await page.getByText('Quote win rate').locator('..').textContent()) ?? '',
+      ),
+      (await page.getByText('Quote win rate').locator('..').textContent()) ?? '',
+    );
+    check(
+      'the delayed count moved to the panel it belongs on, and is still readable',
+      (await page.getByText('Delayed orders').count()) === 0 &&
+        (await page.getByText(/past the quoted date|Nothing flagged/).count()) >= 1,
     );
     check(
       'the dashboard states what is the shop’s to move and what is not',

@@ -121,3 +121,40 @@ describe('orders in production, on the dashboard', () => {
     }
   });
 });
+
+/**
+ * UIUX-106 and UIUX-107. The headline row reads as a funnel now — what came in,
+ * what was answered, how often the answer was taken — and it says what the shop
+ * has actually earned, which no figure on the page did.
+ */
+describe('the headline numbers', () => {
+  it('rates the quotes a buyer decided on, not the ones still waiting', async () => {
+    const tiles = await dashboard.getHeadlineTiles(SHOP);
+
+    // The denominator is decisions, not submissions: silence is not a loss.
+    expect(tiles.quotesDecided).toBeGreaterThanOrEqual(tiles.quotesAccepted);
+    if (tiles.quotesDecided === 0) {
+      expect(tiles.quoteWinRate).toBeNull();
+      return;
+    }
+    expect(tiles.quoteWinRate).toBeCloseTo(tiles.quotesAccepted / tiles.quotesDecided);
+    expect(tiles.quoteWinRate).toBeGreaterThanOrEqual(0);
+    expect(tiles.quoteWinRate).toBeLessThanOrEqual(1);
+  });
+
+  it('has no win rate at all rather than a zero, when nothing has been decided', async () => {
+    // A shop nobody has answered yet has not lost: 0% would say it had.
+    const untouched = asId<ManufacturerId>('seed_mfr_c');
+    const tiles = await dashboard.getHeadlineTiles(untouched);
+
+    expect(tiles.quotesDecided).toBe(0);
+    expect(tiles.quoteWinRate).toBeNull();
+  });
+
+  it('counts what is behind the promised date on the panel, not in the row', async () => {
+    // UIUX-106 moved it here; UIUX-111's reasoning is why it is a flag.
+    const sections = await dashboard.getDashboardSections(SHOP);
+    expect(typeof sections.pastTheQuotedDate).toBe('number');
+    expect(sections.production.some((bar) => /past|late/i.test(bar.label))).toBe(false);
+  });
+});

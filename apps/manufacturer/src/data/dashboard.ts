@@ -15,6 +15,16 @@ export interface HeadlineTiles {
   readonly needResponse: number;
   readonly quotesSubmitted: number;
   readonly quotesAccepted: number;
+  /**
+   * How many of the quotes that got an answer were taken (UIUX-106).
+   *
+   * Null until at least one has been decided: a shop with nothing decided has
+   * no win rate, and printing 0% would read as having lost every time rather
+   * than as not having heard yet. Quotes still waiting on a buyer are out of
+   * the denominator for the same reason — they are not losses, only silence.
+   */
+  readonly quoteWinRate: number | null;
+  readonly quotesDecided: number;
   readonly delayedOrders: number;
   readonly ordersInFlight: number;
   readonly onTimeDeliveryRate: number | null;
@@ -48,6 +58,7 @@ export const getHeadlineTiles = async (
     needResponse,
     quotesSubmitted,
     quotesAccepted,
+    quotesLost,
     liveOrders,
     profile,
     inventory,
@@ -81,6 +92,12 @@ export const getHeadlineTiles = async (
       where: { manufacturerId, status: { in: ['submitted', 'revised'] } },
     }),
     database().quote.count({ where: { manufacturerId, status: 'accepted' } }),
+    // UIUX-106: the quotes a buyer has actually answered, whichever way. A
+    // withdrawn quote is the shop's own decision and not a loss, so it is not
+    // counted against the win rate.
+    database().quote.count({
+      where: { manufacturerId, status: { in: ['rejected', 'expired'] } },
+    }),
     database().manufacturingOrder.findMany({
       where: {
         manufacturerId,
@@ -125,12 +142,18 @@ export const getHeadlineTiles = async (
     readonly reservedQuantity: number;
   }): number => item.stockQuantity - item.reservedQuantity;
 
+  // Of the quotes a buyer answered, how many were taken. Null while none have
+  // been answered — see the note on the field.
+  const quotesDecided = quotesAccepted + quotesLost;
+
   return {
     openRfqs,
     newThisWeek,
     needResponse,
     quotesSubmitted,
     quotesAccepted,
+    quotesDecided,
+    quoteWinRate: quotesDecided === 0 ? null : quotesAccepted / quotesDecided,
     delayedOrders,
     ordersInFlight: liveOrders.length,
     onTimeDeliveryRate:
@@ -253,6 +276,16 @@ export interface DashboardSections {
    * sequence: it can happen at any of them.
    */
   readonly needingAttention: number;
+  /**
+   * Past the date the accepted lead time promised (UIUX-106).
+   *
+   * It sits beside "needing attention" for the reason UIUX-111 gave about that
+   * one: being behind is a cross-cutting exception that can happen at any of the
+   * four stages, so it is a flag rather than a place in the sequence. It is here
+   * rather than in a headline tile because this is the panel a shop reads to
+   * find out what is wrong on the floor.
+   */
+  readonly pastTheQuotedDate: number;
   /** Already gone out. Not a production stage, but not a number to lose either. */
   readonly shippedOrDelivered: number;
   readonly workMix: readonly WorkMixSlice[];
@@ -403,6 +436,15 @@ export const getDashboardSections = async (
     'disputed',
     'partially_refunded',
   ]);
+  // Behind the date it promised, judged the way the orders list judges it: the
+  // accepted lead time, counted from the moment the funds were secured.
+  const pastTheQuotedDate = live.filter((order) => {
+    if (!inScope(order)) return false;
+    if (order.confirmedAt === null || order.snapshot === null) return false;
+    if (order.status === 'shipped') return false;
+    const due = order.confirmedAt.getTime() + order.snapshot.leadTimeDays * DAY;
+    return due < Date.now();
+  }).length;
 
   const mix = new Map<string, number>();
   for (const order of orders) {
@@ -487,6 +529,7 @@ export const getDashboardSections = async (
   return {
     production: bars,
     needingAttention,
+    pastTheQuotedDate,
     shippedOrDelivered,
     workMix: [...mix].map(([label, count]) => ({ label, count })),
     orderCount: orders.length,

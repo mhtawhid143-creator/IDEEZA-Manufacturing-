@@ -474,16 +474,28 @@ const DashboardPage = async ({
           note={`${tiles.quotesAccepted} of your quotes have been accepted, all time`}
           href="/quotes"
         />
+        {/*
+          UIUX-106: the row reads as a funnel — what came in, what was answered,
+          how often the answer was taken. The delayed count that used to sit
+          here is not lost: it is a flag on the Production Status panel below,
+          beside "needing attention", which is where a shop looks for what is
+          wrong on the floor.
+        */}
         <Tile
-          label="Delayed orders"
-          value={String(tiles.delayedOrders)}
-          note={
-            tiles.delayedOrders === 0
-              ? `${tiles.ordersInFlight} orders in flight, all inside their lead time`
-              : 'Past the lead time you quoted'
+          label="Quote win rate"
+          value={
+            tiles.quoteWinRate === null ? '—' : `${Math.round(tiles.quoteWinRate * 100)}%`
           }
-          tone={tiles.delayedOrders === 0 ? 'neutral' : 'danger'}
-          href="/orders"
+          note={
+            tiles.quoteWinRate === null
+              ? 'No buyer has decided on one of your quotes yet'
+              : `${tiles.quotesAccepted} taken of ${tiles.quotesDecided} decided${
+                  tiles.quotesSubmitted === 0
+                    ? ''
+                    : ` · ${tiles.quotesSubmitted} still waiting, not counted either way`
+                }`
+          }
+          href="/quotes"
         />
         <Tile
           label="On-time delivery"
@@ -501,10 +513,21 @@ const DashboardPage = async ({
           tone={tiles.criticalStockItems === 0 ? 'warning' : 'danger'}
           href="/inventory"
         />
+        {/*
+          UIUX-107: what the shop has actually earned, which no figure on this
+          page said. Released rather than gross order value — a shop earns what
+          IDEEZA pays out, and the difference is the platform's fee, which was
+          never theirs. The pending figure that used to be here is still on the
+          Recent payouts panel below, where it sits beside what was released.
+        */}
         <Tile
-          label="Pending payouts"
-          value={`${tiles.currency} ${major(tiles.pendingPayoutMinor)}`}
-          note={`${tiles.pendingPayoutCount} awaiting a documented release`}
+          label="Released to you"
+          value={`${tiles.currency} ${major(sections.releasedPayoutMinor)}`}
+          note={
+            sections.releasedPayoutMinor === 0
+              ? 'Nothing released yet — a payout opens when an order is paid for'
+              : `Paid out on delivered orders · ${tiles.currency} ${major(sections.pendingPayoutMinor)} still held`
+          }
           href="/payouts"
         />
       </div>
@@ -585,7 +608,9 @@ const DashboardPage = async ({
 
           {/* UIUX-111: needing attention is a flag, not a fifth stage — it can
               happen at any of the four, so it sits below them and is worded as
-              an exception rather than a destination. */}
+              an exception rather than a destination. UIUX-106 put being behind
+              the quoted date here too, for the same reason and next to the
+              other exception, when it left the headline row. */}
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-3">
             {sections.needingAttention > 0 ? (
               <Link
@@ -600,6 +625,15 @@ const DashboardPage = async ({
                 <Icon name="check" size={12} />
                 Nothing flagged
               </span>
+            )}
+            {sections.pastTheQuotedDate > 0 && (
+              <Link
+                href="/orders?status=late"
+                className="inline-flex items-center gap-2 rounded-full bg-bg-warning-subtle px-3 py-1 text-xs font-semibold text-text-warning hover:underline"
+              >
+                <Icon name="clock" size={12} />
+                {sections.pastTheQuotedDate} past the quoted date
+              </Link>
             )}
             <Text tone="muted" size="xs">
               {sections.shippedOrDelivered} already shipped or delivered — past production,
