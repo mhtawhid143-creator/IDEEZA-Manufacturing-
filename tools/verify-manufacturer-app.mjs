@@ -436,10 +436,19 @@ const main = async () => {
     // ------------------------------------------------ M02: where the work is
     check(
       'the dashboard shows where every order has got to',
+      // Four rows, not six: UIUX-113 took "Shipped or delivered" and "Needing
+      // attention" out of the stage list, because neither is a stage. Both are
+      // still counted beside it, and the check below pins that.
       (await visible(page.getByText('Production status'))) &&
-        (await page.locator('ul[aria-label="Production status"] > li').count()) === 6 &&
+        (await page.locator('ul[aria-label="Production status"] > li').count()) === 4 &&
         (await visible(page.getByText('In production').first())),
       (await page.locator('ul[aria-label="Production status"]').textContent()) ?? '',
+    );
+    check(
+      'and the counts it stopped listing are still reported beside it',
+      /already shipped or delivered/.test(
+        await page.getByText(/already shipped or delivered/).innerText(),
+      ),
     );
     check(
       'a request waiting on an answer offers the way straight to the quote',
@@ -861,6 +870,53 @@ const main = async () => {
       'a request that has been quoted shows the quote instead of the form',
       (await visible(page.getByText('You quoted USD', { exact: false }))) &&
         (await page.getByRole('button', { name: 'Submit Quote' }).count()) === 0,
+    );
+
+    // ----- UIUX-113/108/111 (MFG-08/03/06): one production panel, four stages
+    //
+    // The ticket decided the list: exactly four universal stages, the same for a
+    // board shop and a printing shop, with "needing attention" as a flag below
+    // rather than a fifth stage, a named count column, and one panel that can be
+    // scoped instead of two panels drifting apart.
+    await page.goto(`${base}/dashboard`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(600);
+    const stages = page.locator('ul[aria-label="Production status"] > li');
+    const stageNames = await stages.locator('span').first().allInnerTexts();
+    check(
+      'the production panel carries exactly four stages',
+      (await stages.count()) === 4,
+      `${await stages.count()} rows: ${stageNames.join(', ')}`,
+    );
+    check(
+      'and they are the universal four, with no process name among them',
+      /Queued/.test(await stages.nth(0).innerText()) &&
+        /In production/.test(await stages.nth(1).innerText()) &&
+        /Quality check/.test(await stages.nth(2).innerText()) &&
+        /Awaiting shipment/.test(await stages.nth(3).innerText()),
+    );
+    check(
+      'the count column is named rather than a bare number',
+      (await page.getByText('Qty', { exact: true }).count()) > 0,
+    );
+    check(
+      'what needs attention is a flag below the four, not one of them',
+      (await visible(page.getByText(/needing attention|Nothing flagged/).first())) &&
+        !/attention/i.test(await page.locator('ul[aria-label="Production status"]').innerText()),
+    );
+
+    const scopes = page.getByRole('group', { name: 'Which work to count' });
+    check(
+      'the same panel can be scoped to one kind of work',
+      (await visible(scopes)) && /All.*PCB.*3D printing/s.test(await scopes.innerText()),
+      (await scopes.innerText()).replace(/s+/g, ' ').slice(0, 60),
+    );
+
+    await page.goto(`${base}/dashboard?work=module_3d`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(600);
+    check(
+      'and scoping changes the counts without renaming the stages',
+      /Queued/.test(await stages.nth(0).innerText()) &&
+        (await page.locator('[aria-current="true"]').first().innerText()) === '3D printing',
     );
 
     // --------------- UIUX-213 (MFG-113): an open case holds the line

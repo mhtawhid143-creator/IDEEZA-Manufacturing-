@@ -103,6 +103,64 @@ the open case preferred over a resolved one), and 4 harness checks that walk the
 real screen — the held row exists, it names the reason, the menu offers the way
 in, and the link points at the case rather than the order.
 
+## Wave 1 — refunds and disputes · done
+
+Seven tickets. Four had real work; the rest were satisfied or sequenced. The
+whole of it is on the tickets with evidence; the short version:
+
+- **UIUX-213** — production carried on under an open case, and the timeline
+  pulsed "Live" while it did. `assertProductionMayStart` now refuses a disputed
+  order, so the case freezes the work as well as the money, and the timeline
+  says so with a Held marker, the reason, and the way into the case. A claim is
+  deliberately not blocked: that decision is still the shop's own.
+- **UIUX-215** — the approve form asked a shop to agree with a claim it could
+  not see. It shows the buyer's reason and words read-only, the amount stays
+  visible, the placeholder no longer asks for a confession, and the button says
+  "Approve refund" rather than inventing a third verb.
+- **UIUX-212 / UIUX-211** — an unanswered claim was findable only by opening the
+  right order while its deadline ran. The dashboard carries it now: who, how
+  much, why, and the deadline written out with its year.
+- **UIUX-216** satisfied, **UIUX-214** four points of five, **UIUX-199**
+  postponed behind MFG-08/09/23 rather than designed twice.
+
+## Wave 2 — order and production · in progress
+
+**UIUX-113 with UIUX-108 and UIUX-111 (MFG-08/03/06) — done as one panel**, which
+is what MFG-08 asked for.
+
+The Production Status panel had six rows: the four universal stages plus
+"Shipped or delivered" and "Needing attention". The last two do not belong in a
+list of stages — the first is after production, and the second can happen during
+any of them. So the list is exactly the four the ticket decided (Queued, In
+production, Quality check, Awaiting shipment), the count column has a name
+(Qty), what needs attention is a flag below the four, and the shipped count is
+kept as a caption rather than thrown away because it moved out of a list.
+
+The panel can be scoped to All / PCB / 3D printing rather than being built
+twice. The stage names never change with the scope — that is the whole point of
+a universal set, and a test pins it. A full product counts under both scopes,
+because it is both.
+
+Already true of this build, checked rather than assumed:
+
+- **UIUX-200 / UIUX-116 (MFG-97/11)** — the Current Stage bar is computed from
+  the order's own completed and total stages and prints them as text beside it
+  ("in production · 4/10"). The reported identical fill on every row does not
+  reproduce.
+- **UIUX-201 (MFG-98)** — the Orders table leads each row with the product name,
+  with the buyer and the order reference beneath it.
+- **UIUX-204 (MFG-101)** — every status label in the portal comes from one map in
+  `packages/ui/src/components/status.tsx`, in one casing. There is no
+  "In production" / "In Production" split to fix, and no malformed pill.
+- **UIUX-152 (MFG-48)** — the specification grid is built from typed rows that
+  each carry their own label and value, so a value cannot land under another
+  field's label.
+
+**UIUX-112 (MFG-07)** asked for a column header to read "Customer". It cannot:
+the column leads with the product and carries the buyer beneath it, already
+labelled. Naming it Customer would replace a vague header with a wrong one, so
+it reads **Product**, and the ticket carries the reasoning to be overruled.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   Alert,
   Avatar,
+  Icon,
   buttonAppearance,
   Card,
   CardHeader,
@@ -13,7 +14,7 @@ import {
   majorAmount as major,
 } from '@ideeza/ui';
 import { issueReasonLabel } from '@ideeza/domain';
-import { getDashboardSections, getHeadlineTiles } from '@/data/dashboard.js';
+import { getDashboardSections, getHeadlineTiles, type WorkScope } from '@/data/dashboard.js';
 import { listDisputes, listRefundClaims } from '@/data/resolution.js';
 import { getShopContext } from '@/data/shop.js';
 import { linkIfBuilt } from '@/lib/navigation.js';
@@ -27,6 +28,19 @@ export const dynamic = 'force-dynamic';
 
 const percent = (rate: number | null): string =>
   rate === null ? '—' : `${Math.round(rate * 100)}%`;
+
+/*
+ * UIUX-113: one panel, scoped — not two panels drifting apart.
+ *
+ * The stage names never change with the tab. That is the whole point of a
+ * universal set: a board shop and a printing shop read the same four words, and
+ * the process detail lives on the order where it can differ.
+ */
+const WORK_SCOPES = [
+  { value: 'all', label: 'All' },
+  { value: 'pcb', label: 'PCB' },
+  { value: 'module_3d', label: '3D printing' },
+] as const;
 
 const day = (at: Date): string =>
   at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -254,12 +268,21 @@ const Tile = ({ label, value, note, tone = 'neutral', href }: TileProps) => {
  * what is owed, and what just happened. Every figure is a query against this
  * shop’s own rows — nothing here is a placeholder waiting for data.
  */
-const DashboardPage = async () => {
+const DashboardPage = async ({
+  searchParams,
+}: {
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
   const actor = await requireManufacturer('/dashboard');
+  // Which work the production panel counts. A tab rather than a second panel,
+  // per UIUX-113 — the stages are the same either way.
+  const askedWork = (await searchParams)['work'];
+  const workScope: WorkScope =
+    askedWork === 'pcb' || askedWork === 'module_3d' ? askedWork : 'all';
   const [shop, tiles, sections, disputes, walked, claims] = await Promise.all([
     getShopContext(actor.manufacturerId, actor.userId),
     getHeadlineTiles(actor.manufacturerId),
-    getDashboardSections(actor.manufacturerId),
+    getDashboardSections(actor.manufacturerId, { work: workScope }),
     listDisputes(actor.manufacturerId),
     readProgress(actor.userId),
     listRefundClaims(actor.manufacturerId),
@@ -351,7 +374,7 @@ const DashboardPage = async () => {
       {openDisputes.length > 0 && (
         <div data-tour="dashboard-notice">
           <Alert
-            tone="danger"
+            tone="warning"
             title={
               openDisputes.length === 1
                 ? `A dispute is open on ${openDisputes[0]?.productName ?? 'an order'}`
@@ -471,7 +494,7 @@ const DashboardPage = async () => {
         <Card>
           <CardHeader
             title="Production status"
-            description="Every order you hold, by where it has got to."
+            description="The four stages every order passes, whatever it is made of."
             actions={
               <Link
                 href="/orders"
@@ -481,7 +504,45 @@ const DashboardPage = async () => {
               </Link>
             }
           />
-          <ul aria-label="Production status" className="mt-4 flex flex-col gap-3">
+
+          {/* One panel narrowed, rather than a second one built. */}
+          <div
+            role="group"
+            aria-label="Which work to count"
+            className="mt-4 flex flex-wrap gap-1"
+          >
+            {WORK_SCOPES.map((option) => (
+              <Link
+                key={option.value}
+                href={option.value === 'all' ? '/dashboard' : `/dashboard?work=${option.value}`}
+                aria-current={workScope === option.value ? 'true' : undefined}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-fast focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus',
+                  workScope === option.value
+                    ? 'bg-bg-brand-subtle text-text-brand'
+                    : 'text-text-secondary hover:bg-bg-subtle',
+                )}
+              >
+                {option.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* UIUX-108: the count column has a name. It was a bare number. */}
+          <div className="mt-4 flex items-center gap-3 border-b border-border-subtle pb-2">
+            <span className="w-40 shrink-0 text-2xs font-medium uppercase tracking-caps text-text-tertiary">
+              Stage
+            </span>
+            <span className="w-8 shrink-0 text-2xs font-medium uppercase tracking-caps text-text-tertiary">
+              Qty
+            </span>
+            <span className="flex-1" />
+            <span className="w-10 shrink-0 text-right text-2xs font-medium uppercase tracking-caps text-text-tertiary">
+              Share
+            </span>
+          </div>
+
+          <ul aria-label="Production status" className="mt-3 flex flex-col gap-3">
             {sections.production.map((bar) => (
               <li key={bar.label} className="flex items-center gap-3">
                 <span className="w-40 shrink-0 text-sm text-text-secondary">{bar.label}</span>
@@ -490,11 +551,7 @@ const DashboardPage = async () => {
                 </span>
                 <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-subtle">
                   <span
-                    className={
-                      bar.label === 'Needing attention'
-                        ? 'block h-full bg-bg-error'
-                        : 'block h-full bg-bg-brand'
-                    }
+                    className="block h-full bg-bg-brand"
                     style={{ width: `${Math.max(bar.count === 0 ? 0 : 4, bar.share)}%` }}
                   />
                 </span>
@@ -504,6 +561,30 @@ const DashboardPage = async () => {
               </li>
             ))}
           </ul>
+
+          {/* UIUX-111: needing attention is a flag, not a fifth stage — it can
+              happen at any of the four, so it sits below them and is worded as
+              an exception rather than a destination. */}
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-3">
+            {sections.needingAttention > 0 ? (
+              <Link
+                href="/orders?status=disputed"
+                className="inline-flex items-center gap-2 rounded-full bg-bg-error-subtle px-3 py-1 text-xs font-semibold text-text-error hover:underline"
+              >
+                <Icon name="alert" size={12} />
+                {sections.needingAttention} needing attention
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-full bg-bg-success-subtle px-3 py-1 text-xs font-medium text-text-success">
+                <Icon name="check" size={12} />
+                Nothing flagged
+              </span>
+            )}
+            <Text tone="muted" size="xs">
+              {sections.shippedOrDelivered} already shipped or delivered — past production,
+              so not counted above.
+            </Text>
+          </div>
         </Card>
 
         <Card>
@@ -570,7 +651,7 @@ const DashboardPage = async () => {
                 <thead>
                   <tr className="bg-bg-page">
                     <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary md:px-6">
-                      Name
+                      Product
                     </th>
                     <th scope="col" className="px-4 py-2.5 text-left font-semibold text-text-primary">
                       Order

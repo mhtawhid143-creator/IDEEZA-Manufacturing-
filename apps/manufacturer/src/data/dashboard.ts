@@ -221,8 +221,28 @@ export interface DashboardActivityRow {
   readonly at: Date;
 }
 
+/**
+ * Which kind of work the production panel is scoped to.
+ *
+ * UIUX-113 asked for one panel that can be narrowed rather than two panels
+ * built side by side: the stages are universal, so only the population changes.
+ */
+export type WorkScope = 'all' | 'pcb' | 'module_3d';
+
 export interface DashboardSections {
+  /**
+   * Exactly the four universal stages, in order, named the same for a board
+   * shop and a printing shop. Process detail belongs on the order, not here.
+   */
   readonly production: readonly ProductionBar[];
+  /**
+   * Orders needing attention — a cancellation asked for, a refund claimed, a
+   * case open. Counted apart from the four because it is not a place in a
+   * sequence: it can happen at any of them.
+   */
+  readonly needingAttention: number;
+  /** Already gone out. Not a production stage, but not a number to lose either. */
+  readonly shippedOrDelivered: number;
   readonly workMix: readonly WorkMixSlice[];
   readonly orderCount: number;
   /** Orders taken in the last 30 days, and in the 30 before that. */
@@ -253,6 +273,7 @@ const PACKAGE_LABEL: Readonly<Record<string, string>> = {
  */
 export const getDashboardSections = async (
   manufacturerId: ManufacturerId,
+  options: { readonly work?: WorkScope } = {},
 ): Promise<DashboardSections> => {
   const [orders, requests, parts, payouts, shopQuotes, payoutTotals, events] = await Promise.all([
     database().manufacturingOrder.findMany({
@@ -336,26 +357,40 @@ export const getDashboardSections = async (
     ),
   );
 
+  const scope = options.work ?? 'all';
+  const inScope = (order: { readonly rfq: { readonly package: { readonly kind: string } } }): boolean =>
+    scope === 'all' ||
+    (scope === 'pcb'
+      ? order.rfq.package.kind === 'pcb' || order.rfq.package.kind === 'full_product'
+      : order.rfq.package.kind === 'module_3d' || order.rfq.package.kind === 'full_product');
+
   const bucket = (statuses: readonly string[]): number =>
-    orders.filter((order) => statuses.includes(order.status)).length;
+    orders.filter((order) => inScope(order) && statuses.includes(order.status)).length;
 
   const total = Math.max(1, orders.length);
+  /*
+   * The four universal stages, and nothing else (UIUX-113).
+   *
+   * "Shipped or delivered" and "Needing attention" used to sit in this list and
+   * do not belong in it: the first is after production, and the second can
+   * happen during any of the four. Both are still counted — a number a shop
+   * used to see should not vanish because it moved out of a list — but they are
+   * reported beside the stages rather than inside them.
+   */
   const bars: readonly ProductionBar[] = [
     { label: 'Queued', count: bucket(['awaiting_payment', 'confirmed']) },
     { label: 'In production', count: bucket(['in_production']) },
     { label: 'Quality check', count: bucket(['quality_check']) },
     { label: 'Awaiting shipment', count: bucket(['ready_to_ship']) },
-    { label: 'Shipped or delivered', count: bucket(['shipped', 'delivered']) },
-    {
-      label: 'Needing attention',
-      count: bucket([
-        'cancel_requested',
-        'refund_requested',
-        'disputed',
-        'partially_refunded',
-      ]),
-    },
   ].map((bar) => ({ ...bar, share: Math.round((bar.count / total) * 100) }));
+
+  const shippedOrDelivered = bucket(['shipped', 'delivered']);
+  const needingAttention = bucket([
+    'cancel_requested',
+    'refund_requested',
+    'disputed',
+    'partially_refunded',
+  ]);
 
   const mix = new Map<string, number>();
   for (const order of orders) {
@@ -439,6 +474,8 @@ export const getDashboardSections = async (
 
   return {
     production: bars,
+    needingAttention,
+    shippedOrDelivered,
     workMix: [...mix].map(([label, count]) => ({ label, count })),
     orderCount: orders.length,
     ordersThisPeriod: orders.filter((order) => order.createdAt >= thirtyDaysAgo).length,
