@@ -908,6 +908,7 @@ const DashboardPage = async ({
           <div className="px-4 py-4 md:px-6">
             <CardHeader
               title="Recent payouts"
+              description="Money IDEEZA owes or has released to you, and the order each one came from."
               actions={
                 <Link
                   href="/payouts"
@@ -955,8 +956,14 @@ const DashboardPage = async ({
                       <p className="truncate text-sm font-semibold text-text-primary">
                         {payout.buyerName}
                       </p>
+                      {/*
+                        Who the person is, said in place (UIUX-122). On a panel
+                        headed "Recent payouts" a bare name reads as whoever is
+                        being paid, and it is the opposite: the buyer whose order
+                        earned this money for the shop.
+                      */}
                       <Text tone="muted" size="xs">
-                        {payout.orderReference}
+                        Buyer · {payout.orderReference}
                       </Text>
                     </div>
                   </div>
