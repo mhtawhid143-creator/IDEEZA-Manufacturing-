@@ -385,6 +385,28 @@ const printedRequest = async (): Promise<void> => {
     },
   });
 
+  // UIUX-153: the printed part's own specification, the peer of the board's.
+  // Without a filled-in one the shop's spec tab could only ever show a document
+  // of open answers, which proves nothing about whether it reads correctly.
+  await prisma.printSpecification.upsert({
+    where: { requirementsId: 'mfrfix_requirements_housing' },
+    update: {},
+    create: {
+      requirementsId: 'mfrfix_requirements_housing',
+      layerHeightMm: 0.12,
+      wallThicknessMm: 2,
+      dimensionXMm: 118.4,
+      dimensionYMm: 96.25,
+      dimensionZMm: 47,
+      toleranceMm: 0.25,
+      supportStructure: 'none',
+      orientationRequirement:
+        'Print the bearing seat vertically. The seat face must not touch the build plate.',
+      postProcessing: 'Bead blast, then dye black. No sanding on the bearing seat.',
+      certification: 'RoHS',
+    },
+  });
+
   await prisma.rfq.upsert({
     where: { id: 'mfrfix_rfq_housing' },
     update: { status: 'submitted' },

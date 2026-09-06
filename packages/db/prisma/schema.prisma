@@ -84,6 +84,29 @@ enum SurfaceFinish {
   painted
 }
 
+/// How the inside of a printed part is arranged. The percentage says how much
+/// material goes in, this says how it is laid out, and the two are separate
+/// decisions: a gyroid and a grid at the same percentage do not behave alike.
+enum InfillPattern {
+  grid
+  lines
+  triangles
+  cubic
+  gyroid
+  honeycomb
+  concentric
+}
+
+/// What holds an overhang up while the part is made. It is the buyer's decision
+/// because removing supports marks the surface they touched.
+enum SupportStructure {
+  none
+  standard
+  soluble
+  tree
+  manufacturer_choice
+}
+
 /// The board specification a buyer may ask for.
 ///
 /// Every list is vendor neutral on purpose: one request goes to several
@@ -988,6 +1011,7 @@ model ManufacturingRequirements {
   package   ManufacturingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
   files     RequirementsFile[]
   boardSpec BoardSpecification?
+  printSpec PrintSpecification?
   rfqs      Rfq[]
 
   @@unique([packageId, version])
@@ -1035,6 +1059,39 @@ model BoardSpecification {
   remarks             String?
   updatedAt           DateTime            @updatedAt
   createdAt           DateTime            @default(now())
+
+  requirements ManufacturingRequirements @relation(fields: [requirementsId], references: [id], onDelete: Cascade)
+}
+
+/// The detailed 3D printing specification, one row per requirements version.
+///
+/// The peer of BoardSpecification, and built the same way for the same reasons:
+/// it only applies to a package that contains a printed part, it is long, and it
+/// is frozen and versioned with the requirements it belongs to. Every column is
+/// optional and a missing value means "manufacturer's discretion".
+///
+/// The process, material, colour, finish and infill percentage stay on the
+/// requirements, where they have always been — those five are what a printer
+/// needs to decide whether to quote at all. This record is the depth underneath
+/// them, which is what a printer needs to price it.
+model PrintSpecification {
+  requirementsId         String            @id
+  layerHeightMm          Decimal?          @db.Decimal(4, 3)
+  infillPattern          InfillPattern?
+  wallThicknessMm        Decimal?          @db.Decimal(4, 2)
+  /// The bounding box of the part, in millimetres, as three axes.
+  dimensionXMm           Decimal?          @db.Decimal(7, 2)
+  dimensionYMm           Decimal?          @db.Decimal(7, 2)
+  dimensionZMm           Decimal?          @db.Decimal(7, 2)
+  toleranceMm            Decimal?          @db.Decimal(4, 2)
+  supportStructure       SupportStructure?
+  orientationRequirement String?
+  /// Shore hardness, and only meaningful on a flexible material.
+  durometer              String?
+  postProcessing         String?
+  certification          String?
+  updatedAt              DateTime          @updatedAt
+  createdAt              DateTime          @default(now())
 
   requirements ManufacturingRequirements @relation(fields: [requirementsId], references: [id], onDelete: Cascade)
 }

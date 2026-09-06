@@ -37,9 +37,13 @@ import {
   type WorkmanshipClass,
 } from '../status/board.js';
 import {
+  INFILL_PATTERN_LABEL,
   PRINT_TECHNOLOGY_LABEL,
+  SUPPORT_STRUCTURE_LABEL,
   SURFACE_FINISH_LABEL,
+  type InfillPattern,
   type PrintTechnology,
+  type SupportStructure,
   type SurfaceFinish,
 } from '../status/print.js';
 import type { AssemblyMode, PackageKind } from '../entities/product.js';
@@ -69,7 +73,9 @@ export const PACKAGE_KIND_LABEL: Readonly<Record<PackageKind, string>> = Object.
 });
 
 export const ASSEMBLY_MODE_LABEL: Readonly<Record<AssemblyMode, string>> = Object.freeze({
-  none: 'No assembly — bare boards',
+  // Not "bare boards": this row is read on a print-only request too, where
+  // there are no boards to be bare.
+  none: 'No assembly asked for',
   smt: 'Surface mount',
   through_hole: 'Through hole',
   mixed: 'Surface mount and through hole',
@@ -117,13 +123,14 @@ export interface RequirementsDocument {
 /**
  * The structured requirements, as both sides read them.
  *
- * The print rows appear only when the package has a printed part in it, because
- * a bare board has no infill and showing an empty row invites someone to fill it
- * in later with a number nobody agreed to.
+ * This is the brief: what is being made, how many, to what tolerance, by when.
+ * The printed part's own answers used to be appended here, and are not any more
+ * (UIUX-153) — a printed part has a specification of its own, the peer of the
+ * board's, and the same fact printed in two places is how two screens start
+ * disagreeing about one job.
  */
 export const requirementRows = (
   requirements: RequirementsDocument,
-  options: { readonly includesPrint?: boolean } = {},
 ): readonly DocumentRow[] => {
   const rows: DocumentRow[] = [
     { label: 'Quantity', value: String(requirements.quantity) },
@@ -149,44 +156,149 @@ export const requirementRows = (
     { label: 'Lead time asked for', value: `${requirements.leadTimeDays} days` },
   ];
 
-  if (options.includesPrint === true) {
-    rows.push(
-      {
-        label: 'Print process',
-        value:
-          requirements.printTechnology === null ||
-          requirements.printTechnology === undefined
-            ? OPEN_ANSWER
-            : PRINT_TECHNOLOGY_LABEL[requirements.printTechnology],
-      },
-      {
-        label: 'Print material',
-        value: requirements.printMaterial ?? OPEN_ANSWER,
-      },
-      { label: 'Colour', value: requirements.printColor ?? OPEN_ANSWER },
-      {
-        label: 'Surface finish',
-        value:
-          requirements.surfaceFinish === null || requirements.surfaceFinish === undefined
-            ? OPEN_ANSWER
-            : SURFACE_FINISH_LABEL[requirements.surfaceFinish],
-      },
-      {
-        label: 'Infill',
-        value:
-          requirements.infillPercent === null || requirements.infillPercent === undefined
-            ? OPEN_ANSWER
-            : `${requirements.infillPercent}%`,
-      },
-    );
-  }
-
   if (requirements.notes !== null && requirements.notes !== '') {
     rows.push({ label: 'Notes', value: requirements.notes });
   }
 
   return rows;
 };
+
+export interface PrintSpecificationDocument {
+  /** The five answers that sit on the requirements themselves. */
+  readonly technology: PrintTechnology | null;
+  readonly material: string | null;
+  readonly color: string | null;
+  readonly surfaceFinish: SurfaceFinish | null;
+  readonly infillPercent: number | null;
+  /** The detail, which is its own record — the peer of the board specification. */
+  readonly layerHeightMm: number | null;
+  readonly infillPattern: InfillPattern | null;
+  readonly wallThicknessMm: number | null;
+  readonly dimensionXMm: number | null;
+  readonly dimensionYMm: number | null;
+  readonly dimensionZMm: number | null;
+  readonly toleranceMm: number | null;
+  readonly supportStructure: SupportStructure | null;
+  readonly orientationRequirement: string | null;
+  /** Only for a flexible material, and only when the buyer has a number. */
+  readonly durometer: string | null;
+  readonly postProcessing: string | null;
+  readonly certification: string | null;
+}
+
+/**
+ * The size of the thing, as one box rather than three numbers.
+ *
+ * The separator is a multiplication sign and the unit is written once
+ * (UIUX-155): "70.17 mm* 70.2 mm" read as a footnote marker between two
+ * unrelated measurements, which is not what a bounding box is.
+ */
+const dimensions = (spec: PrintSpecificationDocument): string | null => {
+  const axes = [spec.dimensionXMm, spec.dimensionYMm, spec.dimensionZMm];
+  if (axes.some((axis) => axis === null)) return null;
+  return `${axes.map((axis) => String(axis)).join(' × ')} mm`;
+};
+
+/**
+ * The printed part's specification, as both sides read it.
+ *
+ * The peer of `boardSpecificationRows`, and for the same reason: a printed part
+ * is priced on the process, the layer height, the walls, the size and the way it
+ * is held up while it is made, and none of that fits in a general brief. A row
+ * the buyer left open reads as the manufacturer's decision rather than as
+ * blank, exactly as it does on the board.
+ *
+ * Two rows are left out rather than shown open, because they are not decisions
+ * waiting to be made: durometer is meaningless on a rigid material, and a
+ * certification nobody asked for is not part of the job.
+ */
+export const printSpecificationRows = (
+  spec: PrintSpecificationDocument,
+): readonly DocumentRow[] => {
+  const size = dimensions(spec);
+  const rows: DocumentRow[] = [
+    {
+      label: 'Print process',
+      value: spec.technology === null ? OPEN_ANSWER : PRINT_TECHNOLOGY_LABEL[spec.technology],
+    },
+    { label: 'Material', value: spec.material ?? OPEN_ANSWER },
+    { label: 'Colour', value: spec.color ?? OPEN_ANSWER },
+    {
+      label: 'Surface finish',
+      value:
+        spec.surfaceFinish === null ? OPEN_ANSWER : SURFACE_FINISH_LABEL[spec.surfaceFinish],
+    },
+    {
+      label: 'Layer height',
+      value: spec.layerHeightMm === null ? OPEN_ANSWER : `${spec.layerHeightMm}mm`,
+    },
+    {
+      // The percentage and the pattern are one answer about the inside of the
+      // part: 20% gyroid and 20% grid weigh the same and do not behave alike.
+      label: 'Infill',
+      value:
+        spec.infillPercent === null
+          ? OPEN_ANSWER
+          : spec.infillPattern === null
+            ? `${spec.infillPercent}%`
+            : `${spec.infillPercent}% ${INFILL_PATTERN_LABEL[spec.infillPattern].toLowerCase()}`,
+    },
+    {
+      label: 'Wall thickness',
+      value: spec.wallThicknessMm === null ? OPEN_ANSWER : `${spec.wallThicknessMm}mm`,
+    },
+    { label: 'Dimensions', value: size ?? OPEN_ANSWER },
+    {
+      label: 'Tolerance',
+      value: spec.toleranceMm === null ? OPEN_ANSWER : `+/-${spec.toleranceMm}mm`,
+    },
+    {
+      label: 'Support',
+      value:
+        spec.supportStructure === null
+          ? OPEN_ANSWER
+          : SUPPORT_STRUCTURE_LABEL[spec.supportStructure],
+    },
+    { label: 'Orientation', value: spec.orientationRequirement ?? OPEN_ANSWER },
+    { label: 'Post-processing', value: spec.postProcessing ?? OPEN_ANSWER },
+  ];
+
+  if (spec.durometer !== null && spec.durometer !== '') {
+    rows.push({ label: 'Durometer', value: spec.durometer });
+  }
+  if (spec.certification !== null && spec.certification !== '') {
+    rows.push({ label: 'Certification', value: spec.certification });
+  }
+
+  return rows;
+};
+
+/**
+ * A print specification nobody has filled in.
+ *
+ * Read through `printSpecificationRows` it produces a full document of
+ * "Manufacturer's discretion", which is what an unanswered specification means.
+ * The board has the same, for the same reason.
+ */
+export const EMPTY_PRINT_SPECIFICATION: PrintSpecificationDocument = Object.freeze({
+  technology: null,
+  material: null,
+  color: null,
+  surfaceFinish: null,
+  infillPercent: null,
+  layerHeightMm: null,
+  infillPattern: null,
+  wallThicknessMm: null,
+  dimensionXMm: null,
+  dimensionYMm: null,
+  dimensionZMm: null,
+  toleranceMm: null,
+  supportStructure: null,
+  orientationRequirement: null,
+  durometer: null,
+  postProcessing: null,
+  certification: null,
+});
 
 export interface BoardSpecificationDocument {
   readonly baseMaterial: BaseMaterial | null;

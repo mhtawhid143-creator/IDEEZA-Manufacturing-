@@ -38,8 +38,10 @@ single row. It never re-implements a state machine.
 `ManufacturerCapability`, `ManufacturerMember`
 
 **Product** — `Product`, `FileRef`, `BomLine`, `ManufacturingPackage`,
-`ManufacturingRequirements`, plus the link tables `ProductFile`, `PackageFile`,
-`PackageBomLine`, `RequirementsFile`
+`ManufacturingRequirements`, its two deep specifications `BoardSpecification`
+and `PrintSpecification` (one row each per requirements version, every column
+optional, a missing value meaning "manufacturer's discretion"), plus the link
+tables `ProductFile`, `PackageFile`, `PackageBomLine`, `RequirementsFile`
 
 **Request** — `Rfq`, `RfqRecipient`, `RfqItem`
 
@@ -126,7 +128,8 @@ says it cannot take it.
 ```
 User 1─N Product 1─N ManufacturingPackage 1─N ManufacturingRequirements
 User 1─N Rfq ──1 ManufacturingPackage
-                 └─1 ManufacturingRequirements
+                 └─1 ManufacturingRequirements ─1 BoardSpecification
+                                               └─1 PrintSpecification
 Rfq 1─N RfqRecipient N─1 ManufacturerProfile      (one request, many recipients)
 Rfq 1─N RfqItem
 Rfq 1─N Quote N─1 ManufacturerProfile

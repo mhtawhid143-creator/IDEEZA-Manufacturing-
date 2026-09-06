@@ -14,6 +14,7 @@ import { RequestShell } from '@/components/rfq/request-shell.js';
 import { major } from '@/components/rfq/quote-money.js';
 import { listQuotes } from '@/data/quotes.js';
 import { boardSpecRows, getBoardSpec } from '@/data/board-spec.js';
+import { getPrintSpec, printSpecRows } from '@/data/print-spec.js';
 import { getRequest, listManufacturers } from '@/data/requests.js';
 import { requireBuyer } from '@/lib/auth.js';
 import { SERVICE_COPY, SERVICE_LIST } from '@/lib/rfq-copy.js';
@@ -43,9 +44,10 @@ const RequestPage = async ({
 }) => {
   const { rfqId } = await params;
   const actor = await requireBuyer(`/manufacturing/rfq/${rfqId}`);
-  const [request, boardSpec] = await Promise.all([
+  const [request, boardSpec, printSpec] = await Promise.all([
     getRequest(actor.userId, asId<RfqId>(rfqId)),
     getBoardSpec(actor.userId, asId<RfqId>(rfqId)),
+    getPrintSpec(actor.userId, asId<RfqId>(rfqId)),
   ]);
 
   if (request === null) notFound();
@@ -212,6 +214,26 @@ const RequestPage = async ({
                     className="mt-3"
                     columns={2}
                     items={boardSpecRows(boardSpec).map((row) => ({
+                      label: row.label,
+                      value: row.value,
+                    }))}
+                  />
+                </div>
+              )}
+
+              {/* The printed part's own document, alongside the board's (UIUX-153). */}
+              {printSpec !== null && printSpec.hasPrintedPart && (
+                <div className="mt-5 border-t border-border-subtle pt-4">
+                  <p className="text-sm font-semibold text-text-primary">
+                    3D printing specification
+                  </p>
+                  <Text tone="muted" size="xs" className="mt-0.5">
+                    Sent with the request. Every quote answers this exact document.
+                  </Text>
+                  <DefinitionList
+                    className="mt-3"
+                    columns={2}
+                    items={printSpecRows(printSpec).map((row) => ({
                       label: row.label,
                       value: row.value,
                     }))}

@@ -1,8 +1,9 @@
 'use server';
 
 import { DomainError } from '@ideeza/domain';
-import { saveBoardSpecSchema } from '@ideeza/types';
+import { saveBoardSpecSchema, savePrintSpecSchema } from '@ideeza/types';
 import { saveBoardSpec } from '@/data/board-spec.js';
+import { savePrintSpec } from '@/data/print-spec.js';
 import { requireBuyer } from '@/lib/auth.js';
 
 export interface BoardSpecState {
@@ -104,6 +105,68 @@ export const saveBoardSpecAction = async (input: {
 
   try {
     await saveBoardSpec(actor.userId, parsed.data);
+    return { saved: true };
+  } catch (error) {
+    if (error instanceof DomainError) return { error: error.message };
+    if (error instanceof Error) return { error: error.message };
+    return { error: 'That specification could not be saved.' };
+  }
+};
+
+export interface PrintSpecState {
+  readonly error?: string;
+  readonly saved?: boolean;
+}
+
+/**
+ * Saves the detailed 3D printing specification of a draft.
+ *
+ * The peer of `saveBoardSpecAction`, and it reads an empty field the same way:
+ * as a decision handed to the manufacturer, not as a zero.
+ */
+export const savePrintSpecAction = async (input: {
+  readonly draftId: string;
+  readonly layerHeightMm: string;
+  readonly infillPattern: string;
+  readonly wallThicknessMm: string;
+  readonly dimensionXMm: string;
+  readonly dimensionYMm: string;
+  readonly dimensionZMm: string;
+  readonly toleranceMm: string;
+  readonly supportStructure: string;
+  readonly orientationRequirement: string;
+  readonly durometer: string;
+  readonly postProcessing: string;
+  readonly certification: string;
+}): Promise<PrintSpecState> => {
+  const actor = await requireBuyer(
+    `/manufacturing/draft/${input.draftId}/print-specification`,
+  );
+
+  const parsed = savePrintSpecSchema.safeParse({
+    draftId: input.draftId,
+    layerHeightMm: optionalNumber(input.layerHeightMm),
+    infillPattern: optionalText(input.infillPattern),
+    wallThicknessMm: optionalNumber(input.wallThicknessMm),
+    dimensionXMm: optionalNumber(input.dimensionXMm),
+    dimensionYMm: optionalNumber(input.dimensionYMm),
+    dimensionZMm: optionalNumber(input.dimensionZMm),
+    toleranceMm: optionalNumber(input.toleranceMm),
+    supportStructure: optionalText(input.supportStructure),
+    orientationRequirement: optionalText(input.orientationRequirement),
+    durometer: optionalText(input.durometer),
+    postProcessing: optionalText(input.postProcessing),
+    certification: optionalText(input.certification),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? 'Some of the specification is not valid.',
+    };
+  }
+
+  try {
+    await savePrintSpec(actor.userId, parsed.data);
     return { saved: true };
   } catch (error) {
     if (error instanceof DomainError) return { error: error.message };

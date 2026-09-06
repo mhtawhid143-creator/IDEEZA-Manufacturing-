@@ -10,10 +10,10 @@ import {
   DEFAULT_STAGE_TASK_TEMPLATES,
   orderMachine,
   readPromoCode,
+  printSpecificationRows,
   requirementRows,
   serviceLabels,
   type OrderId,
-  type PackageKind,
   type PaymentMethodKind,
   type PromoRefusal,
   type ShippingChoice,
@@ -21,12 +21,6 @@ import {
 } from '@ideeza/domain';
 import { ensureRecordThread, postEventCard, promoteThreadToOrder, toDatabaseEventKind } from '@ideeza/db';
 
-/** The print rows apply only to a package with a printed part in it. */
-const PRINTS: Readonly<Record<PackageKind, boolean>> = {
-  pcb: false,
-  module_3d: true,
-  full_product: true,
-};
 import type { PayOrderInput } from '@ideeza/types';
 import { database } from '@/lib/db.js';
 
@@ -41,6 +35,10 @@ export const EXPRESS_SURCHARGE_MINOR = 4_500;
 
 /** The platform's fee on a manufacturing order, in basis points of the goods. */
 export const PLATFORM_FEE_BASIS_POINTS = 300;
+
+/** Prisma hands back a Decimal; the document reads plain numbers. */
+const decimal = (value: unknown): number | null =>
+  value === null || value === undefined ? null : Number(value);
 
 export interface CheckoutLineView {
   readonly label: string;
@@ -64,6 +62,7 @@ export interface CheckoutView {
   /** The scope the accepted quote froze: what is included, and to what spec. */
   readonly includedServices: readonly string[];
   readonly specRows: readonly { readonly label: string; readonly value: string }[];
+  readonly printSpecRows: readonly { readonly label: string; readonly value: string }[];
   readonly items: readonly {
     readonly name: string;
     readonly detail: string;
@@ -136,6 +135,7 @@ const orderInclude = {
           printColor: true,
           surfaceFinish: true,
           infillPercent: true,
+          printSpec: true,
         },
       },
     },
@@ -221,27 +221,48 @@ export const getCheckout = async (
     leadTimeDays: row.snapshot.leadTimeDays,
     packageKind: row.rfq.package.kind,
     includedServices: serviceLabels(row.rfq.requestedServices),
-    specRows: requirementRows(
-      {
-        quantity: requirements.quantity,
-        material: requirements.material,
-        manufacturingMethod: requirements.manufacturingMethod,
-        tolerance: requirements.tolerance,
-        leadTimeDays: requirements.leadTimeDays,
-        shippingRequirement: requirements.shippingRequirement,
-        assembly: requirements.assembly,
-        assemblySides: requirements.assemblySides,
-        qualityCheckRequirement: requirements.qualityCheckRequirement,
-        substitutionPolicy: requirements.substitutionPolicy,
-        notes: requirements.notes,
-        printTechnology: requirements.printTechnology,
-        printMaterial: requirements.printMaterial,
-        printColor: requirements.printColor,
-        surfaceFinish: requirements.surfaceFinish,
-        infillPercent: requirements.infillPercent,
-      },
-      { includesPrint: PRINTS[row.rfq.package.kind] },
-    ),
+    specRows: requirementRows({
+      quantity: requirements.quantity,
+      material: requirements.material,
+      manufacturingMethod: requirements.manufacturingMethod,
+      tolerance: requirements.tolerance,
+      leadTimeDays: requirements.leadTimeDays,
+      shippingRequirement: requirements.shippingRequirement,
+      assembly: requirements.assembly,
+      assemblySides: requirements.assemblySides,
+      qualityCheckRequirement: requirements.qualityCheckRequirement,
+      substitutionPolicy: requirements.substitutionPolicy,
+      notes: requirements.notes,
+      printTechnology: requirements.printTechnology,
+      printMaterial: requirements.printMaterial,
+      printColor: requirements.printColor,
+      surfaceFinish: requirements.surfaceFinish,
+      infillPercent: requirements.infillPercent,
+    }),
+    // The printed part's own document (UIUX-153): the brief above stays a
+    // brief, and the depth a printer prices on is read as its peer.
+    printSpecRows:
+      requirements.printTechnology === null
+        ? []
+        : printSpecificationRows({
+            technology: requirements.printTechnology,
+            material: requirements.printMaterial,
+            color: requirements.printColor,
+            surfaceFinish: requirements.surfaceFinish,
+            infillPercent: requirements.infillPercent,
+            layerHeightMm: decimal(requirements.printSpec?.layerHeightMm),
+            infillPattern: requirements.printSpec?.infillPattern ?? null,
+            wallThicknessMm: decimal(requirements.printSpec?.wallThicknessMm),
+            dimensionXMm: decimal(requirements.printSpec?.dimensionXMm),
+            dimensionYMm: decimal(requirements.printSpec?.dimensionYMm),
+            dimensionZMm: decimal(requirements.printSpec?.dimensionZMm),
+            toleranceMm: decimal(requirements.printSpec?.toleranceMm),
+            supportStructure: requirements.printSpec?.supportStructure ?? null,
+            orientationRequirement: requirements.printSpec?.orientationRequirement ?? null,
+            durometer: requirements.printSpec?.durometer ?? null,
+            postProcessing: requirements.printSpec?.postProcessing ?? null,
+            certification: requirements.printSpec?.certification ?? null,
+          }),
     items: [
       {
         name: row.rfq.package.product.name,

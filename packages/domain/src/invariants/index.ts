@@ -15,6 +15,7 @@ export * from './delivery.js';
 export * from './resolution.js';
 export * from './composition.js';
 export * from './board-spec.js';
+export * from './print-spec.js';
 export * from './access.js';
 export * from './order-authority.js';
 export * from './payout.js';

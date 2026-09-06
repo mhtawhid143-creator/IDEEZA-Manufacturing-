@@ -206,6 +206,63 @@ the column leads with the product and carries the buyer beneath it, already
 labelled. Naming it Customer would replace a vague header with a wrong one, so
 it reads **Product**, and the ticket carries the reasoning to be overruled.
 
+**UIUX-153 with UIUX-155 (MFG-49/51) — a printed part gets a document of its
+own.**
+
+This was the one ticket in the wave confirmed real on the first reading, and it
+was the largest. A board had a 28-field specification, its own screen, its own
+invariants and its own frozen record. A printed part had **five answers**
+appended to the end of the general requirements — process, material, colour,
+finish, infill — and nowhere at all for the layer height, the wall thickness,
+the size of the thing, the tolerance, how it is supported, which way up it is
+made, what happens to it afterwards, or what it has to be certified to. A
+printer prices on every one of those.
+
+So the print specification is now the board's peer, at every layer:
+
+- `PrintSpecification` in the schema, one row per requirements version, every
+  column optional, frozen with the requirements it belongs to — built the same
+  way as `BoardSpecification` and for the same reasons. Two hand-written CHECK
+  constraints, because Prisma models neither: every measurement is positive, and
+  a bounding box is three axes or none.
+- `printSpecificationRows` in the domain, read by both panels so they cannot
+  word the same document differently. Two rows are left out rather than shown
+  open, because they are not decisions waiting to be made: a Shore hardness on a
+  rigid material, and a certification nobody asked for.
+- `assertPrintSpecCoherent` refuses what cannot be built rather than warning
+  about it: a tolerance or a wall finer than the layer it would be made from, an
+  infill pattern on a process that removes material, a Shore hardness on
+  something rigid, half a bounding box.
+- A buyer's screen to fill it in, the peer of the board's, with the durometer
+  field shown only on a flexible material and the infill pattern only on a
+  process that fills.
+- Both manufacturer specification tabs — on the request and on the order —
+  render it as its own card, headed with a **PCB** or **3D printing** chip so it
+  is never in doubt which spec applies to which part of the job. That last part
+  is also **UIUX-210 (MFG-109)**'s complaint, which is that whatever the request
+  tab is missing the order tab is missing too.
+
+**UIUX-155 (MFG-51)** is satisfied by construction rather than by patching a
+string: the size is built by one function that joins the three axes with `×` and
+writes the unit once — `118.4 × 96.25 × 47 mm`. There was no dimension field in
+this build to carry the reported asterisk, and now the field that exists cannot
+produce one. A browser check asserts no `mm* ` pattern appears on the page.
+
+Rec. 4 of MFG-49 also moved something out: the five print answers no longer
+appear in the general requirements at all. Printing the same fact in two places
+is how two screens start disagreeing about one job.
+
+Not implemented, with the reason: **Build Time**, from the ticket's field list.
+It is a manufacturer's estimate, not a buyer's requirement — the lead time asked
+for is already a requirement row, and what a build takes is an output of quoting
+rather than an input to it. Per-component splitting (a spec section per BOM
+component rather than per manufacturing type) is **UIUX-207 (MFG-105)**'s
+multi-product work and is left to it.
+
+Fixed on the way, because the new screen exposed it: the assembly row read "No
+assembly — bare boards" on a print-only request, which has no boards to be bare.
+It reads "No assembly asked for", which is true either way.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |

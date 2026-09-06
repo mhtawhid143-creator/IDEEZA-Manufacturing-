@@ -14,6 +14,7 @@ import { Crumbs } from '@/components/crumbs.js';
 import { DraftForm } from '@/components/draft-form.js';
 import { WithdrawDraft } from '@/components/withdraw-draft.js';
 import { boardSpecRows, getBoardSpec } from '@/data/board-spec.js';
+import { getPrintSpec, printSpecRows } from '@/data/print-spec.js';
 import { getDraft } from '@/data/drafts.js';
 import { getProductDetail } from '@/data/products.js';
 import { requireBuyer } from '@/lib/auth.js';
@@ -43,9 +44,10 @@ const DraftPage = async ({
 }) => {
   const { draftId } = await params;
   const actor = await requireBuyer(`/manufacturing/draft/${draftId}`);
-  const [draft, spec] = await Promise.all([
+  const [draft, spec, printSpec] = await Promise.all([
     getDraft(actor.userId, asId<RfqId>(draftId)),
     getBoardSpec(actor.userId, asId<RfqId>(draftId)),
+    getPrintSpec(actor.userId, asId<RfqId>(draftId)),
   ]);
 
   if (draft === null) notFound();
@@ -97,7 +99,7 @@ const DraftPage = async ({
                 href={`/manufacturing/draft/${draft.rfqId}/specification`}
                 className={buttonAppearance({ variant: 'secondary' })}
               >
-                Edit specification
+                Edit board specification
               </Link>
             }
           />
@@ -111,6 +113,39 @@ const DraftPage = async ({
           <Text tone="muted" size="xs" className="mt-3">
             {spec.specifiedCount} of the detailed options are set. The rest are left to
             the manufacturer.
+          </Text>
+        </Card>
+      )}
+
+      {/*
+        The printed part's own document, the peer of the board's (UIUX-153). A
+        package can carry both, and then both cards are here — one job, two
+        processes, each specified in its own terms.
+      */}
+      {printSpec !== null && printSpec.hasPrintedPart && (
+        <Card>
+          <CardHeader
+            title="3D printing specification"
+            description="What every manufacturer will quote against. Anything left open is their choice, and their quote says what they chose."
+            actions={
+              <Link
+                href={`/manufacturing/draft/${draft.rfqId}/print-specification`}
+                className={buttonAppearance({ variant: 'secondary' })}
+              >
+                Edit printing specification
+              </Link>
+            }
+          />
+          <DefinitionList
+            className="mt-4"
+            columns={2}
+            items={printSpecRows(printSpec)
+              .slice(0, 8)
+              .map((row) => ({ label: row.label, value: row.value }))}
+          />
+          <Text tone="muted" size="xs" className="mt-3">
+            {printSpec.specifiedCount} of the detailed options are set. The rest are
+            left to the manufacturer.
           </Text>
         </Card>
       )}

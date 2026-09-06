@@ -1,8 +1,8 @@
 import {
   asId,
+  printSpecificationRows,
   requirementRows,
   type ManufacturerId,
-  type PackageKind,
   type OrderId,
   type OrderStatus,
   type ProductId,
@@ -12,18 +12,9 @@ import {
 } from '@ideeza/domain';
 import { database } from '@/lib/db.js';
 
-/**
- * Whether a package has a printed part in it.
- *
- * The print rows only mean something for one, and the kind of package already
- * says so — a bare board has no infill, and an empty row invites someone to fill
- * it in later with a number nobody agreed to.
- */
-const PRINTS: Readonly<Record<PackageKind, boolean>> = {
-  pcb: false,
-  module_3d: true,
-  full_product: true,
-};
+/** Prisma hands back a Decimal; the document reads plain numbers. */
+const decimal = (value: unknown): number | null =>
+  value === null || value === undefined ? null : Number(value);
 
 export interface OrderSummary {
   readonly orderId: OrderId;
@@ -62,6 +53,7 @@ export interface OrderDetail extends OrderSummary {
   readonly manufacturerRating: number | null;
   readonly shippingRequirement: string;
   readonly specRows: readonly { readonly label: string; readonly value: string }[];
+  readonly printSpecRows: readonly { readonly label: string; readonly value: string }[];
   readonly paymentStatus: string | null;
   readonly paidMinor: number | null;
   readonly reviewWindowEndsAt: Date | null;
@@ -109,6 +101,7 @@ const orderInclude = {
           printColor: true,
           surfaceFinish: true,
           infillPercent: true,
+          printSpec: true,
         },
       },
       package: {
@@ -156,27 +149,48 @@ export const getOrder = async (
     manufacturerCountry: row.manufacturer.countryCode,
     manufacturerRating: row.manufacturer.rating === null ? null : Number(row.manufacturer.rating),
     shippingRequirement: row.rfq.requirements.shippingRequirement,
-    specRows: requirementRows(
-      {
-        quantity: row.rfq.requirements.quantity,
-        material: row.rfq.requirements.material,
-        manufacturingMethod: row.rfq.requirements.manufacturingMethod,
-        tolerance: row.rfq.requirements.tolerance,
-        leadTimeDays: row.rfq.requirements.leadTimeDays,
-        shippingRequirement: row.rfq.requirements.shippingRequirement,
-        assembly: row.rfq.requirements.assembly,
-        assemblySides: row.rfq.requirements.assemblySides,
-        qualityCheckRequirement: row.rfq.requirements.qualityCheckRequirement,
-        substitutionPolicy: row.rfq.requirements.substitutionPolicy,
-        notes: row.rfq.requirements.notes,
-        printTechnology: row.rfq.requirements.printTechnology,
-        printMaterial: row.rfq.requirements.printMaterial,
-        printColor: row.rfq.requirements.printColor,
-        surfaceFinish: row.rfq.requirements.surfaceFinish,
-        infillPercent: row.rfq.requirements.infillPercent,
-      },
-      { includesPrint: PRINTS[row.rfq.package.kind] },
-    ),
+    specRows: requirementRows({
+      quantity: row.rfq.requirements.quantity,
+      material: row.rfq.requirements.material,
+      manufacturingMethod: row.rfq.requirements.manufacturingMethod,
+      tolerance: row.rfq.requirements.tolerance,
+      leadTimeDays: row.rfq.requirements.leadTimeDays,
+      shippingRequirement: row.rfq.requirements.shippingRequirement,
+      assembly: row.rfq.requirements.assembly,
+      assemblySides: row.rfq.requirements.assemblySides,
+      qualityCheckRequirement: row.rfq.requirements.qualityCheckRequirement,
+      substitutionPolicy: row.rfq.requirements.substitutionPolicy,
+      notes: row.rfq.requirements.notes,
+      printTechnology: row.rfq.requirements.printTechnology,
+      printMaterial: row.rfq.requirements.printMaterial,
+      printColor: row.rfq.requirements.printColor,
+      surfaceFinish: row.rfq.requirements.surfaceFinish,
+      infillPercent: row.rfq.requirements.infillPercent,
+    }),
+    // The printed part's own document (UIUX-153): the brief above stays a
+    // brief, and the depth a printer prices on is read as its peer.
+    printSpecRows:
+      row.rfq.requirements.printTechnology === null
+        ? []
+        : printSpecificationRows({
+            technology: row.rfq.requirements.printTechnology,
+            material: row.rfq.requirements.printMaterial,
+            color: row.rfq.requirements.printColor,
+            surfaceFinish: row.rfq.requirements.surfaceFinish,
+            infillPercent: row.rfq.requirements.infillPercent,
+            layerHeightMm: decimal(row.rfq.requirements.printSpec?.layerHeightMm),
+            infillPattern: row.rfq.requirements.printSpec?.infillPattern ?? null,
+            wallThicknessMm: decimal(row.rfq.requirements.printSpec?.wallThicknessMm),
+            dimensionXMm: decimal(row.rfq.requirements.printSpec?.dimensionXMm),
+            dimensionYMm: decimal(row.rfq.requirements.printSpec?.dimensionYMm),
+            dimensionZMm: decimal(row.rfq.requirements.printSpec?.dimensionZMm),
+            toleranceMm: decimal(row.rfq.requirements.printSpec?.toleranceMm),
+            supportStructure: row.rfq.requirements.printSpec?.supportStructure ?? null,
+            orientationRequirement: row.rfq.requirements.printSpec?.orientationRequirement ?? null,
+            durometer: row.rfq.requirements.printSpec?.durometer ?? null,
+            postProcessing: row.rfq.requirements.printSpec?.postProcessing ?? null,
+            certification: row.rfq.requirements.printSpec?.certification ?? null,
+          }),
     paymentStatus: row.payment?.status ?? null,
     paidMinor: row.payment === null ? null : Number(row.payment.totalChargedMinor),
     reviewWindowEndsAt: row.reviewWindowEndsAt,

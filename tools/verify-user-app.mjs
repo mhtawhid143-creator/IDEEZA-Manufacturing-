@@ -1761,10 +1761,10 @@ const main = async () => {
     });
     check(
       'a draft with a board offers its specification',
-      await visible(page.getByRole('link', { name: 'Edit specification' })),
+      await visible(page.getByRole('link', { name: 'Edit board specification' })),
     );
 
-    await page.getByRole('link', { name: 'Edit specification' }).click();
+    await page.getByRole('link', { name: 'Edit board specification' }).click();
     await page
       .waitForURL(/\/specification$/, { timeout: 20_000 })
       .catch(() => undefined);
@@ -1823,6 +1823,54 @@ const main = async () => {
       'the draft reads the specification back',
       (await visible(page.getByText('Board specification'))) &&
         (await visible(page.getByText(/ENIG/))),
+    );
+
+    // ------------- UIUX-153: the printed part's specification, the board's peer
+    // This draft is a full product — a gerber archive and an STL — so it is the
+    // case the ticket is actually about: one request, two kinds of work, and a
+    // document for each rather than one PCB-shaped table for the whole thing.
+    const draftId = /\/draft\/([^/?]+)/.exec(page.url())?.[1] ?? '';
+    await page.goto(`${base}/manufacturing/draft/${draftId}`, {
+      waitUntil: 'networkidle',
+    });
+    check(
+      'a request that both fabricates and prints offers a document for each',
+      (await visible(page.getByRole('link', { name: 'Edit board specification' }))) &&
+        (await visible(page.getByRole('link', { name: 'Edit printing specification' }))),
+      page.url(),
+    );
+
+    await page.getByRole('link', { name: 'Edit printing specification' }).click();
+    await page
+      .waitForURL(/\/print-specification$/, { timeout: 20_000 })
+      .catch(() => undefined);
+    check(
+      'the printing specification asks what a printer prices on',
+      (await visible(page.getByRole('heading', { name: 'How it is printed' }))) &&
+        (await visible(page.getByRole('radiogroup', { name: 'Layer height' }))) &&
+        (await visible(page.getByRole('radiogroup', { name: 'Support' }))) &&
+        (await visible(page.getByLabel('Width (X)'))) &&
+        (await visible(page.getByLabel('Orientation'))),
+      page.url(),
+    );
+
+    await page.getByLabel('Width (X)').fill('118.4');
+    await page.getByLabel('Depth (Y)').fill('96.25');
+    await page.getByLabel('Height (Z)').fill('47');
+    await page
+      .getByRole('radiogroup', { name: 'Layer height' })
+      .getByRole('radio', { name: '0.2mm' })
+      .check();
+    await clickWhenEnabled(page, page.getByRole('button', { name: 'Save specification' }));
+    const printSaved = await page
+      .waitForURL(/spec=1/, { timeout: 25_000 })
+      .then(() => true)
+      .catch(() => false);
+    check('the printing specification saves onto the draft', printSaved, page.url());
+    check(
+      'and reads back as one box, with a multiplication sign and one unit',
+      (await page.getByText(/118\.4 × 96\.25 × 47 mm/).count()) >= 1,
+      (await page.getByText('3D printing specification').first().textContent()) ?? '',
     );
 
     // A sent request shows the same document, and refuses to change it.

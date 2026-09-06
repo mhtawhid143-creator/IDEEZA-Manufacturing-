@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Alert, Card, CardHeader, Text } from '@ideeza/ui';
+import { Alert, Card, CardHeader, Tag, Text } from '@ideeza/ui';
 import {
   OPEN_ANSWER,
   asId,
@@ -91,9 +91,27 @@ const OrderSpecificationPage = async ({
             <Card>
               <CardHeader
                 title={`${order.productName} — board specification`}
+                actions={<Tag tone="brand">PCB</Tag>}
                 description="The fabrication detail this order is built to."
               />
               <SpecGrid rows={request.boardSpecRows} />
+            </Card>
+          )}
+
+          {/*
+            UIUX-210 (MFG-109) is the same complaint one stage later: whatever
+            the specification tab is missing on the request is missing again on
+            the order being built from it. It is missing in neither now, because
+            both tabs read the same document.
+          */}
+          {request.hasPrintedPart && request.printSpecRows.length > 0 && (
+            <Card>
+              <CardHeader
+                title={`${order.productName} — 3D printing specification`}
+                actions={<Tag tone="brand">3D printing</Tag>}
+                description="How the printed part on this order is made."
+              />
+              <SpecGrid rows={request.printSpecRows} />
             </Card>
           )}
 

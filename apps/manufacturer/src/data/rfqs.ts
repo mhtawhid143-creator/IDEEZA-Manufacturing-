@@ -6,6 +6,7 @@ import {
   explainTransition,
   assertManufacturerMayReadRfq,
   boardSpecificationRows,
+  printSpecificationRows,
   fileKindOf,
   requirementRows,
   rfqRecipientMachine,
@@ -248,6 +249,7 @@ export interface RequestDetail {
   /** The frozen requirements, read exactly as the buyer's screens read them. */
   readonly requirementRows: readonly DocumentRow[];
   readonly boardSpecRows: readonly DocumentRow[];
+  readonly printSpecRows: readonly DocumentRow[];
   readonly hasBoard: boolean;
   readonly hasPrintedPart: boolean;
   readonly requirementsLockedAt: Date | null;
@@ -286,7 +288,7 @@ export const getRoutedRequest = async (
         include: {
           buyer: { select: { id: true, displayName: true } },
           items: { orderBy: { reference: 'asc' } },
-          requirements: { include: { boardSpec: true } },
+          requirements: { include: { boardSpec: true, printSpec: true } },
           package: {
             include: {
               product: {
@@ -387,27 +389,46 @@ export const getRoutedRequest = async (
       sku: item.sku,
       quantityRequired: item.quantityRequired,
     })),
-    requirementRows: requirementRows(
-      {
-        quantity: requirements.quantity,
-        material: requirements.material,
-        manufacturingMethod: requirements.manufacturingMethod,
-        tolerance: requirements.tolerance,
-        leadTimeDays: requirements.leadTimeDays,
-        shippingRequirement: requirements.shippingRequirement,
-        assembly: requirements.assembly,
-        assemblySides: requirements.assemblySides,
-        qualityCheckRequirement: requirements.qualityCheckRequirement,
-        substitutionPolicy: requirements.substitutionPolicy,
-        notes: requirements.notes,
-        printTechnology: requirements.printTechnology,
-        printMaterial: requirements.printMaterial,
-        printColor: requirements.printColor,
-        surfaceFinish: requirements.surfaceFinish,
-        infillPercent: requirements.infillPercent,
-      },
-      { includesPrint: hasPrintedPart },
-    ),
+    requirementRows: requirementRows({
+      quantity: requirements.quantity,
+      material: requirements.material,
+      manufacturingMethod: requirements.manufacturingMethod,
+      tolerance: requirements.tolerance,
+      leadTimeDays: requirements.leadTimeDays,
+      shippingRequirement: requirements.shippingRequirement,
+      assembly: requirements.assembly,
+      assemblySides: requirements.assemblySides,
+      qualityCheckRequirement: requirements.qualityCheckRequirement,
+      substitutionPolicy: requirements.substitutionPolicy,
+      notes: requirements.notes,
+      printTechnology: requirements.printTechnology,
+      printMaterial: requirements.printMaterial,
+      printColor: requirements.printColor,
+      surfaceFinish: requirements.surfaceFinish,
+      infillPercent: requirements.infillPercent,
+    }),
+    // The printed part's own document, the peer of the board's (UIUX-153).
+    printSpecRows: !hasPrintedPart
+      ? []
+      : printSpecificationRows({
+          technology: requirements.printTechnology,
+          material: requirements.printMaterial,
+          color: requirements.printColor,
+          surfaceFinish: requirements.surfaceFinish,
+          infillPercent: requirements.infillPercent,
+          layerHeightMm: decimal(requirements.printSpec?.layerHeightMm),
+          infillPattern: requirements.printSpec?.infillPattern ?? null,
+          wallThicknessMm: decimal(requirements.printSpec?.wallThicknessMm),
+          dimensionXMm: decimal(requirements.printSpec?.dimensionXMm),
+          dimensionYMm: decimal(requirements.printSpec?.dimensionYMm),
+          dimensionZMm: decimal(requirements.printSpec?.dimensionZMm),
+          toleranceMm: decimal(requirements.printSpec?.toleranceMm),
+          supportStructure: requirements.printSpec?.supportStructure ?? null,
+          orientationRequirement: requirements.printSpec?.orientationRequirement ?? null,
+          durometer: requirements.printSpec?.durometer ?? null,
+          postProcessing: requirements.printSpec?.postProcessing ?? null,
+          certification: requirements.printSpec?.certification ?? null,
+        }),
     boardSpecRows: !hasBoard
       ? []
       : boardSpecificationRows(

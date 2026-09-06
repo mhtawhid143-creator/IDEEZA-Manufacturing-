@@ -606,8 +606,57 @@ const main = async () => {
       'the board specification is on the same screen as the requirement',
       await visible(page.getByText('board specification')),
     );
+    check(
+      'a board-only request is not asked about printing',
+      (await page.getByText('3D printing specification').count()) === 0,
+      page.url(),
+    );
     await page.screenshot({
       path: join(shotDir, 'rfq-specification.png'),
+      fullPage: true,
+    });
+
+    // ---------------- UIUX-153 / UIUX-155: the printed part's own document
+    await page.goto(`${base}/rfqs/mfrfix_rfq_housing/specification`, {
+      waitUntil: 'networkidle',
+    });
+    check(
+      'a printed part has a specification of its own, headed as its own kind of work',
+      (await visible(page.getByText('3D printing specification'))) &&
+        (await page.getByText('3D printing', { exact: true }).count()) >= 1 &&
+        // And it is not a board: this request has no gerbers in it.
+        (await page.getByText('board specification').count()) === 0,
+      page.url(),
+    );
+    check(
+      'it carries what a printer prices on, not just the process and material',
+      (await visible(page.getByText('Layer height'))) &&
+        (await visible(page.getByText('Wall thickness'))) &&
+        (await visible(page.getByText('Support'))) &&
+        (await visible(page.getByText('Orientation'))) &&
+        (await visible(page.getByText('Post-processing'))),
+    );
+    check(
+      'the size reads as one box with a multiplication sign and one unit',
+      (await page.getByText(/118\.4 × 96\.25 × 47 mm/).count()) >= 1 &&
+        // UIUX-155: never an asterisk between two measurements.
+        (await page.getByText(/\d\s*mm\*\s*\d/).count()) === 0,
+      (await page
+        .getByText(/118\.4/)
+        .first()
+        .textContent()) ?? '',
+    );
+    check(
+      'the brief above it is a brief, and does not repeat the print document',
+      (await page
+        .getByText('Production requirement')
+        .locator('..')
+        .locator('..')
+        .getByText('Print process')
+        .count()) === 0,
+    );
+    await page.screenshot({
+      path: join(shotDir, 'rfq-print-specification.png'),
       fullPage: true,
     });
 

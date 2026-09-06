@@ -54,6 +54,7 @@ describe('migrations apply to a clean database', () => {
       '20260901154826_member_title',
       '20260902042510_settings_flows',
       '20260902114625_tour_progress',
+      '20260906104240_print_specification_detail',
     ]);
   });
 
@@ -95,7 +96,11 @@ describe('migrations apply to a clean database', () => {
     // TourProgress arrived with the tour guide: where somebody is up to in a
     // guided walk of the panel. It hangs off the person and not the shop,
     // because a tour teaches somebody how this works and they keep that.
-    expect(tables).toBe(63);
+    // PrintSpecification arrived with UIUX-153: a printed part is priced on its
+    // layer height, walls, size, supports and finishing, and it had nowhere to
+    // keep any of that. It is the peer of BoardSpecification and is built the
+    // same way — one row per requirements version, every column optional.
+    expect(tables).toBe(64);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with
@@ -108,7 +113,9 @@ describe('migrations apply to a clean database', () => {
     // are three different claims.
     // TwoStepMethod, NotificationTopic, NotificationChannel, KycStatus and
     // PayoutMethodKind arrived with them.
-    expect(enums).toBe(57);
+    // InfillPattern and SupportStructure arrived with the print specification:
+    // how the inside of a part is arranged, and what holds its overhangs up.
+    expect(enums).toBe(59);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

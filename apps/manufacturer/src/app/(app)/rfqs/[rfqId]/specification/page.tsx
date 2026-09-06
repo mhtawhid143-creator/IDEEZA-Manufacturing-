@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Alert, Card, CardHeader, Text } from '@ideeza/ui';
+import { Alert, Card, CardHeader, Tag, Text } from '@ideeza/ui';
 import { OPEN_ANSWER, asId, type DocumentRow, type RfqId } from '@ideeza/domain';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
@@ -71,6 +71,7 @@ const SpecificationPage = async ({
         <Card>
           <CardHeader
             title={`${request.productName} — board specification`}
+            actions={<Tag tone="brand">PCB</Tag>}
             description={
               request.boardSpecRows.length === 0
                 ? 'The buyer left the whole board specification to the manufacturer.'
@@ -90,6 +91,23 @@ const SpecificationPage = async ({
           ) : (
             <SpecGrid rows={request.boardSpecRows} />
           )}
+        </Card>
+      )}
+
+      {/*
+        The printed part's own specification, the peer of the board's
+        (UIUX-153). A package that carries both shows both, each headed with the
+        kind of work it describes, so it is never in doubt which spec applies to
+        which part of the job.
+      */}
+      {request.hasPrintedPart && (
+        <Card>
+          <CardHeader
+            title={`${request.productName} — 3D printing specification`}
+            actions={<Tag tone="brand">3D printing</Tag>}
+            description="How the printed part is made, exactly as the buyer filled it in."
+          />
+          <SpecGrid rows={request.printSpecRows} />
         </Card>
       )}
 

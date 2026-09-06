@@ -56,6 +56,60 @@ export const SURFACE_FINISH_LABEL: Readonly<Record<SurfaceFinish, string>> = Obj
   painted: 'Painted',
 });
 
+/**
+ * How the inside of a printed part is filled.
+ *
+ * The percentage says how much material goes in; the pattern says how it is
+ * arranged, and the two are not the same decision — a gyroid at 20% and a grid
+ * at 20% weigh the same and do not behave the same under load. A part that has
+ * to take a bearing is specified on both.
+ */
+export const INFILL_PATTERNS = [
+  'grid',
+  'lines',
+  'triangles',
+  'cubic',
+  'gyroid',
+  'honeycomb',
+  'concentric',
+] as const;
+export type InfillPattern = (typeof INFILL_PATTERNS)[number];
+
+export const INFILL_PATTERN_LABEL: Readonly<Record<InfillPattern, string>> = Object.freeze({
+  grid: 'Grid',
+  lines: 'Lines',
+  triangles: 'Triangles',
+  cubic: 'Cubic',
+  gyroid: 'Gyroid',
+  honeycomb: 'Honeycomb',
+  concentric: 'Concentric',
+});
+
+/**
+ * What holds an overhang up while it is being made, and what that costs later.
+ *
+ * It is a buyer's decision rather than a printer's, because removing supports
+ * marks the surface they touched — so a part with a cosmetic face is oriented
+ * and supported to keep that face clear, and somebody has to say which face.
+ */
+export const SUPPORT_STRUCTURES = [
+  'none',
+  'standard',
+  'soluble',
+  'tree',
+  'manufacturer_choice',
+] as const;
+export type SupportStructure = (typeof SUPPORT_STRUCTURES)[number];
+
+export const SUPPORT_STRUCTURE_LABEL: Readonly<Record<SupportStructure, string>> =
+  Object.freeze({
+    none: 'None — the geometry needs no support',
+    standard: 'Standard, broken away',
+    soluble: 'Soluble, dissolved off',
+    tree: 'Tree, minimal contact',
+    manufacturer_choice: 'Whatever the process needs',
+  });
+
 /** Infill is a percentage, and only a subtractive process has none. */
 export const INFILL_MIN = 10;
 export const INFILL_MAX = 100;
