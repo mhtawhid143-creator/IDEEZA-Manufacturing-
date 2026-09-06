@@ -528,8 +528,29 @@ const main = async () => {
       'the inbox counts what is waiting, sent and closed',
       (await visible(page.getByText('Requests received'))) &&
         (await visible(page.getByText('Waiting on you'))) &&
-        (await visible(page.getByText('Quotes sent'))) &&
+        // UIUX-124: named as the status a row carries, not a second word for it.
+        (await visible(page.getByText('Quote sent').first())) &&
         (await visible(page.getByText('Closed without a quote'))),
+    );
+    // -------------- UIUX-125: what is waiting, and whether any of it is late
+    check(
+      'the waiting count says whether any of it is past its reply-by date',
+      await visible(
+        page.getByText(/past the buyer’s reply-by date|None past its reply-by date/),
+      ),
+      (await page
+        .getByText(/past the buyer’s reply-by date|None past its reply-by date/)
+        .first()
+        .textContent()) ?? '',
+    );
+    // ------------------ UIUX-131 / UIUX-174: the row says less, and means more
+    check(
+      'the quantity cell is a number, not a number and its own header',
+      (await page.getByRole('cell', { name: /^\d+ Qty$/ }).count()) === 0,
+    );
+    check(
+      'the row is marked with the kind of work rather than a picture of a board',
+      (await page.locator('table svg').count()) >= 1,
     );
     check(
       'both unanswered requests are in the inbox',
@@ -555,6 +576,25 @@ const main = async () => {
       (await visible(page.getByRole('link', { name: 'Rover Motor Driver v3' }))) &&
         (await page.getByRole('link', { name: 'Gimbal Housing v2' }).count()) === 0,
     );
+    // ------------- UIUX-129: what the menu offers depends on where the row is
+    await page.goto(`${base}/rfqs?status=routed`, { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: /^Actions for / }).first().click();
+    check(
+      'an unanswered request offers the act of answering it',
+      (await visible(page.getByRole('menuitem', { name: 'Submit quote' }))) &&
+        (await page.getByRole('menuitem', { name: 'The quote you sent' }).count()) === 0,
+    );
+    await page.keyboard.press('Escape');
+
+    await page.goto(`${base}/rfqs?status=quoted`, { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: /^Actions for / }).first().click();
+    check(
+      'an answered one offers the quote instead, and not a second answer',
+      (await visible(page.getByRole('menuitem', { name: 'The quote you sent' }))) &&
+        (await page.getByRole('menuitem', { name: 'Submit quote' }).count()) === 0,
+    );
+    await page.keyboard.press('Escape');
+
     await page.goto(`${base}/rfqs?status=quoted`, { waitUntil: 'networkidle' });
     const quotedChips = await page.getByText('Quote sent').count();
     const quotedRows = await page.getByRole('row').count();

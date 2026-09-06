@@ -93,14 +93,23 @@ const RequestsPage = async ({
           label="Requests received"
           note="Everything ever routed to your shop"
         />
+        {/*
+          UIUX-125: a count of what is waiting cannot say whether any of it is
+          late, and that is the half a shop has to act on first.
+        */}
         <Counter
           value={counters.awaiting}
           label="Waiting on you"
-          note="Not answered yet"
+          note={
+            counters.overdue === 0
+              ? 'None past its reply-by date'
+              : `${counters.overdue} past the buyer’s reply-by date`
+          }
         />
+        {/* UIUX-124: named as the status a row carries, not a second word for it. */}
         <Counter
           value={counters.quoted}
-          label="Quotes sent"
+          label="Quote sent"
           note="Your answer is with the buyer"
         />
         <Counter

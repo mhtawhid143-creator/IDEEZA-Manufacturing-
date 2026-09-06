@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FormField, SearchInput, Select } from '@ideeza/ui';
+import { PACKAGE_KIND_LABEL } from '@ideeza/domain';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Any status' },
@@ -13,11 +14,18 @@ const STATUS_OPTIONS = [
   { value: 'expired', label: 'Expired' },
 ];
 
+/*
+ * The same three words the Manufacturing type column shows (UIUX-172).
+ *
+ * The filter said "PCB only / 3D module / Full product" while the column it
+ * narrows said "PCB / 3D module / PCB + 3D" — three things named twice, so a
+ * shop filtering for what it had just read in a row had to translate.
+ */
 const KIND_OPTIONS = [
-  { value: 'all', label: 'Any work type' },
-  { value: 'pcb', label: 'PCB only' },
-  { value: 'module_3d', label: '3D module' },
-  { value: 'full_product', label: 'Full product' },
+  { value: 'all', label: 'Any manufacturing type' },
+  { value: 'pcb', label: PACKAGE_KIND_LABEL.pcb },
+  { value: 'module_3d', label: PACKAGE_KIND_LABEL.module_3d },
+  { value: 'full_product', label: PACKAGE_KIND_LABEL.full_product },
 ];
 
 /**
@@ -60,7 +68,7 @@ export const InboxToolbar = () => {
         <FormField label="Search by product name" labelHidden>
           <SearchInput
             name="q"
-            placeholder="Search by Quote Name"
+            placeholder="Search by product name"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -75,7 +83,7 @@ export const InboxToolbar = () => {
             onChange={(event) => apply({ status: event.target.value })}
           />
         </FormField>
-        <FormField label="Work type" labelHidden className="min-w-[170px]">
+        <FormField label="Manufacturing type" labelHidden className="min-w-[170px]">
           <Select
             options={KIND_OPTIONS}
             value={params.get('kind') ?? 'all'}

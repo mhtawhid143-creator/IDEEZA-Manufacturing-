@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   DataTable,
   EmptyState,
+  Icon,
   Pagination,
   StatusChip,
   Text,
@@ -42,11 +43,60 @@ const LABEL: Readonly<Record<InboxRow['status'], string>> = {
 };
 
 /**
+ * A mark for the kind of work, rather than a picture of a board (UIUX-174).
+ *
+ * The reported defect was a PCB photograph on every row, including rows whose
+ * work was printing. A glyph for the actual kind cannot contradict the row it
+ * sits on, and it is read by anyone who cannot tell two thumbnails apart.
+ */
+const KIND_ICON: Readonly<Record<string, 'board' | 'cube' | 'layers'>> = {
+  PCB: 'board',
+  '3D module': 'cube',
+  'PCB + 3D': 'layers',
+};
+
+/**
+ * What this stage can actually do to a request, which depends on where it is.
+ *
+ * A closed request cannot be quoted and an answered one cannot be answered
+ * twice, so one static action set (UIUX-129) offers moves that would fail. The
+ * reading tabs are always there; only the acts change.
+ */
+const actionsFor = (row: InboxRow): readonly { id: string; label: string; href: string }[] => {
+  const reading = [
+    { id: 'open', label: 'View details', href: `/rfqs/${row.rfqId}` },
+    { id: 'files', label: 'Production files', href: `/rfqs/${row.rfqId}/files` },
+    {
+      id: 'spec',
+      label: 'Production specification',
+      href: `/rfqs/${row.rfqId}/specification`,
+    },
+    { id: 'bom', label: 'BOM / parts', href: `/rfqs/${row.rfqId}/bom` },
+  ];
+
+  if (row.status === 'routed' || row.status === 'viewed') {
+    // Unanswered: the act is to answer it. Both live on the request itself,
+    // because quoting needs the specification and the bill of materials open.
+    return [
+      { id: 'quote', label: 'Submit quote', href: `/rfqs/${row.rfqId}` },
+      ...reading,
+    ];
+  }
+  if (row.status === 'quoted') {
+    return [{ id: 'sent', label: 'The quote you sent', href: '/quotes' }, ...reading];
+  }
+  // Declined or expired: nothing can be done to it, and the record stays
+  // readable rather than offering an act that would be refused.
+  return reading;
+};
+
+/**
  * The inbox table.
  *
- * The row menu carries only what this stage can actually do: open the request, or
- * decline it from inside it. Quoting is one screen away and belongs to the
- * quoting stage, so it is not offered here as a shortcut that would not work.
+ * The row menu carries only what can actually be done to *that* request, which
+ * depends on where it has got to — see `actionsFor`. Declining still happens on
+ * the request itself, because a reason is required and this row has nowhere to
+ * ask for one.
  */
 export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTableProps) => {
   const router = useRouter();
@@ -84,8 +134,10 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
-                />
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-subtle text-icon-secondary"
+                >
+                  <Icon name={KIND_ICON[row.kindLabel] ?? 'file'} size={18} />
+                </span>
                 <div className="min-w-0">
                   <Link
                     href={`/rfqs/${row.rfqId}`}
@@ -123,7 +175,9 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
           {
             id: 'quantity',
             header: 'Quantity',
-            cell: (row) => `${row.quantity} Qty`,
+            // UIUX-131: the header already says Quantity; repeating the unit in
+            // every cell adds a word and no information.
+            cell: (row) => String(row.quantity),
           },
           {
             id: 'status',
@@ -151,20 +205,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
             cell: (row) => (
               <RowMenu
                 label={`Actions for ${row.productName}`}
-                items={[
-                  { id: 'open', label: 'View details', href: `/rfqs/${row.rfqId}` },
-                  {
-                    id: 'files',
-                    label: 'Production files',
-                    href: `/rfqs/${row.rfqId}/files`,
-                  },
-                  {
-                    id: 'spec',
-                    label: 'Production specification',
-                    href: `/rfqs/${row.rfqId}/specification`,
-                  },
-                  { id: 'bom', label: 'BOM / parts', href: `/rfqs/${row.rfqId}/bom` },
-                ]}
+                items={actionsFor(row)}
                 trigger={({ ref, onClick, ...aria }) => (
                   <button
                     ref={ref}

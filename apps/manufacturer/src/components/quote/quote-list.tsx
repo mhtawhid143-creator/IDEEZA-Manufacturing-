@@ -101,7 +101,7 @@ export const QuoteList = ({
           <FormField label="Search by product name" labelHidden>
             <SearchInput
               name="q"
-              placeholder="Search by Quote Name"
+              placeholder="Search by product name"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />

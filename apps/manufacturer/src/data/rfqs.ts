@@ -53,6 +53,14 @@ export interface InboxCounters {
   readonly quoted: number;
   readonly declined: number;
   readonly expired: number;
+  /**
+   * Unanswered requests whose reply-by date has passed (UIUX-125).
+   *
+   * A count of what is waiting says nothing about whether any of it is late,
+   * and a shop reading "12 waiting" cannot tell a quiet morning from a missed
+   * deadline. This is the part of that number with a clock on it.
+   */
+  readonly overdue: number;
 }
 
 export interface InboxFilters {
@@ -179,11 +187,26 @@ export const listRoutedRequests = async (
 export const inboxCounters = async (
   manufacturerId: ManufacturerId,
 ): Promise<InboxCounters> => {
-  const rows = await database().rfqRecipient.groupBy({
-    by: ['status'],
-    where: { manufacturerId, rfq: { status: { not: 'draft' } } },
-    _count: { _all: true },
-  });
+  const [rows, overdue] = await Promise.all([
+    database().rfqRecipient.groupBy({
+      by: ['status'],
+      where: { manufacturerId, rfq: { status: { not: 'draft' } } },
+      _count: { _all: true },
+    }),
+    // Unanswered, and the buyer's own reply-by date has gone. Counted here
+    // rather than filtered from the rows, because it is a judgement about the
+    // clock and the pager only holds one page.
+    database().rfqRecipient.count({
+      where: {
+        manufacturerId,
+        status: { in: ['routed', 'viewed'] },
+        rfq: {
+          status: { not: 'draft' },
+          responseDeadline: { not: null, lt: new Date() },
+        },
+      },
+    }),
+  ]);
 
   const count = (status: RfqRecipientStatus): number =>
     rows.find((row) => row.status === status)?._count._all ?? 0;
@@ -194,6 +217,7 @@ export const inboxCounters = async (
     quoted: count('quoted'),
     declined: count('declined'),
     expired: count('expired'),
+    overdue,
   };
 };
 
