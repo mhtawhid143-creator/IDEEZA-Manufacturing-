@@ -863,6 +863,44 @@ const main = async () => {
         (await page.getByRole('button', { name: 'Submit Quote' }).count()) === 0,
     );
 
+    // ------------------------- UIUX-224 (MFG-126): a held payout says why
+    //
+    // The finding: a row reading "Disputed" showed the same fields as every
+    // other row — no reason, and no way to the case. A shop could see its money
+    // stopped and had nowhere to go from there.
+    await page.goto(`${base}/payouts?status=disputed`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(600);
+    const heldRow = page.locator('tbody tr').filter({ hasText: 'Disputed' }).first();
+    check(
+      'a payout held by a case is in the list',
+      (await heldRow.count()) > 0,
+      `${await page.locator('tbody tr').count()} rows under the Disputed filter`,
+    );
+
+    if ((await heldRow.count()) > 0) {
+      check(
+        'and it says what the case is about, not just that there is one',
+        /wrong specification|Built to the wrong specification/i.test(await heldRow.innerText()),
+        (await heldRow.innerText()).replace(/\s+/g, ' ').slice(0, 110),
+      );
+
+      const toCase = page.getByRole('menuitem', { name: 'Open the dispute' });
+      await clearToasts(page);
+      const trigger = heldRow.getByRole('button', { name: /Actions for payout/ });
+      await trigger.click();
+      check('and the row offers the way into that case', await visible(toCase));
+
+      if (await visible(toCase)) {
+        const href = await toCase.getAttribute('href');
+        check(
+          'which points at the case itself, not the order',
+          href !== null && //orders/[^/]+/disputes/[^/]+/.test(href),
+          String(href),
+        );
+        await page.keyboard.press('Escape');
+      }
+    }
+
     // --------------------------------- M11: the conversation the quote opened
     //
     // The quote sent a few checks ago is the act that opens the conversation.

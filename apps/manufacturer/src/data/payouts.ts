@@ -15,6 +15,17 @@ export interface PayoutRow {
   readonly createdAt: Date;
   /** The event the release was made against, which is what makes it auditable. */
   readonly releaseTriggerKind: string | null;
+  /**
+   * The case this payout is held by, when it is held by one.
+   *
+   * A row that says "Disputed" and nothing else tells a shop that its money is
+   * stopped and gives it no way to find out why — which is the whole of
+   * UIUX-224. The unresolved case is preferred when an order has more than one:
+   * that is the one still costing the shop money.
+   */
+  readonly disputeId: string | null;
+  /** The domain's own reason value, so the screen can put the shared words on it. */
+  readonly disputeReason: string | null;
 }
 
 export interface EarningsSummary {
@@ -48,6 +59,10 @@ const include = {
   order: {
     select: {
       id: true,
+      disputes: {
+        orderBy: { createdAt: 'desc' as const },
+        select: { id: true, reason: true, resolvedAt: true },
+      },
       rfq: {
         select: {
           buyer: { select: { displayName: true } },
@@ -109,7 +124,12 @@ export const listPayouts = async (
   });
 
   return {
-    rows: rows.map((row) => ({
+    rows: rows.map((row) => {
+      // The unresolved case first: a resolved one is history, and history is not
+      // what is holding this money.
+      const cases = row.order.disputes;
+      const held = cases.find((one) => one.resolvedAt === null) ?? cases[0] ?? null;
+      return {
       id: row.id,
       orderId: asId<OrderId>(row.orderId),
       productName: row.order.rfq.package.product.name,
@@ -122,7 +142,10 @@ export const listPayouts = async (
       releasedAt: row.releasedAt,
       createdAt: row.createdAt,
       releaseTriggerKind: row.releaseTriggerEvent?.kind ?? null,
-    })),
+      disputeId: held?.id ?? null,
+      disputeReason: held?.reason ?? null,
+      };
+    }),
     total,
     page,
     pageCount,

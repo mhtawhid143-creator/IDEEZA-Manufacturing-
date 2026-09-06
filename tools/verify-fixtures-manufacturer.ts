@@ -1114,6 +1114,26 @@ const disputedOrderForShopA = async (): Promise<void> => {
     },
   });
 
+  // The payout the case is holding. A secured payment always opens one (see
+  // docs/DOMAIN.md §3), and a dispute is what stops it moving — which is the
+  // state UIUX-224 is about: a shop reading "Disputed" with no way to learn why.
+  await prisma.payout.upsert({
+    where: { id: 'mfrfix_payout_disputed' },
+    update: { status: 'disputed' },
+    create: {
+      id: 'mfrfix_payout_disputed',
+      orderId: 'mfrfix_order_disputed',
+      paymentId: 'mfrfix_payment_disputed',
+      manufacturerId: MANUFACTURER_A,
+      status: 'disputed',
+      currency: 'USD',
+      orderAmountMinor: total,
+      platformFeeMinor: 4_100n,
+      netAmountMinor: total - 4_100n,
+      createdAt: confirmedAt,
+    },
+  });
+
   await prisma.evidence.upsert({
     where: { id: 'mfrfix_dispute_open_statement' },
     update: {},

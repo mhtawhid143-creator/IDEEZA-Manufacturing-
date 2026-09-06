@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { orderReference, payoutReference } from '@ideeza/domain';
+import { issueReasonLabel, orderReference, payoutReference } from '@ideeza/domain';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -32,6 +32,9 @@ export interface PayoutListRow {
   readonly netAmountMajor: string;
   readonly dateOn: string;
   readonly releaseTrigger: string | null;
+  /** The case holding this payout, when one is. */
+  readonly disputeId: string | null;
+  readonly disputeReason: string | null;
 }
 
 const STATUS_OPTIONS = [
@@ -240,6 +243,14 @@ export const PayoutList = ({
                     against {TRIGGER_LABEL[row.releaseTrigger] ?? row.releaseTrigger}
                   </Text>
                 )}
+                {/* UIUX-224: "Disputed" on its own tells a shop its money is
+                    stopped and nothing about why. The reason is the domain's
+                    own, in the words both panels use for it. */}
+                {row.disputeReason !== null && (
+                  <Text tone="muted" size="xs">
+                    {issueReasonLabel(row.disputeReason)}
+                  </Text>
+                )}
               </div>
             ),
           },
@@ -252,6 +263,17 @@ export const PayoutList = ({
               <RowMenu
                 label={`Actions for payout ${payoutReference(row.id)}`}
                 items={[
+                  // The case first when there is one: it is the reason this
+                  // payout has not moved, and the screen that can change that.
+                  ...(row.disputeId === null
+                    ? []
+                    : [
+                        {
+                          id: 'dispute',
+                          label: 'Open the dispute',
+                          href: `/orders/${row.orderId}/disputes/${row.disputeId}`,
+                        },
+                      ]),
                   { id: 'order', label: 'Open the order', href: `/orders/${row.orderId}` },
                 ]}
                 trigger={({ ref, onClick, ...aria }) => (

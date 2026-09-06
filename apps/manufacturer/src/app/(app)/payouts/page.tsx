@@ -123,6 +123,8 @@ const PayoutsPage = async ({
               netAmountMajor: major(row.netAmountMinor),
               dateOn: day(row.releasedAt ?? row.createdAt),
               releaseTrigger: row.releaseTriggerKind,
+              disputeId: row.disputeId,
+              disputeReason: row.disputeReason,
             }))}
           />
         </div>
