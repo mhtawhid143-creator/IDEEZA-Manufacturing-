@@ -584,6 +584,58 @@ Eight tickets, and one architectural decision the whole group turns on.
   rather than a manifest. That belongs with UIUX-146's project traceability,
   which needs the source-project model this build does not have.
 
+## Wave 10 — what a request must carry, per kind of work · done
+
+Six tickets, and one idea underneath them: a list of attachments can only say
+what came, and the question a shop opens the tab with is whether everything
+needed to make the thing is here.
+
+- **UIUX-147 / UIUX-148** — the required file set, defined in the domain per
+  kind of work and per what the buyer actually asked for. Board: gerber, drill
+  and a fabrication drawing always; pick-and-place, a parts list and an assembly
+  drawing once parts are being placed; a panel drawing only when
+  `deliveryFormat` says the *buyer* supplies the panel — a panel the shop
+  arranges needs no drawing from them. Printed: a model and a print
+  specification always, orientation and finish as the buyer's option. **A
+  schematic is never asked for**, and a test walks every combination to prove
+  it: a circuit design is not a fabrication input, so the platform does not ask
+  a buyer for their IP. One arriving anyway is shown and said to be extra.
+- **"Missing" and "left to you" are drawn apart.** A tab that calls both missing
+  teaches a shop to ignore it. Absent orientation notes are not a gap in the
+  request; they are a decision the shop now owns, and the copy says to price for
+  the assumption.
+- **UIUX-156** — an empty BOM table looked identical in three situations, and
+  only one of them is actionable. It now says which: not required for
+  fabrication-only work, not required for a single printed piece, or required
+  and absent. From `bomIsRequired()` — the same function the file set uses, so
+  the two tabs cannot disagree about whether a parts list is owed.
+- **UIUX-143** — resolved by construction rather than by four hand-tailored
+  layouts. The shape of the work is one value (`RequestDetail.work`) that every
+  type-conditional rule reads, so a new surface cannot be built PCB-first
+  without deciding what the printed case does — the type checker asks. **Rec 1's
+  "hand it to a designer" was departed from**, with the reasoning on the ticket:
+  the per-tab design decisions already exist as their own tickets, and
+  implementing them against one description of the work is what stops them being
+  fields bolted onto a PCB template.
+- **UIUX-174** — already fixed earlier in the epic: a glyph for the kind of work
+  rather than a photograph of a board, keyed off the same label the Type column
+  prints. A real thumbnail needs the file's bytes, which this build does not
+  hold — that is UIUX-150's, blocked on storage.
+- **UIUX-175** — **not applicable**: there is no layout viewer, because there
+  are no file contents to render layers from. The three recommendations are
+  recorded on the ticket as the spec for whoever builds it, with one addition
+  from this portal's conventions — the control should say what it currently is,
+  not just what it does.
+
+One thing said plainly on the tickets rather than overclaimed: a file's *role*
+is read from its **name**, because this build records names, revisions, sizes
+and hashes but not bytes. The page says so, so a shop checks by eye.
+
+And the harness flakes chased all session are now genuinely gone — **371/371**
+with nothing failing. The last one was a soft navigation to the quote page
+timing out at fifteen seconds; that page is a wide read, and the check's
+question is whether the menu goes anywhere, not how fast.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |
