@@ -2,6 +2,7 @@ export * from './product.js';
 export * from './services.js';
 export * from './shipping.js';
 export * from './print.js';
+export * from './production-files.js';
 export * from './board.js';
 export * from './rfq.js';
 export * from './quote.js';

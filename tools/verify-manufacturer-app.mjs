@@ -770,10 +770,27 @@ const main = async () => {
       waitUntil: 'networkidle',
     });
     check(
-      'the production files are listed with their revisions and kinds',
+      'the production files are listed with their revisions and what each is for',
       (await visible(page.getByText('rover-motor-driver-v3-gerber.zip'))) &&
         (await visible(page.getByText('rover-motor-driver-assembly-notes.pdf'))) &&
-        (await visible(page.getByText('Board data').first())),
+        (await visible(page.getByText('Gerber files').first())),
+    );
+    // ------- UIUX-147 / UIUX-148: what the work needs, not just what arrived
+    check(
+      'the tab says how many files this kind of work needs',
+      await visible(page.getByText(/this kind of work needs/)),
+      (await page.getByText(/this kind of work needs/).first().textContent()) ?? '',
+    );
+    check(
+      'and names the ones it needs that did not arrive',
+      await visible(page.getByText(/did not arrive/)),
+      (await page.getByText(/did not arrive/).first().textContent()) ?? '',
+    );
+    check(
+      'a schematic is never one of the files it asks for',
+      !/Schematic/.test(
+        (await page.getByText(/did not arrive/).first().textContent()) ?? '',
+      ),
     );
     check(
       'no download button pretends to serve bytes this build does not hold',
@@ -2231,8 +2248,14 @@ const main = async () => {
           isLink = await entry.evaluate((node) => node.tagName === 'A').catch(() => false);
           target = await entry.getAttribute('href').catch(() => null);
         }
+        // Thirty seconds, not fifteen. This is a soft navigation: the browser
+        // asks the server for the next screen's payload and swaps it in, and
+        // the quote's own page is a wide read — the quote, its cost lines, its
+        // deviations, the request it answers and the buyer's record. The
+        // question this check asks is whether the menu goes anywhere at all,
+        // not how quickly, and a screenshot is kept if it still does not.
         await Promise.all([
-          page.waitForURL(list.lands, { timeout: 15_000 }).catch(() => undefined),
+          page.waitForURL(list.lands, { timeout: 30_000 }).catch(() => undefined),
           entry.click(),
         ]);
         if (list.lands.test(new URL(page.url()).pathname)) break;

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, EmptyState, majorAmount, Tag, Text, Tooltip } from '@ideeza/ui';
+import { bomIsRequired } from '@ideeza/domain';
 import {
   SUBSTITUTION_POLICY_LABEL,
   asId,
@@ -169,10 +170,28 @@ const BomPage = async ({
 
         {request.bomLines.length === 0 ? (
           <div className="px-4 pb-6 md:px-6">
-            <EmptyState
-              title="No bill of materials on this request"
-              description="Nothing to source: either the buyer supplies the parts or this is fabrication only. If you expected a BOM, ask before quoting."
-            />
+            {/*
+              Three situations look identical as an empty table, and a shop
+              cannot act on the wrong one (UIUX-156). A bill of materials is a
+              manufacturing input only when parts are being placed, or when the
+              printed work is more than one piece — so the page says which of
+              "not needed" and "should be here and is not" this is.
+            */}
+            {bomIsRequired(request.work) ? (
+              <EmptyState
+                title="This work needs a bill of materials, and none arrived"
+                description="Parts are being placed on this order, so there is a list of them to source and it is not here. Ask for it before you quote — a price for parts nobody has named is a guess."
+              />
+            ) : (
+              <EmptyState
+                title="No bill of materials required"
+                description={
+                  request.work.packageKind === 'module_3d'
+                    ? 'This is a single printed piece: there are no parts to source. Nothing is missing.'
+                    : 'This is fabrication only — nobody is placing parts, so there is nothing to source. Nothing is missing.'
+                }
+              />
+            )}
           </div>
         ) : (
           <div className="w-full overflow-x-auto border-t border-border-subtle">

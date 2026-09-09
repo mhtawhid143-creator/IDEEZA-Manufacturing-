@@ -1,6 +1,14 @@
 import { notFound } from 'next/navigation';
 import { Alert, Card, CardHeader, EmptyState, Tag, Text } from '@ideeza/ui';
-import { asId, counted, type RfqId } from '@ideeza/domain';
+import {
+  asId,
+  counted,
+  PRODUCTION_FILE_LABEL,
+  PRODUCTION_FILE_PURPOSE,
+  productionFileRoleOf,
+  requiredProductionFiles,
+  type RfqId,
+} from '@ideeza/domain';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getRoutedRequest, markSectionViewed, type RequestFile } from '@/data/rfqs.js';
@@ -8,24 +16,24 @@ import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
 
-const KIND_LABEL: Readonly<Record<RequestFile['kind'], string>> = {
-  pcb: 'Board data',
-  model_3d: '3D model',
-  document: 'Document',
-};
-
 const size = (bytes: number): string =>
   bytes >= 1_048_576
     ? `${(bytes / 1_048_576).toFixed(1)} MB`
     : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 /**
- * Production Files: what came with the request.
+ * Production Files: what came with the request, against what it needs.
+ *
+ * The list alone could only say what arrived. What a shop actually asks on
+ * opening this tab is whether everything needed to make the thing is here — and
+ * a missing drill file discovered at the bench has already been quoted for
+ * (UIUX-147, UIUX-148). So the files are sorted into what the work needs and
+ * has, what it needs and lacks, and what came besides.
  *
  * The design puts a download button and a layout viewer on every row. Neither
  * exists in this build — the platform records a file's name, revision, size and
- * content hash, not its bytes — so the row carries the hash instead, which is the
- * thing a shop checks a file against once it does have it. A button that
+ * content hash, not its bytes — so the row carries the hash instead, which is
+ * the thing a shop checks a file against once it does have it. A button that
  * downloaded nothing would be worse than saying so.
  */
 const FilesPage = async ({
@@ -41,11 +49,18 @@ const FilesPage = async ({
   await markSectionViewed(actor.manufacturerId, asId<RfqId>(rfqId), 'files');
   const client = await getClientProfile(request.buyerId, actor.manufacturerId);
 
-  const counts = {
-    pcb: request.files.filter((file) => file.kind === 'pcb').length,
-    model_3d: request.files.filter((file) => file.kind === 'model_3d').length,
-    document: request.files.filter((file) => file.kind === 'document').length,
-  };
+  // What each file appears to be for. A guess from its name, and said to be
+  // one: the platform holds names rather than contents.
+  const roleOf = (file: RequestFile) => productionFileRoleOf(file.name);
+  const required = requiredProductionFiles(request.work);
+  const arrived = new Set(request.files.map((file) => roleOf(file)));
+
+  const missing = required.filter((entry) => !arrived.has(entry.role));
+  const absent = missing.filter((entry) => entry.requirement === 'always');
+  const unstated = missing.filter((entry) => entry.requirement === 'if_specified');
+  const extra = request.files.filter(
+    (file) => !required.some((entry) => entry.role === roleOf(file)),
+  );
 
   return (
     <RequestShell request={request} client={client} activeTab="files">
@@ -53,10 +68,10 @@ const FilesPage = async ({
         <div className="px-4 py-4 md:px-6">
           <CardHeader
             title={request.productName}
-            description={`${counted(counts.pcb, 'board file')} · ${counted(
-              counts.model_3d,
-              '3D model',
-            )} · ${counted(counts.document, 'document')}`}
+            description={`${counted(request.files.length, 'file')} attached · ${counted(
+              required.length,
+              'file',
+            )} this kind of work needs`}
           />
         </div>
 
@@ -86,13 +101,16 @@ const FilesPage = async ({
                       {file.name}
                     </p>
                     <Text tone="muted" size="xs">
-                      {KIND_LABEL[file.kind]} · {size(file.byteSize)} · rev{' '}
-                      {file.revision}
+                      {size(file.byteSize)} · rev {file.revision} ·{' '}
+                      {PRODUCTION_FILE_PURPOSE[roleOf(file)]}
                     </Text>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Tag tone="neutral">{KIND_LABEL[file.kind]}</Tag>
+                  {/* What it is for, read from its name (UIUX-147, UIUX-148). */}
+                  <Tag tone={roleOf(file) === 'schematic' ? 'neutral' : 'brand'}>
+                    {PRODUCTION_FILE_LABEL[roleOf(file)]}
+                  </Tag>
                   <code className="rounded bg-bg-surface-raised px-2 py-1 text-2xs text-text-tertiary">
                     {file.contentHash.slice(0, 12)}…
                   </code>
@@ -103,11 +121,77 @@ const FilesPage = async ({
         )}
       </Card>
 
+      {/*
+        What this kind of work needs and has not got. Split by whether the file
+        is one the work cannot be made without or one the buyer may simply have
+        had no opinion about — a tab that calls both "missing" teaches a shop to
+        ignore it (UIUX-147, UIUX-148).
+      */}
+      {absent.length > 0 && (
+        <Alert
+          tone="danger"
+          title={`${counted(absent.length, 'file')} this work needs did not arrive`}
+        >
+          <span className="mt-1 block font-medium text-text-primary">
+            {absent.map((entry) => PRODUCTION_FILE_LABEL[entry.role]).join(' · ')}
+          </span>
+          <span className="mt-1 block">
+            Ask for them before you quote. A price for a board with no drill file is a
+            price for something nobody has described — and declining with &ldquo;files
+            incomplete&rdquo; is a fair answer if they do not come.
+          </span>
+        </Alert>
+      )}
+
+      {unstated.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Left to you"
+            description="The buyer said nothing about these, so the choice is the shop’s. Say what you assumed in your quote."
+          />
+          <ul aria-label="Left to the shop" className="mt-3 flex flex-col gap-2">
+            {unstated.map((entry) => (
+              <li key={entry.role}>
+                <p className="text-sm font-medium text-text-primary">
+                  {PRODUCTION_FILE_LABEL[entry.role]}
+                </p>
+                <Text tone="muted" size="xs">
+                  {PRODUCTION_FILE_PURPOSE[entry.role]}
+                </Text>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {extra.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Attached as well"
+            description="Not part of what this kind of work needs, and not counted against it."
+          />
+          <ul aria-label="Attached as well" className="mt-3 flex flex-col gap-2">
+            {extra.map((file) => (
+              <li key={file.id}>
+                <p className="text-sm font-medium text-text-primary">{file.name}</p>
+                <Text tone="muted" size="xs">
+                  {PRODUCTION_FILE_PURPOSE[roleOf(file)]}
+                  {roleOf(file) === 'schematic'
+                    ? ' The platform does not ask a buyer for one, because it is a circuit design rather than a manufacturing input; this arrived anyway.'
+                    : ''}
+                </Text>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <Alert tone="info" title="File contents are not served in this environment">
         The platform records each file&rsquo;s name, revision, size and content hash;
         the bytes live in the design tool the package came from. The hash is what
         you verify against once you have the file, and it is the same hash the
-        buyer sees.
+        buyer sees. What each file is <em>for</em> is read from its name, so check
+        it by eye — a name is all this build holds.
       </Alert>
     </RequestShell>
   );

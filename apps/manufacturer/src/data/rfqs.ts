@@ -9,6 +9,7 @@ import {
   requestLifecycle,
   type QuoteCostKind,
   type QuoteLifecycle,
+  type ProductionFileWork,
   type QuoteReason,
   type ReviewRecord,
   type ReviewSection,
@@ -412,6 +413,16 @@ export interface RequestDetail {
   /** The cost lines a quote for this request can be built from (UIUX-166). */
   readonly costKinds: readonly QuoteCostKind[];
   /**
+   * The shape of the work, for the rules that depend on it (UIUX-147, UIUX-148,
+   * UIUX-156): which files the request ought to carry, and whether a bill of
+   * materials is a manufacturing input at all.
+   *
+   * `panelised` is read from the board specification when it says so; a request
+   * whose specification is silent is not panelised, which is the safe reading —
+   * asking for a panel drawing nobody promised would be a false gap.
+   */
+  readonly work: ProductionFileWork;
+  /**
    * What this shop has to have read before it can price the work, and what it
    * has read so far (UIUX-193).
    */
@@ -649,6 +660,18 @@ export const getRoutedRequest = async (
       files: recipient.filesViewedAt !== null,
       specification: recipient.specificationViewedAt !== null,
       bom: recipient.bomViewedAt !== null,
+    },
+    work: {
+      packageKind: rfq.package.kind,
+      assemblyAsked: requirements.assembly !== 'none',
+      // More than one printed piece, or a piece that takes inserts. The
+      // platform records the bill of materials rather than a part count, so
+      // its presence is what says the build is not a single piece.
+      multiPart: rfq.items.length > 0,
+      // Panelised only when the *buyer* supplies the panel: a panel the shop
+      // arranges itself needs no drawing from them, so asking for one would be
+      // a gap that is not the buyer's to fill.
+      panelised: requirements.boardSpec?.deliveryFormat === 'panel_by_buyer',
     },
     costKinds: quoteCostKindsFor({
       packageKind: rfq.package.kind,
