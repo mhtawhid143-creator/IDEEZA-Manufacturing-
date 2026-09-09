@@ -38,6 +38,33 @@ export const QUOTE_COST_LABEL: Readonly<Record<QuoteCostKind, string>> = Object.
   shipping: 'Shipping',
 });
 
+/**
+ * Which kind of work each cost line belongs to (UIUX-194).
+ *
+ * A mixed request has two disciplines with nothing in common, and one flat
+ * total hides which of them the money is going to. Since the lines are already
+ * named per family, the split is a grouping rather than new data — so a shop
+ * that itemised gets the per-type subtotal for free, and one that did not is
+ * not asked to itemise twice.
+ */
+export const QUOTE_COST_FAMILY: Readonly<Record<QuoteCostKind, 'board' | 'printed'>> =
+  Object.freeze({
+    fabrication: 'board',
+    parts: 'board',
+    assembly: 'board',
+    stencil: 'board',
+    material: 'printed',
+    machine_time: 'printed',
+    support_removal: 'printed',
+    finishing: 'printed',
+    hardware: 'printed',
+    // Shared, and never offered as a per-unit line — see `quoteCostKindsFor`.
+    shipping: 'board',
+  });
+
+export const QUOTE_COST_FAMILY_LABEL: Readonly<Record<'board' | 'printed', string>> =
+  Object.freeze({ board: 'PCB', printed: '3D printing' });
+
 export interface QuoteCostWork {
   readonly packageKind: PackageKind;
   /** Whether the buyer asked for the parts to be placed, not just the board made. */

@@ -24,10 +24,19 @@ const day = (value: Date | null): string =>
 const major = (minor: number): string =>
   `${minor < 0 ? '-' : ''}${majorAmount(minor)}`;
 
+/**
+ * Where each suggestion stands (UIUX-197).
+ *
+ * `unavailable` is not a decision the buyer makes — it is this shop saying no
+ * substitute exists (UIUX-162) — so it reads as the shop's own statement rather
+ * than as something waiting on anybody. Without it here the raw status leaked
+ * onto the page as the word "unavailable", which reads as a system fault.
+ */
 const DECISION_LABEL: Readonly<Record<string, string>> = {
   proposed: 'Waiting on the buyer',
   approved: 'Buyer approved',
   rejected: 'Buyer rejected',
+  unavailable: 'You cannot source this',
 };
 
 /**
@@ -100,7 +109,9 @@ const QuoteSubstitutionsPage = async ({
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-text-primary">
-                    {suggestion.requestedPartReference} → {suggestion.suggestedPartName}
+                    {suggestion.status === 'unavailable'
+                      ? `${suggestion.requestedPartReference} — no substitute offered`
+                      : `${suggestion.requestedPartReference} → ${suggestion.suggestedPartName}`}
                   </p>
                   <StatusChip
                     status={suggestion.status}
@@ -109,17 +120,30 @@ const QuoteSubstitutionsPage = async ({
                   />
                 </div>
                 <Text tone="muted" size="xs" className="mt-1 block">
-                  {suggestion.priceImpactMinor === 0
-                    ? 'No price change on record'
-                    : `${suggestion.priceImpactMinor > 0 ? 'Adds' : 'Saves'} ${
-                        quote.currency
-                      } ${major(Math.abs(suggestion.priceImpactMinor))}`}
-                  {suggestion.leadTimeImpactDays === 0
-                    ? ' · no extra days'
-                    : ` · ${suggestion.leadTimeImpactDays} extra days`}
-                  {suggestion.decidedAt === null
-                    ? ''
-                    : ` · decided ${day(suggestion.decidedAt)}`}
+                  {/*
+                    A line nobody can supply has no price and no lead time to
+                    report — reading "no extra days" over it would say the
+                    opposite of what happened (UIUX-197, UIUX-162).
+                  */}
+                  {suggestion.status === 'unavailable'
+                    ? 'Nothing was priced for this line: the quote covers everything except this part.'
+                    : `${
+                        suggestion.priceImpactMinor === 0
+                          ? 'No price change on record'
+                          : `${
+                              suggestion.priceImpactMinor > 0 ? 'Adds' : 'Saves'
+                            } ${quote.currency} ${major(
+                              Math.abs(suggestion.priceImpactMinor),
+                            )}`
+                      }${
+                        suggestion.leadTimeImpactDays === 0
+                          ? ' · no extra days'
+                          : ` · ${suggestion.leadTimeImpactDays} extra days`
+                      }${
+                        suggestion.decidedAt === null
+                          ? ''
+                          : ` · decided ${day(suggestion.decidedAt)}`
+                      }`}
                 </Text>
                 <Text size="sm" className="mt-2 block">
                   {suggestion.justification}

@@ -636,6 +636,44 @@ with nothing failing. The last one was a soft navigation to the quote page
 timing out at fifteen seconds; that page is a wide read, and the check's
 question is whether the menu goes anywhere, not how fast.
 
+## Wave 11 — the price, split by the work it pays for · done
+
+Three tickets on the quote's own page, and one refusal to invent data.
+
+- **UIUX-194** — a mixed PCB / 3D-printing request was priced as one flat list
+  of cost lines, so a shop could not see what each kind of work cost. The split
+  is now a **grouping of the lines that already exist**, not a second set of
+  numbers: every cost kind is assigned a family once, in `QUOTE_COST_FAMILY`
+  (`packages/domain/src/invariants/quote-costs.ts`), and the page sums each
+  family from the same lines. That choice is the whole point — the two subtotals
+  reconcile with the unit price by `assertCostLinesExplainUnitPrice()`, the
+  invariant that already refuses a breakdown which does not add up, so a
+  per-type split cannot introduce a number that disagrees with what the buyer
+  pays. A separately captured "PCB total" field could.
+- **The family heading appears only when the request holds both kinds of work.**
+  A board-only quote gains nothing from the word "PCB" above every line, and a
+  heading that never varies is noise.
+- **UIUX-195** — the umbrella spec for the pricing breakdown
+  (MFG-61/62/63/66/82/86/87/91). Closed against the assembled shape now on the
+  page: the quantity break the price belongs to, the itemised lines the domain
+  offers for *this* kind of work, the per-family subtotals, the lead time, and
+  the read-back of what the buyer asked for beside it. What was refused is on
+  the ticket with the reasoning — a deposit percentage (the escrow model secures
+  the whole amount, so a deposit line would describe a flow this platform does
+  not run), a shipping method (the buyer's choice at checkout), and a warning
+  tone on a quote above the buyer's target, which would teach shops to quote
+  prices they cannot deliver.
+- **UIUX-197** — the substitution tab's `unavailable` decision had a gap: a line
+  nobody can source has no price and no lead time, but the impact row still read
+  "no extra days", which says the opposite of what happened. The label is now
+  "You cannot source this", the row reads `C7 — no substitute offered`, and the
+  impact line is one expression, so an unsuppliable line prints what is true —
+  nothing was priced for it, and the quote covers everything else.
+
+Verified: `pnpm run typecheck`, `pnpm run lint`, `pnpm exec vitest run --project unit`
+(579 passed, four of them new on the families), the database projects, and the
+shop harness at **371/371**.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |

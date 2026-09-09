@@ -4,6 +4,8 @@ import { Alert, Card, CardHeader, DefinitionList, Text, majorAmount as major } f
 import {
   asId,
   counted,
+  QUOTE_COST_FAMILY,
+  QUOTE_COST_FAMILY_LABEL,
   QUOTE_COST_LABEL,
   quoteReference,
   requestReference,
@@ -70,6 +72,24 @@ const QuoteDetailPage = async ({
     request === null
       ? null
       : await getClientProfile(request.buyerId, actor.manufacturerId);
+
+  // The itemised lines, grouped by the kind of work they belong to, in the
+  // order the domain offers them so the reading is stable (UIUX-194).
+  const families = (['board', 'printed'] as const)
+    .map((family) => {
+      const lines = quote.costKinds
+        .filter((kind) => QUOTE_COST_FAMILY[kind] === family)
+        .flatMap((kind) => {
+          const line = quote.costLines.find((candidate) => candidate.kind === kind);
+          return line === undefined ? [] : [line];
+        });
+      return {
+        family,
+        lines,
+        subtotalMinor: lines.reduce((sum, line) => sum + line.amountMinor, 0),
+      };
+    })
+    .filter((group) => group.lines.length > 0);
 
   return (
     <QuoteShell
@@ -201,22 +221,36 @@ const QuoteDetailPage = async ({
               </dt>
               <dd className="text-xs text-text-tertiary">per unit</dd>
             </div>
-            {quote.costKinds
-              .map((kind) => ({
-                kind,
-                line: quote.costLines.find((candidate) => candidate.kind === kind),
-              }))
-              .filter((row) => row.line !== undefined)
-              .map((row) => (
-                <div key={row.kind} className="flex items-center justify-between gap-4">
-                  <dt className="text-sm text-text-tertiary">
-                    {QUOTE_COST_LABEL[row.kind]}
-                  </dt>
-                  <dd className="text-sm font-medium text-text-primary">
-                    {quote.currency} {major(row.line?.amountMinor ?? 0)}
-                  </dd>
-                </div>
-              ))}
+            {families.map((family) => (
+              <div key={family.family} className="flex flex-col gap-2">
+                {/*
+                  Named only when the request holds both kinds of work: a
+                  board-only quote gains nothing from a heading saying "PCB"
+                  above every line, and a heading that never varies is noise
+                  (UIUX-194).
+                */}
+                {families.length > 1 && (
+                  <div className="flex items-center justify-between gap-4 border-t border-border-subtle pt-2">
+                    <dt className="text-xs font-semibold uppercase tracking-caps text-text-secondary">
+                      {QUOTE_COST_FAMILY_LABEL[family.family]}
+                    </dt>
+                    <dd className="text-sm font-semibold text-text-primary">
+                      {quote.currency} {major(family.subtotalMinor)}
+                    </dd>
+                  </div>
+                )}
+                {family.lines.map((line) => (
+                  <div key={line.kind} className="flex items-center justify-between gap-4">
+                    <dt className="text-sm text-text-tertiary">
+                      {QUOTE_COST_LABEL[line.kind]}
+                    </dt>
+                    <dd className="text-sm font-medium text-text-primary">
+                      {quote.currency} {major(line.amountMinor)}
+                    </dd>
+                  </div>
+                ))}
+              </div>
+            ))}
           </dl>
         )}
 

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   InvariantViolationError,
+  QUOTE_COST_FAMILY,
+  QUOTE_COST_FAMILY_LABEL,
+  QUOTE_COST_KINDS,
   QUOTE_COST_LABEL,
   assertCostLinesExplainUnitPrice,
   quoteCostKindsFor,
@@ -55,6 +58,58 @@ describe('which cost lines a request can be priced with', () => {
         quoteCostKindsFor({ packageKind: kind, assemblyAsked: true, hardwareAsked: true }),
       ).not.toContain('shipping');
     }
+  });
+});
+
+describe('which kind of work each cost belongs to', () => {
+  it('places every line in exactly one family', () => {
+    // The per-type subtotal is a grouping of the lines rather than new data
+    // (UIUX-194), which only holds if every line has a family.
+    for (const kind of QUOTE_COST_KINDS) {
+      expect(['board', 'printed']).toContain(QUOTE_COST_FAMILY[kind]);
+    }
+  });
+
+  it('keeps the board and printed families apart', () => {
+    expect(QUOTE_COST_FAMILY.fabrication).toBe('board');
+    expect(QUOTE_COST_FAMILY.stencil).toBe('board');
+    expect(QUOTE_COST_FAMILY.material).toBe('printed');
+    expect(QUOTE_COST_FAMILY.support_removal).toBe('printed');
+  });
+
+  it('names both families in the portal’s own words', () => {
+    expect(QUOTE_COST_FAMILY_LABEL.board).toBe('PCB');
+    expect(QUOTE_COST_FAMILY_LABEL.printed).toBe('3D printing');
+  });
+
+  it('groups a combined package into two subtotals that add to the price', () => {
+    const lines = [
+      { kind: 'fabrication' as const, amountMinor: 700 },
+      { kind: 'parts' as const, amountMinor: 300 },
+      { kind: 'material' as const, amountMinor: 150 },
+      { kind: 'machine_time' as const, amountMinor: 90 },
+    ];
+    const board = lines
+      .filter((line) => QUOTE_COST_FAMILY[line.kind] === 'board')
+      .reduce((sum, line) => sum + line.amountMinor, 0);
+    const printed = lines
+      .filter((line) => QUOTE_COST_FAMILY[line.kind] === 'printed')
+      .reduce((sum, line) => sum + line.amountMinor, 0);
+    expect(board).toBe(1_000);
+    expect(printed).toBe(240);
+    // And the two subtotals are the unit price, so the split cannot introduce
+    // a number that disagrees with what the buyer pays.
+    expect(() =>
+      assertCostLinesExplainUnitPrice({
+        unitPriceMinor: board + printed,
+        lines,
+        allowed: quoteCostKindsFor({
+          packageKind: 'full_product',
+          assemblyAsked: false,
+          hardwareAsked: false,
+        }),
+      }),
+    ).not.toThrow();
   });
 });
 
