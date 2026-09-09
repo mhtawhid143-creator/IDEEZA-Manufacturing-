@@ -65,7 +65,7 @@ export const RequestShell = ({
       {/* The record's own name, matching the heading below it (UIUX-204). */}
       <Crumbs
         items={[
-          { label: 'Request Quote', href: '/rfqs' },
+          { label: 'RFQs', href: '/rfqs' },
           { label: request.productName },
         ]}
       />

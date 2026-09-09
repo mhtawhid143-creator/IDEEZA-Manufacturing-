@@ -352,10 +352,12 @@ const cardFor = (
 const major = (minor: bigint | null): string =>
   minor === null ? '—' : majorAmount(Number(minor));
 
+// What the package holds, said with the one name for each kind of work
+// (UIUX-144) rather than a second set of words for the same three things.
 const PACKAGE_LABEL: Readonly<Record<string, string>> = {
   pcb: 'PCB only',
-  module_3d: '3D module',
-  full_product: 'Full product',
+  module_3d: '3D printing only',
+  full_product: 'PCB + 3D printing',
 };
 
 /** One conversation, with the record it is about stated as facts. */

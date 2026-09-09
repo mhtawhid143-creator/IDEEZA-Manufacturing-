@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   Alert,
   Avatar,
+  Badge,
   Icon,
   buttonAppearance,
   Card,
@@ -14,8 +15,13 @@ import {
   Text,
   majorAmount as major,
 } from '@ideeza/ui';
-import { issueReasonLabel } from '@ideeza/domain';
-import { getDashboardSections, getHeadlineTiles, type WorkScope } from '@/data/dashboard.js';
+import { counted, issueReasonLabel } from '@ideeza/domain';
+import {
+  getDashboardSections,
+  getHeadlineTiles,
+  REQUEST_ACTION,
+  type WorkScope,
+} from '@/data/dashboard.js';
 import { listDisputes, listRefundClaims } from '@/data/resolution.js';
 import { getShopContext } from '@/data/shop.js';
 import { linkIfBuilt } from '@/lib/navigation.js';
@@ -304,7 +310,10 @@ const DashboardPage = async ({
   const [shop, tiles, sections, disputes, walked, claims] = await Promise.all([
     getShopContext(actor.manufacturerId, actor.userId),
     getHeadlineTiles(actor.manufacturerId),
-    getDashboardSections(actor.manufacturerId, { work: workScope }),
+    getDashboardSections(actor.manufacturerId, {
+      work: workScope,
+      userId: actor.userId,
+    }),
     listDisputes(actor.manufacturerId),
     readProgress(actor.userId),
     listRefundClaims(actor.manufacturerId),
@@ -801,21 +810,33 @@ const DashboardPage = async ({
                   className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-text-primary">
-                      {request.reference}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-text-primary">
+                        {request.reference}
+                      </p>
+                      {/*
+                        Why this row is here, said rather than inferred from the
+                        description (UIUX-115). Without it a question and an
+                        unquoted request look identical.
+                      */}
+                      <Badge tone={REQUEST_ACTION[request.reason].tone}>
+                        {REQUEST_ACTION[request.reason].chip}
+                      </Badge>
+                    </div>
                     <Text tone="muted" size="xs">
-                      {request.productName} · {request.kindLabel} · {request.quantity} units
+                      {request.productName} · {request.kindLabel} ·{' '}
+                      {counted(request.quantity, 'unit')}
                       {request.respondBy === null
                         ? ''
                         : ` · reply by ${day(request.respondBy)}`}
                     </Text>
                   </div>
+                  {/* The act this reason asks for, not one act for all five. */}
                   <Link
-                    href={`/rfqs/${request.rfqId}`}
+                    href={request.actionHref}
                     className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
                   >
-                    Submit quote
+                    {request.actionLabel}
                   </Link>
                 </li>
               ))}
@@ -1067,7 +1088,7 @@ const DashboardPage = async ({
           {[
             {
               step: 'A request arrives',
-              detail: 'A buyer sends it to the shops it chose. It lands in Request Quote.',
+              detail: 'A buyer sends it to the shops it chose. It lands in RFQs.',
             },
             {
               step: 'You quote it, or decline',

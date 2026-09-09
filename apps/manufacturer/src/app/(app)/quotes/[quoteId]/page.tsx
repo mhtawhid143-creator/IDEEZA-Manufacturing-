@@ -1,6 +1,12 @@
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
-import {asId, type QuoteId, counted } from '@ideeza/domain';
+import {
+  asId,
+  counted,
+  quoteReference,
+  requestReference,
+  type QuoteId,
+} from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getQuote } from '@/data/quotes.js';
@@ -54,8 +60,8 @@ const QuoteDetailPage = async ({
           className="mt-4"
           columns={2}
           items={[
-            { label: 'Quote ID', value: quote.quoteId },
-            { label: 'Request', value: quote.rfqId },
+            { label: 'Quote ID', value: quoteReference(quote.quoteId) },
+            { label: 'Request', value: requestReference(quote.rfqId) },
             { label: 'Version', value: String(quote.version) },
             { label: 'Lead time', value: `${quote.leadTimeDays} days` },
             { label: 'Quantity', value: counted(quote.quantity, 'unit') },

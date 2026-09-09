@@ -72,14 +72,18 @@ export const PRIMARY_NAV: readonly NavEntry[] = Object.freeze<readonly NavEntry[
   },
   {
     id: 'rfqs',
-    label: 'Request Quote',
+    // "Request Quote" read as something the shop does, sitting directly above
+    // "Quotes", so neither name said whose quotes it meant (UIUX-181). RFQs
+    // come in; My Quotes go out — and "My Orders" below already sets that
+    // possessive pattern.
+    label: 'RFQs',
     href: '/rfqs',
     capability: 'rfq.view',
     icon: 'folder',
   },
   {
     id: 'quotes',
-    label: 'Quotes',
+    label: 'My Quotes',
     href: '/quotes',
     capability: 'quote.view',
     icon: 'invoice',

@@ -101,7 +101,7 @@ const QuotesPage = async ({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Quotes"
+        title="My Quotes"
         description="Everything you have answered, and what the buyer did with it."
       />
 

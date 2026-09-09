@@ -1,6 +1,13 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardHeader, DefinitionList, Tag, Text } from '@ideeza/ui';
-import {asId, briefRows, type RfqId, counted } from '@ideeza/domain';
+import {
+  asId,
+  briefRows,
+  counted,
+  requestReference,
+  type RfqId,
+} from '@ideeza/domain';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getRoutedRequest, markRequestViewed } from '@/data/rfqs.js';
@@ -46,8 +53,13 @@ const BriefPage = async ({
           title="Production requirement"
           actions={
             <div className="flex flex-wrap gap-2">
+              {/*
+                The kind of work, in the portal's one name for it (UIUX-144).
+                This tag said "3D" while the field below it said "3D module" and
+                the inbox said something else again.
+              */}
               {request.hasBoard && <Tag tone="brand">PCB</Tag>}
-              {request.hasPrintedPart && <Tag tone="brand">3D</Tag>}
+              {request.hasPrintedPart && <Tag tone="brand">3D printing</Tag>}
               {!request.hasBoard && !request.hasPrintedPart && (
                 <Tag tone="neutral">No production files attached</Tag>
               )}
@@ -73,7 +85,10 @@ const BriefPage = async ({
           className="mt-4"
           columns={2}
           items={[
-            { label: 'RFQ ID', value: request.rfqId },
+            // The reference either side can quote, not the internal row id
+            // (UIUX-138). The dashboard and the case records already read it
+            // from the same helper.
+            { label: 'RFQ ID', value: requestReference(request.rfqId) },
             { label: 'Product', value: request.productName },
             { label: 'Manufacturing type', value: request.kindLabel },
             {
@@ -91,8 +106,33 @@ const BriefPage = async ({
                   ? 'This volume only'
                   : request.volumeTiers.map((tier) => counted(tier, 'unit')).join(', '),
             },
-            { label: 'BOM lines', value: String(request.bomLines.length) },
-            { label: 'Attached files', value: String(request.files.length) },
+            // A bill of materials is a fact about assembly work. A print-only
+            // request has none, and a row reading "0" invites the shop to
+            // wonder what it is missing (UIUX-142).
+            ...(request.bomLines.length === 0
+              ? []
+              : [
+                  {
+                    label: 'BOM lines',
+                    value: counted(request.bomLines.length, 'line'),
+                  },
+                ]),
+            {
+              label: 'Attached files',
+              value:
+                request.files.length === 0 ? (
+                  'None attached'
+                ) : (
+                  // The count is the way to the files (UIUX-139). It was static
+                  // text beside a tab the shop had to notice for itself.
+                  <Link
+                    href={`/rfqs/${request.rfqId}/files`}
+                    className="font-medium text-text-link underline decoration-border-strong underline-offset-2 hover:text-text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                  >
+                    {counted(request.files.length, 'file')}
+                  </Link>
+                ),
+            },
             { label: 'Received', value: day(request.receivedAt) },
             { label: 'Reply by', value: day(request.respondBy) },
             { label: 'Wanted by', value: day(request.neededBy) },

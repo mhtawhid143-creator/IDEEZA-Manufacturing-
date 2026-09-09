@@ -1,7 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Tag, Text, buttonAppearance } from '@ideeza/ui';
-import {asId, briefRows, type QuoteId, counted } from '@ideeza/domain';
+import {
+  asId,
+  briefRows,
+  counted,
+  requestReference,
+  type QuoteId,
+} from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getQuote } from '@/data/quotes.js';
@@ -76,7 +82,7 @@ const QuoteRequestPage = async ({
           className="mt-4"
           columns={2}
           items={[
-            { label: 'RFQ ID', value: request.rfqId },
+            { label: 'RFQ ID', value: requestReference(request.rfqId) },
             { label: 'Product', value: request.productName },
             { label: 'Manufacturing type', value: request.kindLabel },
             {

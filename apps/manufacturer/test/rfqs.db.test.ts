@@ -178,16 +178,30 @@ describe('the inbox is this shop’s routing records', () => {
     });
   });
 
-  it('filters by routing state and by kind of work together', async () => {
+  it('filters by where the request got to, and by kind of work together', async () => {
+    // Every row a filter returns carries that same word on its own pill: the
+    // filter and the row are derived from the same six (UIUX-127). The seed's
+    // quoted request was accepted, so it answers to "Accepted" and not to
+    // "Quote sent" — which is the whole point of separating them.
+    const accepted = await rfqs.listRoutedRequests(SHOP, { status: 'accepted' });
+    expect(accepted.rows.length).toBeGreaterThan(0);
+    expect(accepted.rows.every((row) => row.lifecycle === 'accepted')).toBe(true);
+
     const quoted = await rfqs.listRoutedRequests(SHOP, { status: 'quoted' });
-    expect(quoted.rows.length).toBeGreaterThan(0);
-    expect(quoted.rows.every((row) => row.status === 'quoted')).toBe(true);
+    expect(quoted.rows.every((row) => row.lifecycle === 'quoted')).toBe(true);
+    expect(
+      quoted.rows.some((row) => accepted.rows.some((won) => won.rfqId === row.rfqId)),
+    ).toBe(false);
 
-    const waiting = await rfqs.listRoutedRequests(SHOP, { status: 'routed' });
+    const waiting = await rfqs.listRoutedRequests(SHOP, { status: 'new' });
     expect(waiting.rows.map((row) => row.rfqId)).toEqual(['test_rfq_fresh']);
+    expect(waiting.rows.every((row) => row.lifecycle === 'new')).toBe(true);
 
+    // "PCB" means the request has boards in it, so a combined package belongs
+    // under it too (UIUX-126) — and nothing that is print-only does.
     const boards = await rfqs.listRoutedRequests(SHOP, { kind: 'pcb' });
-    expect(boards.rows.every((row) => row.kind === 'pcb')).toBe(true);
+    expect(boards.rows.length).toBeGreaterThan(0);
+    expect(boards.rows.every((row) => row.kind !== 'module_3d')).toBe(true);
 
     const searched = await rfqs.listRoutedRequests(SHOP, {
       kind: 'pcb',
@@ -212,13 +226,26 @@ describe('the inbox is this shop’s routing records', () => {
     expect(past.rows.length).toBe(1);
   });
 
-  it('counts the inbox the way the cards read it', async () => {
+  it('counts the inbox the way the cards read it, and the six add up', async () => {
     const counters = await rfqs.inboxCounters(SHOP);
     const all = await rfqs.listRoutedRequests(SHOP);
     expect(counters.total).toBe(all.total);
-    expect(counters.awaiting + counters.quoted + counters.declined + counters.expired).toBe(
-      counters.total,
-    );
+
+    // The data-integrity check UIUX-127 asks for, as a test rather than a note:
+    // every routed request is in exactly one of the six, so they sum to the
+    // total the "Requests received" card shows.
+    expect(
+      Object.values(counters.byLifecycle).reduce((sum, count) => sum + count, 0),
+    ).toBe(counters.total);
+
+    // And each count is the same number the filter for it returns.
+    for (const [lifecycle, count] of Object.entries(counters.byLifecycle)) {
+      const page = await rfqs.listRoutedRequests(SHOP, {
+        status: lifecycle as 'new',
+        pageSize: 50,
+      });
+      expect(page.total).toBe(count);
+    }
   });
 });
 

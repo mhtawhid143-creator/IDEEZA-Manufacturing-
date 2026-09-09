@@ -210,11 +210,16 @@ export const QuoteForm = ({
                       ? 'None given'
                       : `${overview.currency} ${money(overview.targetPriceMinor)}`,
                 },
-                { label: 'Units asked for', value: String(overview.quantity) },
-                { label: 'BOM lines', value: String(overview.bomLineCount) },
+                // Each tile's number carries its unit, formed the same way
+                // (UIUX-165) — a bare count beside three that name what they
+                // count reads as a different kind of figure.
+                { label: 'Units asked for', value: counted(overview.quantity, 'unit') },
+                { label: 'BOM lines', value: counted(overview.bomLineCount, 'line') },
                 {
                   label: 'Not covered by your stock',
-                  value: `${overview.shortLineCount} · ${overview.suggestionCount} answered`,
+                  value: `${counted(overview.shortLineCount, 'line')} · ${
+                    overview.suggestionCount
+                  } answered`,
                 },
               ].map((tile) => (
                 <div key={tile.label} className="rounded-lg border border-border-subtle bg-bg-surface p-3">

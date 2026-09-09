@@ -3,16 +3,12 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { FormField, SearchInput, Select } from '@ideeza/ui';
-import { PACKAGE_KIND_LABEL } from '@ideeza/domain';
-
-const STATUS_OPTIONS = [
-  { value: 'all', label: 'Any status' },
-  { value: 'routed', label: 'New RFQ' },
-  { value: 'viewed', label: 'Opened' },
-  { value: 'quoted', label: 'Quote sent' },
-  { value: 'declined', label: 'Declined' },
-  { value: 'expired', label: 'Expired' },
-];
+import {
+  PACKAGE_KIND_LABEL,
+  REQUEST_LIFECYCLE,
+  REQUEST_LIFECYCLE_LABEL,
+  type RequestLifecycle,
+} from '@ideeza/domain';
 
 /*
  * The same three words the Manufacturing type column shows (UIUX-172).
@@ -23,8 +19,11 @@ const STATUS_OPTIONS = [
  */
 const KIND_OPTIONS = [
   { value: 'all', label: 'Any manufacturing type' },
-  { value: 'pcb', label: PACKAGE_KIND_LABEL.pcb },
-  { value: 'module_3d', label: PACKAGE_KIND_LABEL.module_3d },
+  // "Includes", because a combined request needs both and belongs under either
+  // (UIUX-126). The third option is still the narrower question — requests that
+  // need both — and says so.
+  { value: 'pcb', label: `Includes ${PACKAGE_KIND_LABEL.pcb}` },
+  { value: 'module_3d', label: `Includes ${PACKAGE_KIND_LABEL.module_3d}` },
   { value: 'full_product', label: PACKAGE_KIND_LABEL.full_product },
 ];
 
@@ -35,7 +34,18 @@ const KIND_OPTIONS = [
  * bookmarked and the back button behaves. Changing a filter always returns to
  * page one, because staying on page four of a different result set shows nothing.
  */
-export const InboxToolbar = () => {
+export const InboxToolbar = ({
+  counts,
+}: {
+  /**
+   * How many requests are in each of the six (UIUX-127).
+   *
+   * Shown on the options so the set is checkable at a glance: the six add up to
+   * what "Requests received" says, and a shop can see that they do rather than
+   * being asked to trust it.
+   */
+  readonly counts: Readonly<Record<RequestLifecycle, number>>;
+}) => {
   const router = useRouter();
   const params = useSearchParams();
   const [search, setSearch] = useState(params.get('q') ?? '');
@@ -44,6 +54,20 @@ export const InboxToolbar = () => {
   useEffect(() => {
     setSearch(params.get('q') ?? '');
   }, [params]);
+
+  const statusOptions = [
+    {
+      value: 'all',
+      label: `Any status (${Object.values(counts).reduce(
+        (total, count) => total + count,
+        0,
+      )})`,
+    },
+    ...REQUEST_LIFECYCLE.map((lifecycle) => ({
+      value: lifecycle,
+      label: `${REQUEST_LIFECYCLE_LABEL[lifecycle]} (${counts[lifecycle]})`,
+    })),
+  ];
 
   const apply = (changes: Readonly<Record<string, string>>): void => {
     const next = new URLSearchParams(params.toString());
@@ -78,7 +102,7 @@ export const InboxToolbar = () => {
       <div className="flex flex-wrap items-end gap-3">
         <FormField label="Status" labelHidden className="min-w-[160px]">
           <Select
-            options={STATUS_OPTIONS}
+            options={statusOptions}
             value={params.get('status') ?? 'all'}
             onChange={(event) => apply({ status: event.target.value })}
           />

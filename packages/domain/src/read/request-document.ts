@@ -66,11 +66,38 @@ const yesNo = (value: boolean): string => (value ? 'Yes' : 'No');
 const sentence = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ');
 
+/**
+ * The kind of work a request asks for, in one vocabulary (UIUX-144).
+ *
+ * The portal called this "3D", "3D module" and "3D printing" on three surfaces
+ * of the same page family, which reads as three manufacturing types rather than
+ * one. "3D printing" wins because it is what the print specification and the
+ * inventory scopes already say, and because it names the process rather than the
+ * thing — a shop is asked whether it prints, not whether it holds modules.
+ *
+ * Anything that needs this word reads it from here. A second copy is how the
+ * three names happened.
+ */
 export const PACKAGE_KIND_LABEL: Readonly<Record<PackageKind, string>> = Object.freeze({
   pcb: 'PCB',
-  module_3d: '3D module',
-  full_product: 'PCB + 3D',
+  module_3d: '3D printing',
+  full_product: 'PCB + 3D printing',
 });
+
+/**
+ * Which package kinds involve a given kind of work (UIUX-126).
+ *
+ * A combined package needs both board work and printing, so a shop narrowing to
+ * "PCB" is asking which requests have boards in them — not which requests are
+ * boards and nothing else. Treating the three kinds as mutually exclusive hid
+ * every combined request from both filters, which is the one place a shop that
+ * does both would have looked.
+ *
+ * "PCB + 3D printing" stays selectable on its own, because "requests that need
+ * both" is a different and legitimate question.
+ */
+export const packageKindsIncluding = (kind: PackageKind): readonly PackageKind[] =>
+  kind === 'full_product' ? ['full_product'] : [kind, 'full_product'];
 
 export const ASSEMBLY_MODE_LABEL: Readonly<Record<AssemblyMode, string>> = Object.freeze({
   // Not "bare boards": this row is read on a print-only request too, where

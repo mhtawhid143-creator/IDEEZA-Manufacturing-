@@ -1,5 +1,9 @@
 import { Card, PageHeader, Text } from '@ideeza/ui';
-import { RFQ_RECIPIENT_STATUSES, type PackageKind, type RfqRecipientStatus } from '@ideeza/domain';
+import {
+  REQUEST_LIFECYCLE,
+  type PackageKind,
+  type RequestLifecycle,
+} from '@ideeza/domain';
 import { InboxToolbar } from '@/components/request/inbox-toolbar.js';
 import { RequestTable } from '@/components/request/request-table.js';
 import { inboxCounters, listRoutedRequests } from '@/data/rfqs.js';
@@ -12,9 +16,11 @@ const day = (value: Date | null): string =>
 
 const KINDS: readonly PackageKind[] = ['pcb', 'module_3d', 'full_product'];
 
-const statusFilter = (value: string | undefined): RfqRecipientStatus | 'all' =>
-  value !== undefined && (RFQ_RECIPIENT_STATUSES as readonly string[]).includes(value)
-    ? (value as RfqRecipientStatus)
+// The filter is over the six the inbox is partitioned into (UIUX-127), not the
+// routing row's own five — those two sets are not the same question.
+const statusFilter = (value: string | undefined): RequestLifecycle | 'all' =>
+  value !== undefined && (REQUEST_LIFECYCLE as readonly string[]).includes(value)
+    ? (value as RequestLifecycle)
     : 'all';
 
 const kindFilter = (value: string | undefined): PackageKind | 'all' =>
@@ -48,7 +54,7 @@ const Counter = ({ value, label, note }: CounterProps) => (
 );
 
 /**
- * Request Quote: the requests buyers have routed to this shop.
+ * RFQs: the requests buyers have routed to this shop.
  *
  * Every row is this shop's own routing record. A request sent to five shops is
  * five rows in five inboxes, and nothing here can read another shop's row or
@@ -83,7 +89,7 @@ const RequestsPage = async ({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Request Quotes"
+        title="RFQs"
         description="Requests buyers have sent to your shop. Answer them with a quote, or decline with a reason."
       />
 
@@ -110,18 +116,33 @@ const RequestsPage = async ({
         <Counter
           value={counters.quoted}
           label="Quote sent"
-          note="Your answer is with the buyer"
+          note={
+            counters.accepted === 0
+              ? 'Your answer is with the buyer'
+              : `${counters.accepted} of your quotes was accepted`
+          }
         />
+        {/*
+          The four tiles are groupings of the six statuses, and the note names
+          which ones (UIUX-127): new + quoted + accepted + declined + expired +
+          withdrawn is the whole of what was received, and nothing falls outside
+          it. A withdrawn request is counted here because it closed without this
+          shop being able to quote it, which is the same outcome for the shop.
+        */}
         <Counter
-          value={counters.declined + counters.expired}
+          value={counters.declined + counters.expired + counters.withdrawn}
           label="Closed without a quote"
-          note={`${counters.declined} declined · ${counters.expired} expired`}
+          note={`${counters.declined} declined · ${counters.expired} expired${
+            counters.withdrawn === 0
+              ? ''
+              : ` · ${counters.withdrawn} withdrawn by the buyer`
+          }`}
         />
       </div>
 
       <Card padded={false} data-tour="rfq-list">
         <div className="flex flex-col gap-4 p-4 md:p-6">
-          <InboxToolbar />
+          <InboxToolbar counts={counters.byLifecycle} />
           <RequestTable
             page={inbox.page}
             pageCount={inbox.pageCount}
@@ -133,6 +154,8 @@ const RequestsPage = async ({
               kindLabel: row.kindLabel,
               quantity: row.quantity,
               status: row.status,
+              lifecycle: row.lifecycle,
+              openedOn: row.openedAt === null ? null : day(row.openedAt),
               receivedOn: day(row.receivedAt),
               respondBy: row.respondBy === null ? null : day(row.respondBy),
               buyerName: row.buyerName,

@@ -374,8 +374,8 @@ const main = async () => {
 
     const navItems = [
       'Dashboard',
-      'Request Quote',
-      'Quotes',
+      'RFQs',
+      'My Quotes',
       'My Orders',
       'Inventory',
       'Payouts & Earnings',
@@ -478,6 +478,28 @@ const main = async () => {
             .first(),
         )),
     );
+    // ------- UIUX-115: the reason a row is here, and the act it asks for
+    const answerPanel = page.locator('ul[aria-label="Requests needing an answer"]');
+    check(
+      'every row says why it is waiting, not only that it is',
+      (await answerPanel.locator('> li').count()) ===
+        (await answerPanel
+          .getByText(/^(New|Closing soon|Question|Revision asked|Your quote expiring)$/)
+          .count()),
+      (await answerPanel
+        .getByText(/^(New|Closing soon|Question|Revision asked|Your quote expiring)$/)
+        .allInnerTexts()).join(' | '),
+    );
+    check(
+      'and the act it offers is the one that reason asks for',
+      (
+        await answerPanel
+          .getByRole('link')
+          .evaluateAll((nodes) => nodes.map((node) => node.textContent ?? ''))
+      ).every((label) =>
+        ['Submit quote', 'Reply', 'Revise quote'].includes(label.trim()),
+      ),
+    );
     check(
       'the stock panel reads what is free to promise, not the shelf count',
       (await visible(page.getByText('Inventory health'))) &&
@@ -516,13 +538,29 @@ const main = async () => {
     // ------------------------------------------- M03: the inbox and a request
     await page
       .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Request Quote' })
+      .getByRole('link', { name: 'RFQs' })
       .click();
     await page.waitForURL(/\/rfqs/, { timeout: 15_000 });
     check(
       'the rail reaches the request inbox',
-      await visible(page.getByRole('heading', { name: 'Request Quotes' })),
+      await visible(page.getByRole('heading', { name: 'RFQs' })),
       page.url(),
+    );
+    // ------------- UIUX-181: the two names say which way the work is going
+    check(
+      'the rail says whose quotes each list holds',
+      (await visible(
+        page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'RFQs' }),
+      )) &&
+        (await visible(
+          page
+            .getByRole('navigation', { name: 'Main' })
+            .getByRole('link', { name: 'My Quotes' }),
+        )) &&
+        (await page
+          .getByRole('navigation', { name: 'Main' })
+          .getByRole('link', { name: 'Request Quote', exact: true })
+          .count()) === 0,
     );
     check(
       'the inbox counts what is waiting, sent and closed',
@@ -577,7 +615,7 @@ const main = async () => {
         (await page.getByRole('link', { name: 'Gimbal Housing v2' }).count()) === 0,
     );
     // ------------- UIUX-129: what the menu offers depends on where the row is
-    await page.goto(`${base}/rfqs?status=routed`, { waitUntil: 'networkidle' });
+    await page.goto(`${base}/rfqs?status=new`, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: /^Actions for / }).first().click();
     check(
       'an unanswered request offers the act of answering it',
@@ -604,6 +642,38 @@ const main = async () => {
       `${quotedRows} rows, ${quotedChips} chips`,
     );
 
+    // ------- UIUX-127: six statuses, and the counts add up to what was received
+    await page.goto(`${base}/rfqs`, { waitUntil: 'networkidle' });
+    const statusOptions = await page
+      .getByLabel('Status')
+      .locator('option')
+      .evaluateAll((nodes) => nodes.map((node) => node.textContent ?? ''));
+    check(
+      'the status filter offers the six, each with its count',
+      ['New RFQ', 'Quote sent', 'Accepted', 'Declined', 'Expired', 'Withdrawn'].every(
+        (word) => statusOptions.some((option) => option.startsWith(`${word} (`)),
+      ),
+      statusOptions.join(' | ').slice(0, 200),
+    );
+    const counted = statusOptions
+      .filter((option) => !option.startsWith('Any status'))
+      .map((option) => Number(/\((\d+)\)/.exec(option)?.[1] ?? '0'))
+      .reduce((sum, value) => sum + value, 0);
+    const received = Number(
+      (await page.getByText('Requests received').locator('..').innerText())
+        .replace(/[^0-9]/g, '')
+        .slice(0, 4),
+    );
+    check(
+      'the six sum to the requests received, so nothing falls outside them',
+      counted > 0 && counted === received,
+      `six sum to ${counted}, card says ${received}`,
+    );
+    check(
+      'whether a request was opened is a date, not a seventh status',
+      (await page.getByText(/^Opened \d{4}-/).count()) >= 1,
+    );
+
     // ------------------------------------------------------ M03: the brief
     await page.goto(`${base}/rfqs`, { waitUntil: 'networkidle' });
     await page.getByRole('link', { name: 'Rover Motor Driver v3' }).click();
@@ -620,6 +690,29 @@ const main = async () => {
         (await visible(page.getByText('General information'))) &&
         (await visible(page.getByText('400 units').first())),
     );
+    // ------------- UIUX-138 / UIUX-139 / UIUX-140 / UIUX-144: the Brief panel
+    check(
+      'the request names itself with the reference either side can quote',
+      await visible(page.getByText(/^RFQ-[0-9A-Z]{8}$/)),
+      (await page.getByText(/^RFQ-[0-9A-Z]{8}$/).first().textContent()) ?? '',
+    );
+    check(
+      'the breadcrumb names the request, not the action that opened it',
+      (await visible(
+        page.getByRole('navigation').getByText('Rover Motor Driver v3'),
+      )) && (await page.getByText('View Details').count()) === 0,
+    );
+    check(
+      'the file count is the way to the files, not text beside a tab',
+      await visible(
+        page.getByRole('link', { name: /^\d+ files?$/ }),
+      ),
+    );
+    check(
+      'one name for the kind of work, on the tag and in the field',
+      (await page.getByText('3D module').count()) === 0 &&
+        (await page.getByText(/^3D$/).count()) === 0,
+    );
     check(
       'the buyer target price is labelled as theirs, not as a price',
       await visible(page.getByText(/target/i).first()),
@@ -629,6 +722,21 @@ const main = async () => {
       (await visible(page.getByText('About the client'))) &&
         (await visible(page.getByText('Requests sent on IDEEZA'))) &&
         (await visible(page.getByText('Member since'))),
+    );
+    // ------------- UIUX-145: whether quoting this buyer has led anywhere
+    check(
+      'the buyer carries a reliability reading, from the record and not a score',
+      (await visible(
+        page.getByText(
+          /New client|Accepts \d+% of quotes|Has not accepted a quote yet/,
+        ),
+      )) &&
+        (await visible(page.getByText('Follows through'))) &&
+        (await page.getByText(/★|out of 5/).count()) === 0,
+      (await page
+        .getByText(/New client|Accepts \d+% of quotes|Has not accepted a quote yet/)
+        .first()
+        .textContent()) ?? '',
     );
     await page.screenshot({ path: join(shotDir, 'rfq-brief.png'), fullPage: true });
 
@@ -996,12 +1104,12 @@ const main = async () => {
     // ------------------------------------------------------ M05: the quote list
     await page
       .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Quotes' })
+      .getByRole('link', { name: 'My Quotes' })
       .click();
     await page.waitForURL(/\/quotes(\?|$)/, { timeout: 15_000 });
     check(
       'the rail reaches the quotes this shop has sent',
-      (await visible(page.getByRole('heading', { name: 'Quotes' }))) &&
+      (await visible(page.getByRole('heading', { name: 'My Quotes' }))) &&
         (await visible(page.getByText('Quotes sent').first())) &&
         (await visible(page.getByText('With the buyer').first())),
     );
@@ -1065,7 +1173,7 @@ const main = async () => {
       (await page.getByRole('columnheader', { name: 'Type' }).count()) >= 1 &&
         (await page
           .getByRole('table', { name: 'Orders in production' })
-          .getByText(/^(PCB|3D module|PCB \+ 3D)$/)
+          .getByText(/^(PCB|3D printing|PCB \+ 3D printing)$/)
           .count()) >= 1,
     );
     check(

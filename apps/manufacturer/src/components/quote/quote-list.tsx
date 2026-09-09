@@ -146,7 +146,7 @@ export const QuoteList = ({
             description={
               filtered
                 ? 'Clear the search, the status or the dates to see everything.'
-                : 'A quote is written from a request in Request Quote. Once it is sent it appears here with the buyer’s decision on it.'
+                : 'A quote is written from a request in RFQs. Once it is sent it appears here with the buyer’s decision on it.'
             }
           />
         }

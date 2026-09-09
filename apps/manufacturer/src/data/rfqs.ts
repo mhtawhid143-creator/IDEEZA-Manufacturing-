@@ -1,6 +1,9 @@
 import {
   EMPTY_BOARD_SPECIFICATION,
   PACKAGE_KIND_LABEL,
+  packageKindsIncluding,
+  requestLifecycle,
+  type RequestLifecycle,
   asId,
   declineReasonLabel,
   explainTransition,
@@ -37,7 +40,17 @@ export interface RequestRow {
   readonly kindLabel: string;
   readonly quantity: number;
   readonly status: RfqRecipientStatus;
+  /**
+   * The one of six the row is in (UIUX-127), which is what the pill shows.
+   *
+   * The routing status is kept beside it because the row menu still needs to
+   * know what this shop did, which is a different question from where the
+   * request ended up.
+   */
+  readonly lifecycle: RequestLifecycle;
   readonly receivedAt: Date;
+  /** When this shop first opened it, which is a fact about the clock. */
+  readonly openedAt: Date | null;
   readonly respondBy: Date | null;
   readonly neededBy: Date | null;
   readonly buyerName: string;
@@ -49,8 +62,17 @@ export interface RequestRow {
 
 export interface InboxCounters {
   readonly total: number;
+  /**
+   * One count per lifecycle value (UIUX-127), and they add up to `total`.
+   *
+   * Kept as a record rather than six fields so the panel and the filter can
+   * both walk the six in order without either of them naming them again.
+   */
+  readonly byLifecycle: Readonly<Record<RequestLifecycle, number>>;
   readonly awaiting: number;
   readonly quoted: number;
+  readonly accepted: number;
+  readonly withdrawn: number;
   readonly declined: number;
   readonly expired: number;
   /**
@@ -64,7 +86,8 @@ export interface InboxCounters {
 }
 
 export interface InboxFilters {
-  readonly status?: RfqRecipientStatus | 'all';
+  /** One of the six the inbox is partitioned into (UIUX-127), or all of them. */
+  readonly status?: RequestLifecycle | 'all';
   readonly kind?: PackageKind | 'all';
   readonly search?: string;
   /** 1-based, because that is what the pager in the design shows. */
@@ -111,6 +134,55 @@ const recipientInclude = {
  * exists for every shop it was sent to, and this shop may only ever see its own
  * row. That is why the query starts at `RfqRecipient` and never at `Rfq`.
  */
+/**
+ * The filter clause for one lifecycle value (UIUX-127).
+ *
+ * It has to say in SQL exactly what `requestLifecycle` says in TypeScript,
+ * including the precedence — a request this shop won is "accepted" and not
+ * "quoted", and one the buyer pulled after this shop declined stays
+ * "declined". Anything looser and the filter would return rows whose own pill
+ * contradicted the filter they arrived under.
+ */
+const lifecycleWhere = (
+  manufacturerId: ManufacturerId,
+  lifecycle: RequestLifecycle,
+): Record<string, unknown> => {
+  const mineAccepted = {
+    quotes: { some: { manufacturerId, status: 'accepted' as const } },
+  };
+  switch (lifecycle) {
+    case 'accepted':
+      return { rfq: mineAccepted };
+    case 'declined':
+      return { status: 'declined' as const };
+    case 'expired':
+      return { status: 'expired' as const };
+    // Each of the three open cases restates the draft exclusion, because this
+    // clause replaces the base one and a request nobody sent must never appear.
+    case 'withdrawn':
+      return {
+        status: { in: ['routed', 'viewed', 'quoted'] as const },
+        rfq: { status: 'withdrawn' as const, NOT: mineAccepted },
+      };
+    case 'quoted':
+      return {
+        status: 'quoted' as const,
+        rfq: {
+          status: { notIn: ['draft', 'withdrawn'] as const },
+          NOT: mineAccepted,
+        },
+      };
+    default:
+      return {
+        status: { in: ['routed', 'viewed'] as const },
+        rfq: {
+          status: { notIn: ['draft', 'withdrawn'] as const },
+          NOT: mineAccepted,
+        },
+      };
+  }
+};
+
 export const listRoutedRequests = async (
   manufacturerId: ManufacturerId,
   filters: InboxFilters = {},
@@ -118,20 +190,29 @@ export const listRoutedRequests = async (
   const search = filters.search?.trim() ?? '';
   const pageSize = filters.pageSize ?? 10;
 
+  const chosen =
+    filters.status === undefined || filters.status === 'all'
+      ? {}
+      : lifecycleWhere(manufacturerId, filters.status);
+
   const where = {
     manufacturerId,
-    ...(filters.status === undefined || filters.status === 'all'
-      ? {}
-      : { status: filters.status }),
+    ...chosen,
     rfq: {
       // A draft is the buyer's private workspace: it was never sent.
       status: { not: 'draft' as const },
+      // Whatever the chosen lifecycle says about the request itself, kept
+      // beside the draft rule rather than replacing it.
+      ...((chosen['rfq'] as Record<string, unknown> | undefined) ?? {}),
       // One `package` filter, so a search and a work-type filter narrow together
       // instead of the second one replacing the first.
       package: {
+        // "PCB" means the request has boards in it, combined packages
+        // included (UIUX-126). An exact match hid every combined request from
+        // both of the filters a shop would have used to find it.
         ...(filters.kind === undefined || filters.kind === 'all'
           ? {}
-          : { kind: filters.kind }),
+          : { kind: { in: [...packageKindsIncluding(filters.kind)] } }),
         ...(search === ''
           ? {}
           : { product: { name: { contains: search, mode: 'insensitive' as const } } }),
@@ -161,7 +242,10 @@ export const listRoutedRequests = async (
   });
 
   const mapped = rows.map((row) => {
-    const quote = quotes.find((candidate) => candidate.rfqId === row.rfqId);
+    const mine = quotes.filter((candidate) => candidate.rfqId === row.rfqId);
+    // The newest quote is the one the row links to; every version's status
+    // counts towards where the request got to.
+    const quote = mine[0];
     return {
       rfqId: asId<RfqId>(row.rfqId),
       productName: row.rfq.package.product.name,
@@ -170,7 +254,13 @@ export const listRoutedRequests = async (
       kindLabel: PACKAGE_KIND_LABEL[row.rfq.package.kind],
       quantity: row.rfq.quantity,
       status: row.status,
+      lifecycle: requestLifecycle({
+        routing: row.status,
+        requestWithdrawn: row.rfq.status === 'withdrawn',
+        myQuoteStatuses: mine.map((candidate) => candidate.status),
+      }),
       receivedAt: row.rfq.submittedAt ?? row.createdAt,
+      openedAt: row.viewedAt,
       respondBy: row.rfq.responseDeadline,
       neededBy: row.rfq.neededBy,
       buyerName: row.rfq.buyer.displayName,
@@ -187,11 +277,12 @@ export const listRoutedRequests = async (
 export const inboxCounters = async (
   manufacturerId: ManufacturerId,
 ): Promise<InboxCounters> => {
-  const [rows, overdue] = await Promise.all([
-    database().rfqRecipient.groupBy({
-      by: ['status'],
+  const [routings, overdue, wonRfqIds, withdrawnRfqIds] = await Promise.all([
+    // Every routing row, so the six below are a partition of the same set the
+    // total is taken from and can be checked against it.
+    database().rfqRecipient.findMany({
       where: { manufacturerId, rfq: { status: { not: 'draft' } } },
-      _count: { _all: true },
+      select: { rfqId: true, status: true },
     }),
     // Unanswered, and the buyer's own reply-by date has gone. Counted here
     // rather than filtered from the rows, because it is a judgement about the
@@ -206,17 +297,50 @@ export const inboxCounters = async (
         },
       },
     }),
+    // Requests this shop won, and requests the buyer pulled — the two facts the
+    // routing row cannot carry.
+    database().quote.findMany({
+      where: { manufacturerId, status: 'accepted' },
+      select: { rfqId: true },
+    }),
+    database().rfq.findMany({
+      where: { status: 'withdrawn', recipients: { some: { manufacturerId } } },
+      select: { id: true },
+    }),
   ]);
 
-  const count = (status: RfqRecipientStatus): number =>
-    rows.find((row) => row.status === status)?._count._all ?? 0;
+  const won = new Set(wonRfqIds.map((quote) => quote.rfqId));
+  const pulled = new Set(withdrawnRfqIds.map((rfq) => rfq.id));
+
+  // Derived through the same function the rows use, so a row's pill and the
+  // count above it cannot disagree about where a request got to.
+  const byLifecycle: Record<RequestLifecycle, number> = {
+    new: 0,
+    quoted: 0,
+    accepted: 0,
+    declined: 0,
+    expired: 0,
+    withdrawn: 0,
+  };
+  for (const routing of routings) {
+    byLifecycle[
+      requestLifecycle({
+        routing: routing.status,
+        requestWithdrawn: pulled.has(routing.rfqId),
+        myQuoteStatuses: won.has(routing.rfqId) ? ['accepted'] : [],
+      })
+    ] += 1;
+  }
 
   return {
-    total: rows.reduce((total, row) => total + row._count._all, 0),
-    awaiting: count('routed') + count('viewed'),
-    quoted: count('quoted'),
-    declined: count('declined'),
-    expired: count('expired'),
+    total: routings.length,
+    byLifecycle,
+    awaiting: byLifecycle.new,
+    quoted: byLifecycle.quoted,
+    accepted: byLifecycle.accepted,
+    withdrawn: byLifecycle.withdrawn,
+    declined: byLifecycle.declined,
+    expired: byLifecycle.expired,
     overdue,
   };
 };

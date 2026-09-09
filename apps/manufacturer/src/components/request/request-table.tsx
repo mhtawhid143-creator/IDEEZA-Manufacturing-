@@ -10,7 +10,11 @@ import {
   StatusChip,
   Text,
 } from '@ideeza/ui';
-import { counted } from '@ideeza/domain';
+import {
+  counted,
+  REQUEST_LIFECYCLE_LABEL,
+  type RequestLifecycle,
+} from '@ideeza/domain';
 import { RowMenu } from '@/components/row-menu.js';
 
 export interface InboxRow {
@@ -20,6 +24,10 @@ export interface InboxRow {
   readonly kindLabel: string;
   readonly quantity: number;
   readonly status: 'routed' | 'viewed' | 'quoted' | 'declined' | 'expired';
+  /** Which of the six the request is in (UIUX-127) — what the pill shows. */
+  readonly lifecycle: RequestLifecycle;
+  /** When this shop first opened it, or null if it has not. */
+  readonly openedOn: string | null;
   readonly receivedOn: string;
   readonly respondBy: string | null;
   readonly buyerName: string;
@@ -34,13 +42,25 @@ export interface RequestTableProps {
   readonly filtered: boolean;
 }
 
-/** The manufacturer's word for its routing state, not the buyer's. */
-const LABEL: Readonly<Record<InboxRow['status'], string>> = {
-  routed: 'New RFQ',
-  viewed: 'Opened',
-  quoted: 'Quote sent',
-  declined: 'Declined',
-  expired: 'Expired',
+/**
+ * The pill's tone per lifecycle value (UIUX-127).
+ *
+ * The words come from the domain, because the counts above the table are
+ * derived from the same six and would otherwise be free to disagree. Only the
+ * colour is decided here, which is this panel's business.
+ *
+ * "Opened" is no longer one of them: whether a shop has looked at a request is a
+ * fact about the clock, so it moved to the date column beside when it arrived.
+ * Six statuses that partition the inbox are worth more than a seventh word that
+ * hides which of them a row is really in.
+ */
+const LIFECYCLE_STATUS: Readonly<Record<RequestLifecycle, string>> = {
+  new: 'routed',
+  quoted: 'quoted',
+  accepted: 'accepted',
+  declined: 'declined',
+  expired: 'expired',
+  withdrawn: 'withdrawn',
 };
 
 /**
@@ -52,8 +72,8 @@ const LABEL: Readonly<Record<InboxRow['status'], string>> = {
  */
 const KIND_ICON: Readonly<Record<string, 'board' | 'cube' | 'layers'>> = {
   PCB: 'board',
-  '3D module': 'cube',
-  'PCB + 3D': 'layers',
+  '3D printing': 'cube',
+  'PCB + 3D printing': 'layers',
 };
 
 /**
@@ -183,7 +203,12 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
           {
             id: 'status',
             header: 'Status',
-            cell: (row) => <StatusChip status={row.status} label={LABEL[row.status]} />,
+            cell: (row) => (
+              <StatusChip
+                status={LIFECYCLE_STATUS[row.lifecycle]}
+                label={REQUEST_LIFECYCLE_LABEL[row.lifecycle]}
+              />
+            ),
           },
           {
             id: 'date',
@@ -191,6 +216,11 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
             cell: (row) => (
               <div>
                 <p className="whitespace-nowrap text-sm text-text-secondary">{row.receivedOn}</p>
+                {row.openedOn !== null && (
+                  <Text tone="muted" size="xs">
+                    Opened {row.openedOn}
+                  </Text>
+                )}
                 {row.respondBy !== null && (
                   <Text tone="muted" size="xs">
                     reply by {row.respondBy}

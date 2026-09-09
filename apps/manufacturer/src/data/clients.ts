@@ -12,6 +12,23 @@ export interface ClientProfile {
   readonly ordersWithThisShop: number;
   /** The kinds of work this buyer asks for, in the platform's words. */
   readonly worksOn: readonly string[];
+  /**
+   * Whether this buyer follows through, from what actually happened (UIUX-145).
+   *
+   * The ticket asks for a star rating. There is none to show: nobody rates a
+   * buyer on this platform, and inventing a score out of these counts would be
+   * a number with no meaning behind it. What a shop is really asking before it
+   * spends an afternoon pricing is whether quoting this buyer leads anywhere,
+   * and that is answerable from the record: how many of the requests they put
+   * out to quote they went on to accept, and how many of those they paid for.
+   *
+   * `quoted` is the denominator rather than every request they ever sent,
+   * because a request nobody quoted says nothing about the buyer.
+   */
+  readonly requestsQuoted: number;
+  readonly requestsAccepted: number;
+  /** Accepted quotes that reached a secured payment, so an order exists. */
+  readonly acceptedAndPaid: number;
 }
 
 /**
@@ -34,7 +51,15 @@ export const getClientProfile = async (
   });
   if (buyer === null) return null;
 
-  const [requestsSent, ordersCompleted, ordersWithThisShop, kinds] = await Promise.all([
+  const [
+    requestsSent,
+    ordersCompleted,
+    ordersWithThisShop,
+    kinds,
+    requestsQuoted,
+    requestsAccepted,
+    acceptedAndPaid,
+  ] = await Promise.all([
     database().rfq.count({ where: { buyerId, status: { not: 'draft' } } }),
     database().manufacturingOrder.count({ where: { buyerId, status: 'completed' } }),
     database().manufacturingOrder.count({ where: { buyerId, manufacturerId } }),
@@ -43,6 +68,21 @@ export const getClientProfile = async (
       select: { package: { select: { kind: true } } },
       distinct: ['packageId'],
     }),
+    // Requests that got at least one real quote — the only ones the buyer had
+    // anything to decide about.
+    database().rfq.count({
+      where: {
+        buyerId,
+        status: { not: 'draft' },
+        quotes: { some: { status: { not: 'draft' } } },
+      },
+    }),
+    database().rfq.count({
+      where: { buyerId, quotes: { some: { status: 'accepted' } } },
+    }),
+    // An order exists only against a secured payment in this domain, so its
+    // existence is the payment having gone through.
+    database().manufacturingOrder.count({ where: { buyerId } }),
   ]);
 
   const worksOn = [...new Set(kinds.map((row) => PACKAGE_KIND_LABEL[row.package.kind]))];
@@ -55,5 +95,8 @@ export const getClientProfile = async (
     ordersCompleted,
     ordersWithThisShop,
     worksOn,
+    requestsQuoted,
+    requestsAccepted,
+    acceptedAndPaid,
   };
 };

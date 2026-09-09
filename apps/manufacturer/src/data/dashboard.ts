@@ -1,11 +1,13 @@
 import {
   OPEN_RFQ_STATUSES,
+  PACKAGE_KIND_LABEL,
   TRANSIT_DAYS,
   orderReference,
   quoteReference,
   requestReference,
   stageDefinition,
   type ManufacturerId,
+  type PackageKind,
 } from '@ideeza/domain';
 import { database } from '@/lib/db.js';
 
@@ -211,6 +213,26 @@ export interface DashboardOrderRow {
   readonly late: boolean;
 }
 
+/**
+ * Why a request is on this panel, which decides what the row offers (UIUX-115).
+ *
+ * Every row used to carry "Submit quote", because the panel only ever queried
+ * requests nobody had quoted yet. That made the button correct and the panel
+ * wrong: a buyer's question and a revision they asked for are also things
+ * waiting on this shop, and neither appeared at all.
+ *
+ * The five reasons are the five states this platform can actually be in. There
+ * is no "buyer countered" here because a counter-offer is not a thing the domain
+ * models — a buyer asks for a revision — and no "payment pending" because money
+ * is the buyer's step and the orders panel is where it is answered.
+ */
+export type RequestActionReason =
+  | 'first_quote'
+  | 'closing_soon'
+  | 'question'
+  | 'revision'
+  | 'expiring';
+
 export interface DashboardRequestRow {
   readonly rfqId: string;
   /** The request as a person would quote it, rather than its database id. */
@@ -219,7 +241,34 @@ export interface DashboardRequestRow {
   readonly quantity: number;
   readonly kindLabel: string;
   readonly respondBy: Date | null;
+  readonly reason: RequestActionReason;
+  /** The one act this row is asking for, and where it is performed. */
+  readonly actionLabel: string;
+  readonly actionHref: string;
 }
+
+/**
+ * What each reason is called, and what answers it (UIUX-115).
+ *
+ * The chip and the button are one decision. `tone` is the row's urgency and
+ * nothing else — it never encodes the kind of work, which is spoken for.
+ */
+export const REQUEST_ACTION: Readonly<
+  Record<
+    RequestActionReason,
+    {
+      readonly chip: string;
+      readonly act: string;
+      readonly tone: 'brand' | 'warning' | 'info' | 'neutral';
+    }
+  >
+> = Object.freeze({
+  first_quote: { chip: 'New', act: 'Submit quote', tone: 'brand' },
+  closing_soon: { chip: 'Closing soon', act: 'Submit quote', tone: 'warning' },
+  question: { chip: 'Question', act: 'Reply', tone: 'info' },
+  revision: { chip: 'Revision asked', act: 'Revise quote', tone: 'warning' },
+  expiring: { chip: 'Your quote expiring', act: 'Revise quote', tone: 'warning' },
+});
 
 export interface DashboardPartRow {
   readonly id: string;
@@ -309,11 +358,8 @@ export interface DashboardSections {
   readonly activity: readonly DashboardActivityRow[];
 }
 
-const PACKAGE_LABEL: Readonly<Record<string, string>> = {
-  pcb: 'PCB',
-  module_3d: '3D module',
-  full_product: 'PCB + 3D',
-};
+// The kind of work, from the one vocabulary that owns the word (UIUX-144).
+const PACKAGE_LABEL = PACKAGE_KIND_LABEL;
 
 /**
  * The rest of the dashboard: where the work is, what is waiting, and what moved.
@@ -324,9 +370,20 @@ const PACKAGE_LABEL: Readonly<Record<string, string>> = {
  */
 export const getDashboardSections = async (
   manufacturerId: ManufacturerId,
-  options: { readonly work?: WorkScope } = {},
+  options: { readonly work?: WorkScope; readonly userId?: string } = {},
 ): Promise<DashboardSections> => {
-  const [orders, requests, parts, payouts, shopQuotes, payoutTotals, events] = await Promise.all([
+  const now = Date.now();
+  const [
+    orders,
+    requests,
+    parts,
+    payouts,
+    shopQuotes,
+    payoutTotals,
+    events,
+    waitingQuotes,
+    unansweredThreads,
+  ] = await Promise.all([
     database().manufacturingOrder.findMany({
       where: { manufacturerId },
       include: {
@@ -400,7 +457,151 @@ export const getDashboardSections = async (
       orderBy: { occurredAt: 'desc' },
       take: 8,
     }),
+    // Quotes this shop has out that are waiting on something: a revision the
+    // buyer asked for, or a clock running down (UIUX-115).
+    database().quote.findMany({
+      where: {
+        manufacturerId,
+        status: { in: ['revision_requested', 'submitted', 'revised'] },
+      },
+      select: {
+        id: true,
+        status: true,
+        expiresAt: true,
+        rfq: {
+          select: {
+            id: true,
+            quantity: true,
+            responseDeadline: true,
+            package: { select: { kind: true, product: { select: { name: true } } } },
+          },
+        },
+      },
+      orderBy: { expiresAt: 'asc' },
+      take: 12,
+    }),
+    // A question waiting on this shop: the thread moved after the last time this
+    // account read it. `lastReadAt` is per participant, so this is genuinely
+    // "you have not seen it", not "somebody has not".
+    options.userId === undefined
+      ? Promise.resolve([])
+      : database().messageThread.findMany({
+          where: {
+            contextKind: 'rfq',
+            rfq: { recipients: { some: { manufacturerId } } },
+            lastMessageAt: { not: null },
+            participants: {
+              some: {
+                userId: options.userId,
+                OR: [{ lastReadAt: null }, { lastReadAt: { lt: new Date(now) } }],
+              },
+            },
+          },
+          select: {
+            id: true,
+            lastMessageAt: true,
+            participants: { where: { userId: options.userId }, select: { lastReadAt: true } },
+            messages: {
+              orderBy: { sentAt: 'desc' },
+              take: 1,
+              select: { authorId: true },
+            },
+            rfq: {
+              select: {
+                id: true,
+                quantity: true,
+                responseDeadline: true,
+                package: { select: { kind: true, product: { select: { name: true } } } },
+              },
+            },
+          },
+          orderBy: { lastMessageAt: 'desc' },
+          take: 6,
+        }),
   ]);
+
+  /**
+   * One row of the panel, and the act it is asking for (UIUX-115).
+   *
+   * The reason and the action are decided together and in one place, so a new
+   * reason cannot be added without saying what answers it — which is how every
+   * row came to say "Submit quote".
+   */
+  const actionRow = (
+    reason: RequestActionReason,
+    rfq: {
+      readonly id: string;
+      readonly quantity: number;
+      readonly responseDeadline: Date | null;
+      readonly package: {
+        readonly kind: PackageKind;
+        readonly product: { readonly name: string };
+      };
+    },
+    href: string,
+  ): DashboardRequestRow => ({
+    rfqId: rfq.id,
+    reference: requestReference(rfq.id),
+    productName: rfq.package.product.name,
+    quantity: rfq.quantity,
+    kindLabel: PACKAGE_LABEL[rfq.package.kind],
+    respondBy: rfq.responseDeadline,
+    reason,
+    actionLabel: REQUEST_ACTION[reason].act,
+    actionHref: href,
+  });
+
+  const CLOSING_WINDOW = 2 * 24 * 60 * 60 * 1000;
+
+  const needingAction: DashboardRequestRow[] = [
+    // A question outranks a quote: answering it is often what unblocks the
+    // quote, and a buyer waiting on a reply is waiting on a person.
+    ...unansweredThreads
+      .filter((thread) => {
+        // A thread's request can be gone (the row is nullable), and a thread
+        // with no request is not a request needing an answer.
+        if (thread.rfq === null) return false;
+        const seen = thread.participants[0]?.lastReadAt ?? null;
+        const moved = thread.lastMessageAt;
+        if (moved === null) return false;
+        // Somebody else spoke last, and this account has not read it since.
+        const mine = thread.messages[0]?.authorId ?? null;
+        return mine !== options.userId && (seen === null || seen < moved);
+      })
+      .flatMap((thread) =>
+        thread.rfq === null
+          ? []
+          : [actionRow('question', thread.rfq, `/messages?thread=${thread.id}`)],
+      ),
+    ...waitingQuotes
+      .filter((quote) => quote.status === 'revision_requested')
+      .map((quote) => actionRow('revision', quote.rfq, `/quotes/${quote.id}`)),
+    ...waitingQuotes
+      .filter(
+        (quote) =>
+          quote.status !== 'revision_requested' &&
+          quote.expiresAt.getTime() - now <= CLOSING_WINDOW,
+      )
+      .map((quote) => actionRow('expiring', quote.rfq, `/quotes/${quote.id}`)),
+    ...requests.map((recipient) =>
+      actionRow(
+        recipient.rfq.responseDeadline !== null &&
+          recipient.rfq.responseDeadline.getTime() - now <= CLOSING_WINDOW
+          ? 'closing_soon'
+          : 'first_quote',
+        recipient.rfq,
+        `/rfqs/${recipient.rfq.id}`,
+      ),
+    ),
+  ];
+
+  // One row per request: the most urgent reason wins, in the order built above.
+  const seenRequests = new Set<string>();
+  const requestsNeedingAction = needingAction.filter((row) => {
+    if (seenRequests.has(row.rfqId)) return false;
+    seenRequests.add(row.rfqId);
+    return true;
+  });
 
   const live = orders.filter((order) =>
     ['confirmed', 'in_production', 'quality_check', 'ready_to_ship', 'shipped'].includes(
@@ -570,14 +771,7 @@ export const getDashboardSections = async (
         late: due !== null && order.status !== 'shipped' && due < Date.now(),
       };
     }),
-    requestsNeedingAction: requests.map((recipient) => ({
-      rfqId: recipient.rfq.id,
-      reference: requestReference(recipient.rfq.id),
-      productName: recipient.rfq.package.product.name,
-      quantity: recipient.rfq.quantity,
-      kindLabel: PACKAGE_LABEL[recipient.rfq.package.kind] ?? recipient.rfq.package.kind,
-      respondBy: recipient.rfq.responseDeadline,
-    })),
+    requestsNeedingAction,
     inventoryHealth: parts.map((item) => ({
       id: item.id,
       partName: item.partName,

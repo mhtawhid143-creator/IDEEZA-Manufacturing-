@@ -1,6 +1,12 @@
 import { notFound } from 'next/navigation';
 import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
-import {asId, type OrderId, counted } from '@ideeza/domain';
+import {
+  asId,
+  counted,
+  orderReference,
+  requestReference,
+  type OrderId,
+} from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
 import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
 import { getClientProfile } from '@/data/clients.js';
@@ -54,9 +60,9 @@ const OrderTermsPage = async ({
           className="mt-4"
           columns={2}
           items={[
-            { label: 'Order', value: order.orderId },
+            { label: 'Order', value: orderReference(order.orderId) },
             { label: 'Quote', value: order.quoteId },
-            { label: 'Request', value: order.rfqId },
+            { label: 'Request', value: requestReference(order.rfqId) },
             { label: 'Quantity', value: counted(order.quantity, 'unit') },
             {
               label: 'Unit price',
