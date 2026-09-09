@@ -3,7 +3,7 @@ import { Alert, Card, CardHeader, EmptyState, Tag, Text } from '@ideeza/ui';
 import { asId, counted, type RfqId } from '@ideeza/domain';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
-import { getRoutedRequest, type RequestFile } from '@/data/rfqs.js';
+import { getRoutedRequest, markSectionViewed, type RequestFile } from '@/data/rfqs.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +37,8 @@ const FilesPage = async ({
   const actor = await requireManufacturer(`/rfqs/${rfqId}/files`);
   const request = await getRoutedRequest(actor.manufacturerId, asId<RfqId>(rfqId));
   if (request === null) notFound();
+  // Opening this is what lets the quote form be sent (UIUX-193).
+  await markSectionViewed(actor.manufacturerId, asId<RfqId>(rfqId), 'files');
   const client = await getClientProfile(request.buyerId, actor.manufacturerId);
 
   const counts = {

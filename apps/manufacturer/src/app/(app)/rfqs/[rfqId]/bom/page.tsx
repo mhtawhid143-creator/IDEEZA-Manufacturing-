@@ -10,7 +10,7 @@ import {
 import { MissingParts, type ShortLine } from '@/components/request/missing-parts.js';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
-import { getRoutedRequest } from '@/data/rfqs.js';
+import { getRoutedRequest, markSectionViewed } from '@/data/rfqs.js';
 import { matchRequestAgainstInventory } from '@/data/inventory-match.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
@@ -77,6 +77,8 @@ const BomPage = async ({
 
   const request = await getRoutedRequest(actor.manufacturerId, id);
   if (request === null) notFound();
+  // Opening this is what lets the quote form be sent (UIUX-193).
+  await markSectionViewed(actor.manufacturerId, id, 'bom');
   const [client, match] = await Promise.all([
     getClientProfile(request.buyerId, actor.manufacturerId),
     matchRequestAgainstInventory(actor.manufacturerId, id),

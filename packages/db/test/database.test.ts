@@ -59,6 +59,7 @@ describe('migrations apply to a clean database', () => {
       '20260909110000_substitution_unavailable',
       '20260909110100_substitution_unavailable_check',
       '20260909140000_quote_cost_lines',
+      '20260909170000_request_review_record',
     ]);
   });
 

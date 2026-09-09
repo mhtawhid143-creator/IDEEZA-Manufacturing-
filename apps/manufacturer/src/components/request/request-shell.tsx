@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
-import { counted, QUOTE_LIFECYCLE_LABEL, QUOTE_REASON_LABEL } from '@ideeza/domain';
+import {
+  counted,
+  QUOTE_LIFECYCLE_LABEL,
+  QUOTE_REASON_LABEL,
+  REVIEW_SECTION_LABEL,
+  REVIEW_SECTION_SEGMENT,
+  reviewOutstanding,
+} from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
@@ -60,6 +67,10 @@ export const RequestShell = ({
   shortLineCount,
   children,
 }: RequestShellProps) => {
+  // What is still unread, decided by the domain from what this request
+  // actually carries — a print-only request has no bill of materials to read
+  // (UIUX-193).
+  const outstanding = reviewOutstanding(request.reviewRequired, request.reviewSeen);
 
   return (
     <div className="flex flex-col gap-6">
@@ -157,6 +168,58 @@ export const RequestShell = ({
               <Text size="sm" className="font-semibold text-text-primary">
                 This request is closed. Nothing here is yours to answer any more.
               </Text>
+            ) : outstanding.length > 0 ? (
+              /*
+                A price cannot be put on work nobody opened (UIUX-193).
+                Accepting a quote secures the buyer's money, so a blind price
+                is not a cheap mistake — it is a dispute with funds already
+                held against it, over a finish or an assembly step the shop
+                never saw. The form is not offered until the parts that apply
+                to this request have been read.
+
+                Shown as the route rather than as a refusal: the reading is a
+                short list of links, each ticked once opened, sitting where the
+                form will be. A gate discovered by pressing Submit and failing
+                would be the same rule told badly.
+              */
+              <>
+                <Text size="sm" className="font-semibold text-text-primary">
+                  Read what you are pricing first
+                </Text>
+                <Text tone="muted" size="xs">
+                  A quote the buyer accepts becomes the terms of the order, and the
+                  money is secured against it. So the price is written after these,
+                  not before.
+                </Text>
+                <ul aria-label="Still to read" className="flex flex-col gap-2">
+                  {request.reviewRequired.map((section) => (
+                    <li key={section}>
+                      <Link
+                        href={`/rfqs/${request.rfqId}${REVIEW_SECTION_SEGMENT[section]}`}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle bg-bg-surface-raised px-3 py-2 hover:border-border-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                      >
+                        <span className="text-sm font-medium text-text-primary">
+                          {REVIEW_SECTION_LABEL[section]}
+                        </span>
+                        <Text
+                          tone={request.reviewSeen[section] ? 'muted' : 'danger'}
+                          size="xs"
+                        >
+                          {request.reviewSeen[section] ? 'Read' : 'Not opened yet'}
+                        </Text>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <DeclineRequest
+                  rfqId={request.rfqId}
+                  productName={request.productName}
+                />
+                <Text tone="muted" size="xs" className="text-center">
+                  {counted(outstanding.length, 'section')} left to open before you
+                  can quote.
+                </Text>
+              </>
             ) : (
               <>
                 <QuoteForm

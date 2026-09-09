@@ -4,11 +4,14 @@ import {
   packageKindsIncluding,
   quoteCostKindsFor,
   quoteLifecycle,
+  reviewSectionsFor,
   quoteReason,
   requestLifecycle,
   type QuoteCostKind,
   type QuoteLifecycle,
   type QuoteReason,
+  type ReviewRecord,
+  type ReviewSection,
   type RequestLifecycle,
   asId,
   declineReasonLabel,
@@ -408,6 +411,12 @@ export interface RequestDetail {
   readonly hasPrintedPart: boolean;
   /** The cost lines a quote for this request can be built from (UIUX-166). */
   readonly costKinds: readonly QuoteCostKind[];
+  /**
+   * What this shop has to have read before it can price the work, and what it
+   * has read so far (UIUX-193).
+   */
+  readonly reviewRequired: readonly ReviewSection[];
+  readonly reviewSeen: ReviewRecord;
   readonly requirementsLockedAt: Date | null;
   readonly notes: string | null;
   readonly myQuote: {
@@ -631,6 +640,16 @@ export const getRoutedRequest = async (
         ),
     hasBoard,
     hasPrintedPart,
+    reviewRequired: reviewSectionsFor({
+      packageKind: rfq.package.kind,
+      fileCount: files.length,
+      bomLineCount: rfq.items.length,
+    }),
+    reviewSeen: {
+      files: recipient.filesViewedAt !== null,
+      specification: recipient.specificationViewedAt !== null,
+      bom: recipient.bomViewedAt !== null,
+    },
     costKinds: quoteCostKindsFor({
       packageKind: rfq.package.kind,
       assemblyAsked: requirements.assembly !== 'none',
@@ -678,6 +697,40 @@ export const getRoutedRequest = async (
  * unread is different from one being worked on, and the buyer is entitled to
  * know which it is.
  */
+/**
+ * Records that this shop has opened one part of a request (UIUX-193).
+ *
+ * Written the first time only: the column is the moment it was first read, not
+ * the last, because what the gate asks is whether the shop has seen it at all.
+ * No domain event — this is a reading, and the buyer's activity feed already
+ * hears about the request being opened.
+ */
+export const markSectionViewed = async (
+  manufacturerId: ManufacturerId,
+  rfqId: RfqId,
+  section: ReviewSection,
+  now: Date = new Date(),
+): Promise<void> => {
+  const column =
+    section === 'files'
+      ? 'filesViewedAt'
+      : section === 'specification'
+        ? 'specificationViewedAt'
+        : 'bomViewedAt';
+
+  const recipient = await database().rfqRecipient.findFirst({
+    where: { rfqId, manufacturerId },
+    select: { id: true, filesViewedAt: true, specificationViewedAt: true, bomViewedAt: true },
+  });
+  if (recipient === null) return;
+  if (recipient[column] !== null) return;
+
+  await database().rfqRecipient.update({
+    where: { id: recipient.id },
+    data: { [column]: now },
+  });
+};
+
 export const markRequestViewed = async (
   manufacturerId: ManufacturerId,
   rfqId: RfqId,

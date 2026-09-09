@@ -1,14 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, DefinitionList, Tag, Text, buttonAppearance } from '@ideeza/ui';
-import {
-  asId,
-  briefRows,
-  counted,
-  requestReference,
-  type QuoteId,
-} from '@ideeza/domain';
+import { asId, type QuoteId } from '@ideeza/domain';
 import { QuoteShell } from '@/components/quote/quote-shell.js';
+import { RequestBrief } from '@/components/request/request-brief.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getQuote } from '@/data/quotes.js';
 import { getRoutedRequest } from '@/data/rfqs.js';
@@ -16,15 +9,17 @@ import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
 
-const day = (value: Date | null): string =>
-  value === null ? '—' : value.toISOString().slice(0, 10);
-
 /**
  * RFQ overview: the request this quote answers, beside the quote.
  *
- * It is the same document the request screens show, read by the same domain
- * function — so a shop checking its quote against the ask cannot be shown a
- * different version of the ask.
+ * Drawn by the same component the request's own Brief tab uses (UIUX-192).
+ * There were two hand-written copies of this content and they had already
+ * drifted — one carried the quotable reference and a link to the files, the
+ * other printed bare counts — which is what two renderers of one thing does.
+ *
+ * What differs here is what should differ: the volumes shown are the ones this
+ * shop actually priced, and the way onward to the production detail is offered,
+ * because a shop reading its quote has no tab bar of the request's own.
  */
 const QuoteRequestPage = async ({
   params,
@@ -48,89 +43,12 @@ const QuoteRequestPage = async ({
       shipsTo={`${request.shipTo.city}, ${request.shipTo.countryCode}`}
       activeTab="rfq"
     >
-      <Card>
-        <CardHeader
-          title="Production requirement"
-          description="Frozen when the request was sent, which is what your quote answers."
-          actions={
-            <div className="flex flex-wrap gap-2">
-              {request.hasBoard && <Tag tone="brand">PCB</Tag>}
-              {request.hasPrintedPart && <Tag tone="brand">3D</Tag>}
-            </div>
-          }
-        />
-        <DefinitionList
-          className="mt-4"
-          columns={2}
-          items={briefRows(request.requirementRows)}
-        />
-        {request.notes !== null && request.notes !== '' && (
-          <div className="mt-4 border-t border-border-subtle pt-4">
-            <Text tone="muted" size="xs" className="block">
-              From the buyer
-            </Text>
-            <Text size="sm" className="mt-1 block whitespace-pre-line">
-              {request.notes}
-            </Text>
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <CardHeader title="General information" />
-        <DefinitionList
-          className="mt-4"
-          columns={2}
-          items={[
-            { label: 'RFQ ID', value: requestReference(request.rfqId) },
-            { label: 'Product', value: request.productName },
-            { label: 'Manufacturing type', value: request.kindLabel },
-            {
-              label: 'To be quoted',
-              value:
-                request.serviceLabels.length === 0
-                  ? 'Not stated'
-                  : request.serviceLabels.join(', '),
-            },
-            { label: 'Quantity', value: counted(request.quantity, 'unit') },
-            {
-              label: 'Also priced at',
-              value:
-                quote.volumePrices.length === 0
-                  ? request.volumeTiers.length === 0
-                    ? 'This volume only'
-                    : `${request.volumeTiers.join(', ')} — you did not price these`
-                  : quote.volumePrices
-                      .map((price) => counted(price.quantity, 'unit'))
-                      .join(', '),
-            },
-            { label: 'BOM lines', value: String(request.bomLines.length) },
-            { label: 'Attached files', value: String(request.files.length) },
-            { label: 'Received', value: day(request.receivedAt) },
-            { label: 'Wanted by', value: day(request.neededBy) },
-          ]}
-        />
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-border-subtle pt-4">
-          <Link
-            href={`/rfqs/${request.rfqId}/specification`}
-            className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-          >
-            Production specification
-          </Link>
-          <Link
-            href={`/rfqs/${request.rfqId}/bom`}
-            className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-          >
-            BOM / parts
-          </Link>
-          <Link
-            href={`/rfqs/${request.rfqId}/files`}
-            className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-          >
-            Production files
-          </Link>
-        </div>
-      </Card>
+      <RequestBrief
+        request={request}
+        heading="The buyer’s request"
+        pricedVolumes={quote.volumePrices.map((price) => price.quantity)}
+        withOnwardLinks
+      />
     </QuoteShell>
   );
 };

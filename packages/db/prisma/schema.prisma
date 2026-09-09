@@ -1181,17 +1181,29 @@ model Rfq {
 /// Per-manufacturer routing state. This row, not the request, is what a
 /// manufacturer is allowed to read.
 model RfqRecipient {
-  id             String             @id
-  rfqId          String
-  manufacturerId String
-  status         RfqRecipientStatus @default(routed)
-  viewedAt       DateTime?
-  quotedAt       DateTime?
-  declinedAt     DateTime?
-  declineReason  RfqDeclineReason?
-  declineNote    String?
-  expiresAt      DateTime?
-  createdAt      DateTime           @default(now())
+  id                    String             @id
+  rfqId                 String
+  manufacturerId        String
+  status                RfqRecipientStatus @default(routed)
+  viewedAt              DateTime?
+  /// When this shop first opened each part of what it is being asked to build
+  /// (UIUX-193).
+  ///
+  /// Recorded because a quote priced without reading the files, the
+  /// specification or the bill of materials is a price for work nobody looked
+  /// at — and the dispute that follows lands on secured money. The quote form
+  /// will not send until the parts that apply to this request have been opened,
+  /// so these are the record of that, per shop and per request rather than per
+  /// browser session.
+  filesViewedAt         DateTime?
+  specificationViewedAt DateTime?
+  bomViewedAt           DateTime?
+  quotedAt              DateTime?
+  declinedAt            DateTime?
+  declineReason         RfqDeclineReason?
+  declineNote           String?
+  expiresAt             DateTime?
+  createdAt             DateTime           @default(now())
 
   rfq          Rfq                 @relation(fields: [rfqId], references: [id], onDelete: Cascade)
   manufacturer ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)

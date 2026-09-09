@@ -681,14 +681,30 @@ const main = async () => {
     check(
       'the brief opens with the decision on the right',
       (await visible(page.getByRole('heading', { name: 'Rover Motor Driver v3' }))) &&
-        (await visible(page.getByText('Submit quote'))) &&
         (await visible(page.getByRole('button', { name: 'Decline' }))),
     );
+    // ------- UIUX-193: no price on work nobody opened
     check(
-      'the brief says what is being asked for',
+      'the form is not offered until the request has been read',
+      (await visible(page.getByText('Read what you are pricing first'))) &&
+        (await visible(page.getByRole('list', { name: 'Still to read' }))) &&
+        (await page.getByRole('button', { name: 'Submit quote' }).count()) === 0,
+    );
+    const toRead = await page
+      .getByRole('list', { name: 'Still to read' })
+      .getByRole('listitem')
+      .evaluateAll((nodes) => nodes.map((node) => node.textContent ?? ''));
+    check(
+      'and it names each part, and which are still unopened',
+      toRead.length >= 2 && toRead.every((row) => /Read|Not opened yet/.test(row)),
+      toRead.join(' | ').replace(/\s+/g, ' ').slice(0, 160),
+    );
+    check(
+      'the brief says what is being asked for, and whose ask it is',
       (await visible(page.getByText('Production requirement').first())) &&
-        (await visible(page.getByText('General information'))) &&
-        (await visible(page.getByText('400 units').first())),
+        (await visible(page.getByText('The buyer’s request'))) &&
+        (await visible(page.getByText('400 units').first())) &&
+        (await page.getByText('General information').count()) === 0,
     );
     // ------------- UIUX-138 / UIUX-139 / UIUX-140 / UIUX-144: the Brief panel
     check(
@@ -987,6 +1003,11 @@ const main = async () => {
 
     // ----------------------------------------------------------- M05: quoting
     await page.goto(`${base}/rfqs/mfrfix_rfq_driver`, { waitUntil: 'networkidle' });
+    check(
+      'with the request read, the form is offered',
+      (await visible(page.getByRole('button', { name: 'Submit quote' }))) &&
+        (await page.getByText('Read what you are pricing first').count()) === 0,
+    );
     await page.getByRole('button', { name: 'Submit quote' }).click();
     const quoteModal = page.getByRole('dialog', { name: 'Submit quote' });
     check(
@@ -1159,8 +1180,27 @@ const main = async () => {
     check(
       'sending the quote lands on the quote itself',
       (await visible(page.getByRole('heading', { name: 'Rover Motor Driver v3' }))) &&
-        (await visible(page.getByText('General information'))),
+        (await visible(page.getByText('Your quote').first())),
       page.url(),
+    );
+    // ------- UIUX-196: two blocks, each saying whose information it holds
+    check(
+      'the quote’s own block and the buyer’s are named apart',
+      (await page.getByText('General information').count()) === 0,
+    );
+    // ------- UIUX-184: what the job is, on the page that prices it
+    check(
+      'the quote names the kind of work and the way to the detail',
+      (await visible(page.getByText('Manufacturing type'))) &&
+        (await visible(page.getByRole('link', { name: /^\d+ files?$/ }))) &&
+        (await visible(page.getByRole('link', { name: 'Read it again' }))),
+    );
+    // ------- UIUX-189: read against the buyer's own figure
+    check(
+      'and the price is read against the buyer’s target, worked out',
+      (await visible(page.getByText(/The buyer’s target was/))) &&
+        (await visible(page.getByText(/(under|over) it —/))),
+      (await page.getByText(/(under|over) it —/).first().textContent()) ?? '',
     );
     check(
       'the quote states what the buyer pays and what is not the shop’s to quote',
