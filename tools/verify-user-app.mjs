@@ -1634,12 +1634,33 @@ const main = async () => {
       .getByRole('link')
       .filter({ hasText: /quote came back|Quote/ })
       .first();
-    await (
+    const thread =
       (await withQuote.count()) > 0
         ? withQuote
-        : page.getByRole('list', { name: 'Conversations' }).getByRole('link').first()
-    ).click();
+        : page.getByRole('list', { name: 'Conversations' }).getByRole('link').first();
+    // Centred before pressing. The navbar is sticky, so a row the page brings
+    // to the top of itself sits underneath it and no click can reach it — the
+    // same trap the shop harness's row menus were failing on.
+    await thread.waitFor({ state: 'visible', timeout: 15_000 });
+    await thread.evaluate((element) => {
+      element.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await page.waitForTimeout(300);
+    await thread.click();
     await page.waitForURL(/\/messages\/[^/]+/, { timeout: 20_000 }).catch(() => undefined);
+    if (!/\/messages\/[^/]+/.test(new URL(page.url()).pathname)) {
+      // A press that did not go. The message only ever says "still on the
+      // list", so the picture and whatever the browser complained about are
+      // the evidence worth keeping.
+      await page
+        .screenshot({ path: join(shotDir, 'thread-stuck.png'), fullPage: false })
+        .catch(() => undefined);
+      process.stdout.write(
+        `      (thread press went nowhere; browser said: ${
+          consoleErrors.slice(-2).join(' | ') || 'nothing'
+        })\n`,
+      );
+    }
     check(
       'a conversation shows what was said and the record it is about',
       (await visible(page.getByRole('list', { name: 'Messages' }))) &&
