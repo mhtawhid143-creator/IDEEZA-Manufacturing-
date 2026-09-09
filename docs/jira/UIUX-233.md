@@ -340,6 +340,42 @@ control or a word that could not be acted on.
   build does not have, because paying out to a bank is IDEEZA's step here. The
   wording decisions are recorded on the tickets for when it is built.
 
+## Wave 5 — the bill of materials and substitutes · done
+
+Six tickets on one flow: what a shop does when it cannot build a line from
+its own stock.
+
+- **UIUX-159** — a real defect, not only a Figma one. The button said "Manage
+  substitute" and opened a dialog titled "Missing parts", so a shop pressed one
+  thing and arrived somewhere that looked like a different screen. Both read
+  **Manage substitutes** now, and the harness asserts the dialog is named after
+  the control that opened it.
+- **UIUX-160** — the dialog states `N of N answered` with the consequence of
+  the rest. The ticket asked for the save to be **blocked** until every line is
+  answered; that was refused, because partial saving is a working capability
+  here (the action sends a null substitute per unanswered line). The screen owed
+  the shop a count and a consequence, not a locked button.
+- **UIUX-162** — the largest change. "No substitute available" is now a state
+  the platform can read: `SubstitutionStatus.unavailable`, terminal on write
+  because the buyer has no substitute to approve, excluded from the pending
+  count that holds up acceptance, and kept honest by two check constraints —
+  such a row names no part and carries no impact. Where the shop held nothing at
+  all the dialog used to render **no control**, only a sentence; the select is
+  always there now. The outcome rides on "Quoted" as `· 1 part unfulfilled`
+  rather than becoming a seventh quote status, and the buyer's row stops
+  offering *Approve* over an empty suggestion and offers the three answers they
+  actually have: take the rest, ask the shop to hold, or withdraw and reroute.
+- **Already true**: UIUX-157 (there is no Package column, so no "Packge" typo),
+  UIUX-158 (the banner reads from `counted()`, so number and noun cannot
+  disagree), UIUX-161 for four of its five asks — Ref/Component/SKU
+  traceability, computed price impact, computed lead-time impact, and the
+  approval state are all on the row.
+- **Named as blocked**: UIUX-161's **spec comparison**. A BOM line holds a
+  reference, a name, a part number and an SKU — not a parametric specification —
+  so there are no two sides to compare. It needs structured part attributes on
+  `RfqItem` and `InventoryItem`, which is the same schema-and-taxonomy
+  decision UIUX-222 is blocked on. One ticket, not two.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |
