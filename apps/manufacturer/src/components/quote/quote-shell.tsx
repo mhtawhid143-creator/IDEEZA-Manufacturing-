@@ -132,6 +132,13 @@ export const QuoteShell = ({
                   currency: quote.currency,
                   volumeTiers: quote.requestVolumeTiers,
                   neededByDays: null,
+                  neededByOn: null,
+                  respondByOn: null,
+                  costKinds: quote.costKinds,
+                  specLockedOn:
+                    quote.specLockedAt === null
+                      ? null
+                      : quote.specLockedAt.toISOString().slice(0, 10),
                 }}
                 defaults={{
                   unitPriceMajor: major(quote.unitPriceMinor),
@@ -154,6 +161,10 @@ export const QuoteShell = ({
                       major(price.unitPriceMinor),
                     ]),
                   ),
+                  costLines: Object.fromEntries(
+                    quote.costLines.map((line) => [line.kind, major(line.amountMinor)]),
+                  ),
+                  deviations: quote.deviations,
                   volumeLeadTimes: Object.fromEntries(
                     quote.volumePrices.map((price) => [
                       String(price.quantity),

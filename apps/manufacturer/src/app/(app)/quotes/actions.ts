@@ -1,6 +1,12 @@
 'use server';
 
-import { DomainError, asId, type QuoteId, type RfqId } from '@ideeza/domain';
+import {
+  DomainError,
+  asId,
+  type QuoteCostKind,
+  type QuoteId,
+  type RfqId,
+} from '@ideeza/domain';
 import { reviseQuote, submitQuote, withdrawQuote } from '@/data/quotes.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
@@ -19,6 +25,22 @@ export interface QuoteFormPayload {
     readonly quantity: number;
     readonly unitPriceMajor: string;
     readonly leadTimeDays: string;
+  }[];
+  /**
+   * What the unit price is made of (UIUX-166), if the shop itemised it.
+   *
+   * Amounts arrive in major units like every other price on this form. A line
+   * left blank is not sent, so an unexplained quote is a quote with no lines
+   * rather than a set of zeros.
+   */
+  readonly costLines?: readonly {
+    readonly kind: QuoteCostKind;
+    readonly amountMajor: string;
+  }[];
+  /** Where this shop cannot meet the frozen specification (UIUX-171). */
+  readonly deviations?: readonly {
+    readonly requirement: string;
+    readonly capability: string;
   }[];
 }
 
@@ -66,6 +88,14 @@ interface ReadTerms {
     readonly quantity: number;
     readonly unitPriceMinor: number;
     readonly leadTimeDays: number | null;
+  }[];
+  readonly costLines: readonly {
+    readonly kind: QuoteCostKind;
+    readonly amountMinor: number;
+  }[];
+  readonly deviations: readonly {
+    readonly requirement: string;
+    readonly capability: string;
   }[];
 }
 
@@ -119,10 +149,38 @@ const read = (payload: QuoteFormPayload): ReadTerms | { readonly error: string }
     });
   }
 
+  const costLines: { kind: QuoteCostKind; amountMinor: number }[] = [];
+  for (const line of payload.costLines ?? []) {
+    const amount = minorOf(line.amountMajor);
+    if (amount === null) continue;
+    if (Number.isNaN(amount)) {
+      return { error: 'One of the cost lines is not a number.' };
+    }
+    costLines.push({ kind: line.kind, amountMinor: amount });
+  }
+
+  // A half-written deviation is worse than none: it names a problem without
+  // saying what the shop can do instead, which the buyer cannot decide on.
+  const deviations: { requirement: string; capability: string }[] = [];
+  for (const entry of payload.deviations ?? []) {
+    const requirement = entry.requirement.trim();
+    const capability = entry.capability.trim();
+    if (requirement === '' && capability === '') continue;
+    if (requirement.length < 3 || capability.length < 3) {
+      return {
+        error:
+          'Each deviation needs both the requirement you cannot meet and what you can do instead.',
+      };
+    }
+    deviations.push({ requirement, capability });
+  }
+
   const warranty = payload.warrantyTerms.trim();
 
   return {
     ok: true,
+    costLines,
+    deviations,
     unitPriceMinor,
     leadTimeDays,
     expiresAt,
@@ -154,6 +212,8 @@ export const submitQuoteAction = async (
       warrantyTerms: terms.warrantyTerms,
       terms: terms.terms,
       volumePrices: terms.volumePrices,
+      costLines: terms.costLines,
+      deviations: terms.deviations,
     });
     return result.ok ? { quoteId: result.quoteId } : { error: result.message };
   } catch (error) {
@@ -184,6 +244,8 @@ export const reviseQuoteAction = async (
       warrantyTerms: terms.warrantyTerms,
       terms: terms.terms,
       volumePrices: terms.volumePrices,
+      costLines: terms.costLines,
+      deviations: terms.deviations,
     });
     return result.ok ? { quoteId: result.quoteId } : { error: result.message };
   } catch (error) {

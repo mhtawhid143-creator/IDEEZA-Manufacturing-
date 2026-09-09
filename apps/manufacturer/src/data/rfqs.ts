@@ -2,7 +2,9 @@ import {
   EMPTY_BOARD_SPECIFICATION,
   PACKAGE_KIND_LABEL,
   packageKindsIncluding,
+  quoteCostKindsFor,
   requestLifecycle,
+  type QuoteCostKind,
   type RequestLifecycle,
   asId,
   declineReasonLabel,
@@ -400,6 +402,8 @@ export interface RequestDetail {
   readonly printSpecRows: readonly DocumentRow[];
   readonly hasBoard: boolean;
   readonly hasPrintedPart: boolean;
+  /** The cost lines a quote for this request can be built from (UIUX-166). */
+  readonly costKinds: readonly QuoteCostKind[];
   readonly requirementsLockedAt: Date | null;
   readonly notes: string | null;
   readonly myQuote: {
@@ -617,6 +621,11 @@ export const getRoutedRequest = async (
         ),
     hasBoard,
     hasPrintedPart,
+    costKinds: quoteCostKindsFor({
+      packageKind: rfq.package.kind,
+      assemblyAsked: requirements.assembly !== 'none',
+      hardwareAsked: rfq.items.length > 0,
+    }),
     requirementsLockedAt: requirements.lockedAt,
     notes: requirements.notes,
     myQuote:

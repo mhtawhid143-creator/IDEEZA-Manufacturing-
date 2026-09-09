@@ -1006,11 +1006,49 @@ const main = async () => {
         .count()) === 0,
     );
 
+    // ------ UIUX-167: the binding step is gated, and says what it is waiting for
+    check(
+      'an empty quote cannot be sent, and the form says what is missing',
+      (await quoteModal.getByRole('button', { name: 'Submit' }).isDisabled()) &&
+        (await visible(quoteModal.getByText(/Still needed before this can be sent/))),
+      (await quoteModal
+        .getByText(/Still needed before this can be sent/)
+        .textContent()) ?? '',
+    );
+
+    // ------ UIUX-164: the summary is named and says where its figures come from
+    check(
+      'the price summary is named, and states what it is worked out from',
+      (await visible(quoteModal.getByText('What the buyer will see'))) &&
+        (await visible(quoteModal.getByText(/Worked out from your unit price/))) &&
+        (await visible(quoteModal.getByText('Shipping estimate'))) &&
+        (await visible(quoteModal.getByText('Tooling and setup'))),
+    );
+
     // Terms the domain refuses, then terms it accepts.
     await quoteModal.getByLabel('Unit price (USD)').fill('12.40');
     await quoteModal.getByLabel('Lead time (days)').fill('0');
     await quoteModal.getByLabel('Materials and process').fill('FR4');
     await quoteModal.getByLabel('Payment and delivery terms').fill('50/50');
+
+    // ------ UIUX-170: submitting is a deliberate act, not one unguarded click
+    check(
+      'with every field filled, it still waits on a confirmation',
+      (await quoteModal.getByRole('button', { name: 'Submit' }).isDisabled()) &&
+        /confirmation that this quote is binding/.test(
+          (await quoteModal
+            .getByText(/Still needed before this can be sent/)
+            .textContent()) ?? '',
+        ),
+    );
+    await quoteModal
+      .getByLabel('This quote is accurate, and I will hold it until the date above')
+      .check();
+    check(
+      'and once confirmed it can be pressed',
+      !(await quoteModal.getByRole('button', { name: 'Submit' }).isDisabled()),
+    );
+
     await quoteModal.getByRole('button', { name: 'Submit' }).click();
     check(
       'a lead time of zero days is refused',
@@ -1027,6 +1065,84 @@ const main = async () => {
     await quoteModal.getByLabel('Shipping estimate (USD)').fill('84.00');
     await quoteModal.getByLabel('Tooling and setup (USD)').fill('120.00');
     await quoteModal.getByLabel('Warranty').fill('12 months against manufacturing defects.');
+
+    // ------ UIUX-166: the breakdown is offered per kind of work, and must add up
+    const costFields = await quoteModal
+      .getByRole('textbox')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-label') ?? ''));
+    check(
+      'the price can be itemised, and only with lines this work can carry',
+      costFields.includes('Board fabrication per unit') &&
+        costFields.includes('Components per unit') &&
+        costFields.includes('Assembly per unit') &&
+        costFields.includes('Stencil per unit') &&
+        !costFields.includes('Material per unit'),
+      costFields.filter((label) => label.endsWith('per unit')).join(' | '),
+    );
+
+    await quoteModal.getByLabel('Board fabrication per unit').fill('7.00');
+    check(
+      'a breakdown that disagrees with the unit price is refused before sending',
+      (await visible(quoteModal.getByText(/One of the two needs to change/))) &&
+        (await quoteModal.getByRole('button', { name: 'Submit' }).isDisabled()),
+    );
+    await quoteModal.getByLabel('Components per unit').fill('4.00');
+    await quoteModal.getByLabel('Assembly per unit').fill('1.20');
+    await quoteModal.getByLabel('Stencil per unit').fill('0.20');
+    check(
+      'and one that adds up is accepted',
+      await visible(quoteModal.getByText('Which is the unit price. Good.')),
+    );
+
+    // ------ UIUX-171: the specification the price answers, and any departure
+    check(
+      'the form names the frozen specification it is quoting against',
+      await visible(quoteModal.getByText('The specification you are quoting against')),
+    );
+    await quoteModal
+      .getByLabel('I can meet the specification as written')
+      .uncheck();
+    check(
+      'saying otherwise asks which requirement, and what the shop can do',
+      (await visible(
+        quoteModal.getByLabel('Requirement you cannot meet 1'),
+      )) &&
+        (await visible(quoteModal.getByLabel('What you can do instead 1'))),
+    );
+    check(
+      'and an unexplained departure cannot be sent',
+      (await quoteModal.getByRole('button', { name: 'Submit' }).isDisabled()) &&
+        /at least one deviation/.test(
+          (await quoteModal
+            .getByText(/Still needed before this can be sent/)
+            .textContent()) ?? '',
+        ),
+    );
+    await quoteModal
+      .getByLabel('Requirement you cannot meet 1')
+      .fill('Board outline tolerance of +/-0.05mm');
+    await quoteModal
+      .getByLabel('What you can do instead 1')
+      .fill('We hold +/-0.10mm, measured on every panel.');
+    check(
+      'with the departure named, the quote can be sent again',
+      !(await quoteModal.getByRole('button', { name: 'Submit' }).isDisabled()),
+    );
+
+    // ------ UIUX-169: production time and transit are two different promises
+    check(
+      'the form says when the buyer would actually have them',
+      (await visible(quoteModal.getByText('When they would have them'))) &&
+        (await visible(quoteModal.getByText(/by express/))) &&
+        (await visible(quoteModal.getByText(/the courier is the buyer/))),
+      (await quoteModal.getByText(/by express/).textContent()) ?? '',
+    );
+    // ------ UIUX-168: the buyer's own window is named on the fields themselves
+    check(
+      'the date fields name the buyer’s own window',
+      (await visible(quoteModal.getByText(/Days to make them, not counting delivery/))) &&
+        (await visible(quoteModal.getByText(/How long you will hold this price/))),
+    );
     check(
       'the request’s other volumes are there to be priced',
       await visible(quoteModal.getByLabel('Unit price at 1000 units')),
@@ -1092,6 +1208,31 @@ const main = async () => {
         (await reviseModal.getByLabel('Unit price (USD)').inputValue()) === '12.40',
     );
     await reviseModal.getByLabel('Unit price (USD)').fill('11.90');
+    // The revision starts from what the quote already says, breakdown included
+    // (UIUX-166) — so changing the price leaves the lines disagreeing with it,
+    // which is the invariant doing its job.
+    check(
+      'a revision inherits the breakdown, and it has to be re-stated',
+      (await reviseModal.getByLabel('Board fabrication per unit').inputValue()) ===
+        '7.00' &&
+        (await reviseModal.getByRole('button', { name: 'Send the revision' }).isDisabled()),
+    );
+    for (const line of [
+      'Board fabrication per unit',
+      'Components per unit',
+      'Assembly per unit',
+      'Stencil per unit',
+    ]) {
+      await reviseModal.getByLabel(line).fill('');
+    }
+    // A revision is a new binding price, so it is confirmed again (UIUX-170).
+    await reviseModal
+      .getByLabel('This quote is accurate, and I will hold it until the date above')
+      .check();
+    check(
+      'dropping the breakdown leaves a valid, unexplained price',
+      !(await reviseModal.getByRole('button', { name: 'Send the revision' }).isDisabled()),
+    );
     await reviseModal.getByRole('button', { name: 'Send the revision' }).click();
     await page.waitForTimeout(2_000);
     await page.goto(quoteUrl, { waitUntil: 'networkidle' });

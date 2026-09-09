@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
+import { Alert, Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
 import {
   asId,
   counted,
+  QUOTE_COST_LABEL,
   quoteReference,
   requestReference,
   type QuoteId,
@@ -100,6 +101,43 @@ const QuoteDetailPage = async ({
           title="Pricing breakdown"
           description="What the buyer pays you if they accept as quoted."
         />
+        {/*
+          What one unit's price is made of (UIUX-166). Absent when the shop did
+          not itemise, and said to be absent rather than shown as zeros — an
+          unexplained price is not the same as a price made of nothing.
+        */}
+        {quote.costLines.length === 0 ? (
+          <Text tone="muted" size="xs" className="mt-3 block">
+            You did not itemise this price. A breakdown is optional, and the buyer
+            reads it beside the total when there is one.
+          </Text>
+        ) : (
+          <dl className="mt-4 flex flex-col gap-2 rounded-lg border border-border-subtle bg-bg-surface-raised p-3">
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
+                One unit is made of
+              </dt>
+              <dd className="text-xs text-text-tertiary">per unit</dd>
+            </div>
+            {quote.costKinds
+              .map((kind) => ({
+                kind,
+                line: quote.costLines.find((candidate) => candidate.kind === kind),
+              }))
+              .filter((row) => row.line !== undefined)
+              .map((row) => (
+                <div key={row.kind} className="flex items-center justify-between gap-4">
+                  <dt className="text-sm text-text-tertiary">
+                    {QUOTE_COST_LABEL[row.kind]}
+                  </dt>
+                  <dd className="text-sm font-medium text-text-primary">
+                    {quote.currency} {major(row.line?.amountMinor ?? 0)}
+                  </dd>
+                </div>
+              ))}
+          </dl>
+        )}
+
         <dl className="mt-4 flex flex-col gap-2">
           {[
             {
@@ -142,6 +180,59 @@ const QuoteDetailPage = async ({
           The platform fee and the buyer&rsquo;s shipping choice are added at checkout
           and are not yours to quote.
         </Text>
+      </Card>
+
+      {/*
+        What this quote was priced against, and where the shop said it cannot
+        meet it (UIUX-171). Shown even when there are no deviations, because
+        "we can meet the specification" is itself a statement the buyer relied
+        on when awarding.
+      */}
+      <Card>
+        <CardHeader
+          title="The specification you quoted against"
+          description={
+            quote.quotedAgainstLockedAt === null
+              ? 'The buyer had not frozen their requirements when this was priced.'
+              : `Frozen on ${day(quote.quotedAgainstLockedAt)}.`
+          }
+        />
+        {quote.quotedAgainstLockedAt !== null &&
+          quote.specLockedAt !== null &&
+          quote.specLockedAt.getTime() !== quote.quotedAgainstLockedAt.getTime() && (
+            <Alert
+              tone="warning"
+              title="The buyer has frozen a different specification since"
+              className="mt-3"
+            >
+              You priced the requirements frozen on {day(quote.quotedAgainstLockedAt)};
+              the current ones were frozen on {day(quote.specLockedAt)}. Read them again
+              before this is accepted, and revise the quote if the change affects your
+              price.
+            </Alert>
+          )}
+        {quote.deviations.length === 0 ? (
+          <Text tone="muted" size="sm" className="mt-3 block">
+            You quoted in full compliance with it. Nothing was declared as a
+            departure.
+          </Text>
+        ) : (
+          <ul aria-label="Declared deviations" className="mt-3 flex flex-col gap-3">
+            {quote.deviations.map((entry) => (
+              <li
+                key={entry.requirement}
+                className="rounded-lg border border-border-subtle bg-bg-surface-raised p-3"
+              >
+                <p className="text-sm font-semibold text-text-primary">
+                  {entry.requirement}
+                </p>
+                <Text tone="muted" size="xs" className="mt-0.5 block">
+                  What you can do: {entry.capability}
+                </Text>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       {quote.volumePrices.length > 0 && (

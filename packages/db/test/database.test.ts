@@ -58,6 +58,7 @@ describe('migrations apply to a clean database', () => {
       '20260906121932_inventory_part_description',
       '20260909110000_substitution_unavailable',
       '20260909110100_substitution_unavailable_check',
+      '20260909140000_quote_cost_lines',
     ]);
   });
 
@@ -103,7 +104,7 @@ describe('migrations apply to a clean database', () => {
     // layer height, walls, size, supports and finishing, and it had nowhere to
     // keep any of that. It is the peer of BoardSpecification and is built the
     // same way — one row per requirements version, every column optional.
-    expect(tables).toBe(64);
+    expect(tables).toBe(66);
     // PrintTechnology and SurfaceFinish arrived with the 3D route, the board
     // specification brought fourteen of its own, InventoryMovementKind arrived
     // with inventory management, and ProblemKind and ProblemFrustration with
@@ -118,7 +119,7 @@ describe('migrations apply to a clean database', () => {
     // PayoutMethodKind arrived with them.
     // InfillPattern and SupportStructure arrived with the print specification:
     // how the inside of a part is arranged, and what holds its overhangs up.
-    expect(enums).toBe(59);
+    expect(enums).toBe(60);
   });
 
   it('is reproducible: the committed migrations produce exactly the schema', async () => {

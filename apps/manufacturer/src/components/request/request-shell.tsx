@@ -153,6 +153,22 @@ export const RequestShell = ({
                               (request.neededBy.getTime() - Date.now()) / 86_400_000,
                             ),
                           ),
+                    // The buyer's own two dates, so the form can name them
+                    // instead of leaving the shop to read them off the rail
+                    // beside it and do the arithmetic (UIUX-168).
+                    neededByOn:
+                      request.neededBy === null
+                        ? null
+                        : request.neededBy.toISOString().slice(0, 10),
+                    respondByOn:
+                      request.respondBy === null
+                        ? null
+                        : request.respondBy.toISOString().slice(0, 10),
+                    costKinds: request.costKinds,
+                    specLockedOn:
+                      request.requirementsLockedAt === null
+                        ? null
+                        : request.requirementsLockedAt.toISOString().slice(0, 10),
                   }}
                 />
                 <DeclineRequest

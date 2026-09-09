@@ -243,6 +243,28 @@ enum QuoteStatus {
   withdrawn
 }
 
+/// The cost lines a quote can be built from.
+///
+/// Two families, because the two kinds of work have nothing in common: a board
+/// has no infill and a printed part has no stencil. `shipping` is shared, and
+/// which of the rest apply is decided by the package and by whether the buyer
+/// asked for assembly — the same conditional rule the production files follow.
+enum QuoteCostKind {
+  // Boards
+  fabrication
+  parts
+  assembly
+  stencil
+  // Printed parts
+  material
+  machine_time
+  support_removal
+  finishing
+  hardware
+  // Either
+  shipping
+}
+
 enum SubstitutionStatus {
   proposed
   approved
@@ -1227,12 +1249,21 @@ model Quote {
   expiresAt             DateTime
   submittedAt           DateTime?
   acceptedAt            DateTime?
+  /// The moment the requirements this quote answers were frozen (UIUX-171).
+  ///
+  /// A price is only meaningful against a specification, so the quote records
+  /// which one it was written against. If the buyer's requirements are ever
+  /// reopened and frozen again, this no longer matches and the quote can be
+  /// shown as answering an older ask rather than silently appearing current.
+  quotedAgainstLockedAt DateTime?
   createdAt             DateTime    @default(now())
 
   rfq            Rfq                 @relation("RfqQuotes", fields: [rfqId], references: [id], onDelete: Cascade)
   acceptedForRfq Rfq?                @relation("RfqAcceptedQuote", fields: [acceptedForRfqId], references: [id])
   manufacturer   ManufacturerProfile @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
   items          QuoteItem[]
+  costLines      QuoteCostLine[]
+  deviations     QuoteDeviation[]
   volumePrices   QuoteVolumePrice[]
   revisions      QuoteRevision[]
   substitutions  Substitution[]
@@ -1246,6 +1277,50 @@ model Quote {
   @@index([rfqId, status])
   @@index([manufacturerId, status])
   @@index([status, expiresAt])
+}
+
+/// What one unit's price is made of.
+///
+/// A manufacturing price is never one number: a board is fabrication, parts,
+/// assembly and a stencil; a printed part is material, machine time, support
+/// removal and finishing. Recorded per line so the buyer can see what they are
+/// paying for and the shop cannot underquote a cost it forgot existed.
+///
+/// The lines are an itemisation of `Quote.unitPriceMinor`, not a second source
+/// for it: a domain invariant refuses a set that does not add up to the unit
+/// price, so there is exactly one authoritative price.
+model QuoteCostLine {
+  id          String        @id
+  quoteId     String
+  kind        QuoteCostKind
+  currency    String        @db.Char(3)
+  /// Per unit, in minor units. Never negative: a discount is a lower price.
+  amountMinor BigInt
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, kind])
+  @@index([quoteId])
+}
+
+/// Where this shop cannot meet the frozen specification, said before the award.
+///
+/// A capability gap discovered after a quote is accepted is a delivery failure
+/// with money already secured against it. This is the shop saying so while the
+/// buyer can still choose another shop: which requirement, and what the shop
+/// can actually do instead.
+model QuoteDeviation {
+  id          String   @id
+  quoteId     String
+  /// The requirement departed from, in the buyer's own words for it.
+  requirement String
+  /// What this shop can actually do.
+  capability  String
+  createdAt   DateTime @default(now())
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
 }
 
 model QuoteItem {

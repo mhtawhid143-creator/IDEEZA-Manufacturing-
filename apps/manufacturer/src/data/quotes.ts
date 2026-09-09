@@ -2,15 +2,18 @@ import {
   applyTransition,
   asId,
   assertManufacturerMayReadQuote,
+  assertCostLinesExplainUnitPrice,
   assertQuoteTermsUsable,
   assertRequestStillTakesQuotes,
   assertVolumePricesAnswerTheRequest,
+  quoteCostKindsFor,
   quoteGoodsTotalMinor,
   quoteHasExpired,
   quoteLandedTotalMinor,
   quoteMachine,
   rfqRecipientMachine,
   type ManufacturerId,
+  type QuoteCostKind,
   type QuoteId,
   type QuoteStatus,
   type RfqId,
@@ -259,6 +262,27 @@ export interface QuoteDetail extends QuoteRow {
   readonly requestTargetPriceMinor: number | null;
   readonly requestNeededBy: Date | null;
   readonly bomLineCount: number;
+  /** What one unit's price is made of, as the shop itemised it (UIUX-166). */
+  readonly costLines: readonly {
+    readonly kind: QuoteCostKind;
+    readonly amountMinor: number;
+  }[];
+  /** The cost lines this request could be priced with, itemised or not. */
+  readonly costKinds: readonly QuoteCostKind[];
+  /** Requirements this shop said it cannot meet (UIUX-171). */
+  readonly deviations: readonly {
+    readonly requirement: string;
+    readonly capability: string;
+  }[];
+  /**
+   * When the requirements this quote answers were frozen, and whether that is
+   * still the frozen date (UIUX-171).
+   *
+   * A quote that priced an older ask is not wrong, but it is answering a
+   * different question, and the shop should be able to see that it is.
+   */
+  readonly quotedAgainstLockedAt: Date | null;
+  readonly specLockedAt: Date | null;
   readonly revisable: boolean;
   readonly withdrawable: boolean;
 }
@@ -286,13 +310,17 @@ export const getQuote = async (
           targetPriceMinor: true,
           neededBy: true,
           buyer: { select: { displayName: true } },
-          package: { select: { product: { select: { name: true } } } },
           _count: { select: { items: true } },
+          package: { select: { kind: true, product: { select: { name: true } } } },
+          requirements: { select: { assembly: true, lockedAt: true } },
+          items: { select: { id: true } },
         },
       },
       substitutions: { orderBy: { createdAt: 'asc' } },
       volumePrices: { orderBy: { quantity: 'asc' } },
       revisions: { orderBy: { version: 'asc' } },
+      costLines: true,
+      deviations: { orderBy: { createdAt: 'asc' } },
     },
   });
   if (row === null) return null;
@@ -384,6 +412,23 @@ export const getQuote = async (
       row.rfq.targetPriceMinor === null ? null : Number(row.rfq.targetPriceMinor),
     requestNeededBy: row.rfq.neededBy,
     bomLineCount: row.rfq._count.items,
+    // Read back in the order the domain offers them, so the breakdown always
+    // reads the same way round however it was typed in.
+    costKinds: quoteCostKindsFor({
+      packageKind: row.rfq.package.kind,
+      assemblyAsked: row.rfq.requirements.assembly !== 'none',
+      hardwareAsked: row.rfq.items.length > 0,
+    }),
+    costLines: row.costLines.map((line) => ({
+      kind: line.kind,
+      amountMinor: Number(line.amountMinor),
+    })),
+    deviations: row.deviations.map((entry) => ({
+      requirement: entry.requirement,
+      capability: entry.capability,
+    })),
+    quotedAgainstLockedAt: row.quotedAgainstLockedAt,
+    specLockedAt: row.rfq.requirements.lockedAt,
     revisable: live && !expired,
     withdrawable: (live || row.status === 'revision_requested') && row.order === null,
   };
@@ -454,6 +499,16 @@ export interface QuoteInput {
     readonly unitPriceMinor: number;
     readonly leadTimeDays?: number | null;
   }[];
+  /** What the unit price is made of, if the shop itemised it (UIUX-166). */
+  readonly costLines?: readonly {
+    readonly kind: QuoteCostKind;
+    readonly amountMinor: number;
+  }[];
+  /** Requirements this shop cannot meet, declared before the award (UIUX-171). */
+  readonly deviations?: readonly {
+    readonly requirement: string;
+    readonly capability: string;
+  }[];
 }
 
 export type QuoteOutcome =
@@ -490,6 +545,10 @@ export const submitQuote = async (
           quantity: true,
           volumeTiers: true,
           responseDeadline: true,
+          package: { select: { kind: true } },
+          requirements: { select: { assembly: true, lockedAt: true } },
+          // A printed part made of more than one piece can take hardware.
+          items: { select: { id: true } },
         },
       },
     },
@@ -526,6 +585,17 @@ export const submitQuote = async (
       recipient.rfq.volumeTiers,
       quantity,
     );
+    // The breakdown has to explain the price, not be a second one (UIUX-166),
+    // and only the lines this kind of work can carry are accepted.
+    assertCostLinesExplainUnitPrice({
+      unitPriceMinor: input.unitPriceMinor,
+      lines: input.costLines ?? [],
+      allowed: quoteCostKindsFor({
+        packageKind: recipient.rfq.package.kind,
+        assemblyAsked: recipient.rfq.requirements.assembly !== 'none',
+        hardwareAsked: recipient.rfq.items.length > 0,
+      }),
+    });
   } catch (error) {
     return {
       ok: false,
@@ -574,6 +644,8 @@ export const submitQuote = async (
         : input.warrantyTerms.trim(),
     terms: input.terms.trim(),
     expiresAt: input.expiresAt,
+    // Which frozen specification this price answers (UIUX-171).
+    quotedAgainstLockedAt: recipient.rfq.requirements.lockedAt,
   };
 
   await database().$transaction(async (transaction) => {
@@ -618,6 +690,34 @@ export const submitQuote = async (
             price.leadTimeDays === null || price.leadTimeDays === undefined
               ? null
               : price.leadTimeDays,
+        })),
+      });
+    }
+
+    // Rewritten wholesale rather than merged: the breakdown describes this
+    // version of the price, so a line left over from an earlier attempt would
+    // make the set stop adding up.
+    await transaction.quoteCostLine.deleteMany({ where: { quoteId } });
+    if ((input.costLines ?? []).length > 0) {
+      await transaction.quoteCostLine.createMany({
+        data: (input.costLines ?? []).map((line) => ({
+          id: identifier('qcl'),
+          quoteId,
+          kind: line.kind,
+          currency: recipient.rfq.currency,
+          amountMinor: BigInt(line.amountMinor),
+        })),
+      });
+    }
+
+    await transaction.quoteDeviation.deleteMany({ where: { quoteId } });
+    if ((input.deviations ?? []).length > 0) {
+      await transaction.quoteDeviation.createMany({
+        data: (input.deviations ?? []).map((entry) => ({
+          id: identifier('qdv'),
+          quoteId,
+          requirement: entry.requirement,
+          capability: entry.capability,
         })),
       });
     }
@@ -688,7 +788,16 @@ export const reviseQuote = async (
   const row = await database().quote.findUnique({
     where: { id: quoteId },
     include: {
-      rfq: { select: { status: true, volumeTiers: true, responseDeadline: true } },
+      rfq: {
+        select: {
+          status: true,
+          volumeTiers: true,
+          responseDeadline: true,
+          package: { select: { kind: true } },
+          requirements: { select: { assembly: true, lockedAt: true } },
+          items: { select: { id: true } },
+        },
+      },
       revisions: { select: { version: true } },
       order: { select: { id: true } },
     },
@@ -723,6 +832,15 @@ export const reviseQuote = async (
       row.rfq.volumeTiers,
       row.quantity,
     );
+    assertCostLinesExplainUnitPrice({
+      unitPriceMinor: input.unitPriceMinor,
+      lines: input.costLines ?? [],
+      allowed: quoteCostKindsFor({
+        packageKind: row.rfq.package.kind,
+        assemblyAsked: row.rfq.requirements.assembly !== 'none',
+        hardwareAsked: row.rfq.items.length > 0,
+      }),
+    });
   } catch (error) {
     return {
       ok: false,
@@ -800,8 +918,38 @@ export const reviseQuote = async (
         terms: input.terms.trim(),
         expiresAt: input.expiresAt,
         submittedAt: now,
+        // A revision is priced against whatever is frozen now, which may not be
+        // what the first version answered (UIUX-171).
+        quotedAgainstLockedAt: row.rfq.requirements.lockedAt,
       },
     });
+
+    // The breakdown and the declared deviations belong to this version of the
+    // price, so both are rewritten rather than merged.
+    await transaction.quoteCostLine.deleteMany({ where: { quoteId } });
+    if ((input.costLines ?? []).length > 0) {
+      await transaction.quoteCostLine.createMany({
+        data: (input.costLines ?? []).map((line) => ({
+          id: identifier('qcl'),
+          quoteId,
+          kind: line.kind,
+          currency: row.currency,
+          amountMinor: BigInt(line.amountMinor),
+        })),
+      });
+    }
+
+    await transaction.quoteDeviation.deleteMany({ where: { quoteId } });
+    if ((input.deviations ?? []).length > 0) {
+      await transaction.quoteDeviation.createMany({
+        data: (input.deviations ?? []).map((entry) => ({
+          id: identifier('qdv'),
+          quoteId,
+          requirement: entry.requirement,
+          capability: entry.capability,
+        })),
+      });
+    }
 
     await transaction.quoteVolumePrice.deleteMany({ where: { quoteId } });
     if ((input.volumePrices ?? []).length > 0) {

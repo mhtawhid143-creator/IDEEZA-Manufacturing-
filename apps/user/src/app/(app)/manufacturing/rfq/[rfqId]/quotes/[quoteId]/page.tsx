@@ -15,6 +15,7 @@ import {
   Text,
   buttonAppearance,
 } from '@ideeza/ui';
+import { QUOTE_COST_LABEL } from '@ideeza/domain';
 import { Crumbs } from '@/components/crumbs.js';
 import { QuoteCard } from '@/components/rfq/quote-card.js';
 import { day, landedTotalMinor, major } from '@/components/rfq/quote-money.js';
@@ -246,6 +247,61 @@ const QuoteDetailPage = async ({
               </div>
             )}
           </Card>
+
+          {/*
+            What this shop said it cannot do, before the award (UIUX-171).
+            A capability gap learned after accepting is a delivery failure with
+            the money already secured, so it belongs beside the price rather
+            than in a conversation afterwards.
+          */}
+          {quote.deviations.length > 0 && (
+            <Card>
+              <CardHeader
+                title="What this manufacturer cannot meet"
+                description="They quoted with these departures from your specification. Weigh them with the price."
+              />
+              <ul
+                aria-label="Declared deviations"
+                className="mt-4 flex flex-col gap-3"
+              >
+                {quote.deviations.map((entry) => (
+                  <li
+                    key={entry.requirement}
+                    className="rounded-lg border border-border-error bg-bg-warning-subtle p-3"
+                  >
+                    <p className="text-sm font-semibold text-text-primary">
+                      {entry.requirement}
+                    </p>
+                    <Text size="xs" className="mt-0.5 block">
+                      What they can do instead: {entry.capability}
+                    </Text>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {/* What one unit's price is made of, where they itemised it (UIUX-166). */}
+          {quote.costLines.length > 0 && (
+            <Card>
+              <CardHeader
+                title="What one unit is made of"
+                description="Their own breakdown of the unit price. It adds up to the price above."
+              />
+              <dl className="mt-4 flex flex-col gap-2">
+                {quote.costLines.map((line) => (
+                  <div key={line.kind} className="flex items-center justify-between gap-4">
+                    <dt className="text-sm text-text-tertiary">
+                      {QUOTE_COST_LABEL[line.kind]}
+                    </dt>
+                    <dd className="text-sm font-medium text-text-primary">
+                      {quote.currency} {major(BigInt(line.amountMinor))}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </Card>
+          )}
 
           <Card>
             <CardHeader

@@ -11,6 +11,7 @@ import {
   substitutionMachine,
   type ManufacturerId,
   type OrderId,
+  type QuoteCostKind,
   type QuoteId,
   type QuoteStatus,
   type RfqId,
@@ -80,6 +81,22 @@ export interface QuoteView {
    */
   readonly volumePrices: readonly QuoteVolumeView[];
   readonly substitutions: readonly SubstitutionView[];
+  /**
+   * Requirements this shop said it cannot meet (UIUX-171).
+   *
+   * Read here because it is part of the award decision: a capability gap the
+   * buyer only learns about after accepting is a delivery failure with their
+   * money already secured against it.
+   */
+  readonly deviations: readonly {
+    readonly requirement: string;
+    readonly capability: string;
+  }[];
+  /** What one unit's price is made of, where the shop itemised it (UIUX-166). */
+  readonly costLines: readonly {
+    readonly kind: QuoteCostKind;
+    readonly amountMinor: number;
+  }[];
   readonly attachmentNames: readonly string[];
   /** Set once this quote has produced an order. */
   readonly orderId: OrderId | null;
@@ -98,6 +115,8 @@ const quoteInclude = {
   items: true,
   volumePrices: { orderBy: { quantity: 'asc' } },
   substitutions: { orderBy: { createdAt: 'asc' } },
+  deviations: { orderBy: { createdAt: 'asc' } },
+  costLines: true,
   attachments: { include: { file: { select: { name: true } } } },
   order: { select: { id: true } },
 } as const;
@@ -150,6 +169,14 @@ type QuoteRow = {
     readonly priceImpactMinor: bigint;
     readonly leadTimeImpactDays: number;
     readonly decidedAt: Date | null;
+  }[];
+  readonly deviations: readonly {
+    readonly requirement: string;
+    readonly capability: string;
+  }[];
+  readonly costLines: readonly {
+    readonly kind: QuoteCostKind;
+    readonly amountMinor: bigint;
   }[];
   readonly attachments: readonly { readonly file: { readonly name: string } }[];
   readonly order: { readonly id: string } | null;
@@ -205,6 +232,14 @@ const toView = (row: QuoteRow, now: Date): QuoteView => ({
     priceImpactMinor: substitution.priceImpactMinor,
     leadTimeImpactDays: substitution.leadTimeImpactDays,
     decidedAt: substitution.decidedAt,
+  })),
+  deviations: row.deviations.map((entry) => ({
+    requirement: entry.requirement,
+    capability: entry.capability,
+  })),
+  costLines: row.costLines.map((line) => ({
+    kind: line.kind,
+    amountMinor: Number(line.amountMinor),
   })),
   attachmentNames: row.attachments.map((attachment) => attachment.file.name),
   orderId: row.order === null ? null : asId<OrderId>(row.order.id),

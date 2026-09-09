@@ -128,6 +128,26 @@ describe('sending a quote', () => {
     expect(vague.ok).toBe(false);
   });
 
+  it('refuses a breakdown that does not add up to the unit price', async () => {
+    // The unit price is what the buyer pays, so it cannot have two values.
+    const wrong = await quotes.submitQuote(SHOP, RFQ, {
+      ...terms,
+      costLines: [{ kind: 'fabrication', amountMinor: 700 }],
+    });
+    expect(wrong.ok).toBe(false);
+    if (!wrong.ok) expect(wrong.message).toMatch(/add up to the unit price/);
+  });
+
+  it('refuses a cost line this kind of work cannot carry', async () => {
+    // This request is a board. A material line belongs to printed work.
+    const wrong = await quotes.submitQuote(SHOP, RFQ, {
+      ...terms,
+      costLines: [{ kind: 'material', amountMinor: 1_240 }],
+    });
+    expect(wrong.ok).toBe(false);
+    if (!wrong.ok) expect(wrong.message).toMatch(/cannot be priced with a material line/);
+  });
+
   it('refuses a volume the request never asked about', async () => {
     const result = await quotes.submitQuote(SHOP, RFQ, {
       ...terms,
@@ -170,6 +190,24 @@ describe('sending a quote', () => {
       where: { kind: 'quote_submitted', subjectId: result.quoteId },
     });
     expect(event.actorManufacturerId).toBe(SHOP);
+  });
+
+  it('records which frozen specification it answered', async () => {
+    const saved = await prisma.quote.findFirstOrThrow({
+      where: { rfqId: RFQ, manufacturerId: SHOP },
+      include: { costLines: true, deviations: true },
+    });
+
+    // The submission carried no breakdown, so there is none — an unexplained
+    // price is not a price made of zeros.
+    expect(saved.costLines.length).toBe(0);
+    expect(saved.deviations.length).toBe(0);
+
+    const requirements = await prisma.manufacturingRequirements.findFirstOrThrow({
+      where: { id: 'quote_requirements' },
+      select: { lockedAt: true },
+    });
+    expect(saved.quotedAgainstLockedAt?.getTime()).toBe(requirements.lockedAt?.getTime());
   });
 
   it('refuses a second quote on the same request', async () => {
@@ -309,6 +347,59 @@ describe('what the shop can read', () => {
   });
 });
 
+describe('a revision carries its own breakdown', () => {
+  it('stores the lines and the deviations, and rewrites them wholesale', async () => {
+    const saved = await prisma.quote.findFirstOrThrow({
+      where: { rfqId: RFQ, manufacturerId: SHOP },
+      select: { id: true },
+    });
+
+    // A revision may itemise, and the lines have to explain the new price.
+    const revised = await quotes.reviseQuote(SHOP, asId<QuoteId>(saved.id), {
+      ...terms,
+      unitPriceMinor: 1_300,
+      costLines: [
+        { kind: 'fabrication', amountMinor: 700 },
+        { kind: 'parts', amountMinor: 440 },
+        { kind: 'assembly', amountMinor: 140 },
+        { kind: 'stencil', amountMinor: 20 },
+      ],
+      deviations: [
+        {
+          requirement: 'Board outline tolerance of +/-0.05mm',
+          capability: 'We hold +/-0.10mm on this outline, measured on every panel.',
+        },
+      ],
+    });
+    expect(revised.ok).toBe(true);
+
+    const after = await prisma.quote.findUniqueOrThrow({
+      where: { id: saved.id },
+      include: { costLines: true, deviations: true },
+    });
+    expect(after.costLines.length).toBe(4);
+    expect(
+      after.costLines.reduce((sum, line) => sum + Number(line.amountMinor), 0),
+    ).toBe(1_300);
+    expect(after.deviations.length).toBe(1);
+    expect(after.deviations[0]?.capability).toMatch(/0.10mm/);
+
+    // Rewritten and not merged: a line left from an earlier price would make
+    // the set stop adding up.
+    const cleared = await quotes.reviseQuote(SHOP, asId<QuoteId>(saved.id), {
+      ...terms,
+      unitPriceMinor: 1_300,
+    });
+    expect(cleared.ok).toBe(true);
+    expect(
+      (await prisma.quoteCostLine.count({ where: { quoteId: saved.id } })),
+    ).toBe(0);
+    expect(
+      (await prisma.quoteDeviation.count({ where: { quoteId: saved.id } })),
+    ).toBe(0);
+  });
+});
+
 describe('withdrawing a quote', () => {
   it('takes it off the table without deleting the record', async () => {
     const quote = await prisma.quote.findFirstOrThrow({
@@ -410,3 +501,4 @@ describe('a draft quote becomes the sent quote', () => {
     expect(theirs[0]?.substitutions[0]?.status).toBe('proposed');
   });
 });
+
