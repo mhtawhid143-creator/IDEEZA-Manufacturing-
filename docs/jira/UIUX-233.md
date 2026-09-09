@@ -376,6 +376,64 @@ its own stock.
   `RfqItem` and `InventoryItem`, which is the same schema-and-taxonomy
   decision UIUX-222 is blocked on. One ticket, not two.
 
+## Wave 6 — the request, from arriving to being answered · done
+
+Fourteen tickets. The theme in them was a screen that could not say where
+something was, or what to do about it.
+
+- **UIUX-115** — the dashboard's action panel offered "Submit quote" on every
+  row, which was *correct* for the rows it had: it queried unquoted requests
+  and nothing else, so a buyer's question and a revision they asked for
+  appeared nowhere. Five reasons now, each with the act it asks for, decided
+  together in `REQUEST_ACTION` so a sixth cannot be added without saying what
+  answers it. Two of the ticket's categories were refused: no counter-offer
+  model exists (a buyer asks for a revision), and money is the buyer's step.
+- **UIUX-127** — six statuses that partition the inbox, from one function
+  (`requestLifecycle`) the rows, the counts and the filter all read. The
+  routing row could not do this alone: it stays "quoted" whether the buyer
+  accepted the quote or pulled the request, so a shop could not see what it had
+  **won** and was invited to quote requests that no longer existed. A database
+  test asserts the six sum to the total and that each count is what its filter
+  returns. "Opened" moved to the date column, because whether a person looked at
+  something is a fact about the clock and not a place in a lifecycle.
+- **UIUX-126** — the kind-of-work filter matched the package kind exactly, so
+  **PCB** excluded every combined request: a request needing both was hidden
+  from both of the filters a shop that does both would have used. One domain
+  helper (`packageKindsIncluding`) now answers "which kinds involve this work",
+  and the dashboard's scope rule reads it too so the two cannot drift.
+- **UIUX-144** — four names for one manufacturing type, not three: "3D",
+  "3D module", "PCB + 3D", and — already, in the inventory scopes and the print
+  specification — "3D printing". The last wins because it was already there. The
+  duplicated label maps were **deleted** rather than corrected, since a second
+  copy is how four names happened. Recorded on the ticket: "3D module" was also
+  doing duty for what the *package contains*, which is a different axis and now
+  says so.
+- **UIUX-138 / UIUX-139 / UIUX-142** — the request names itself with the
+  reference the dashboard and the case records already quote (six raw-id sites
+  fixed, not one); its file count is the way to the files; and the BOM row is
+  gone from requests that have no bill of materials, where it read `0` and
+  invited the shop to wonder what it was missing.
+- **UIUX-181** — the rail says which way the work is going: **RFQs** and
+  **My Quotes**, matching **My Orders** below them, with the headings and
+  breadcrumbs following. The ticket's open question is answered on it: a quoted
+  request **stays** on RFQs in "Quote sent", because the two pages count
+  different things — demand that reached the shop, and quotes the shop wrote.
+- **UIUX-145** — the client panel says whether quoting this buyer has led
+  anywhere: how many of their quoted requests they accepted, and how many of
+  those they paid for. **No star rating**: nothing on this platform rates a
+  buyer, so a score out of order counts would look like a judgement somebody
+  had made. A harness check asserts no star glyph appears, so the decision
+  cannot be reversed by accident.
+- **Already true**: UIUX-140 and UIUX-188 (both breadcrumbs read the record, and
+  from the same shared shape), UIUX-141 (`BOM / Parts`, symmetric), UIUX-178
+  (no "New Quotes" card, and the two stat rows are not a shared component),
+  UIUX-191 (one name for the RFQ overview tab), UIUX-165's leading zeros (no
+  number is zero-padded anywhere) — though its missing unit was real and fixed.
+- **Named as blocked**: UIUX-187's authoritative-ID question is answered by the
+  reference helpers, but UIUX-146 (a link to the source design project) still
+  needs a project model, and UIUX-126's per-pipeline stage split belongs to
+  UIUX-206, not here.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |
