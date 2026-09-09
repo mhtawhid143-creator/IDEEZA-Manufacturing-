@@ -535,6 +535,55 @@ under the sticky navbar, which is the trap `removeCard` already documents. Both
 now centre the control first, and both keep the screenshot when a press still
 does not go.
 
+## Wave 9 — the quote's own page, and reading before pricing · done
+
+Eight tickets, and one architectural decision the whole group turns on.
+
+- **UIUX-193** — the quote form is **not offered** until the parts of the
+  request that apply have each been opened. Accepting a quote secures the
+  buyer's money, so a blind price is a dispute with funds already held against
+  it. Which parts apply comes from the domain: the specification always, the
+  files only when the buyer attached some, the bill of materials only when there
+  is one — a gate a shop cannot pass, or one that makes it open an empty page,
+  teaches it that the gate is theatre. **Hard, not soft**, and shown as the
+  route: the sections sit where the form will be, each a link, each ticked once
+  opened, with Decline still available. Recorded per shop and per request (three
+  columns on `RfqRecipient`) so it survives a reload and cannot be satisfied by
+  someone else's reading. The two entry points the ticket calls the worst case —
+  the row menu and the dashboard panel — already routed through the request in
+  this build.
+- **UIUX-186 / UIUX-184 / UIUX-192** — one decision, three tickets: **each page
+  owns one object and links to the other**. The quote page owns the quote
+  (revise, withdraw, pricing, substitutes, the specification it answered); the
+  request's pages own the request. So the quote page gained the kind of work
+  and named links into the files and the specification, rather than a second
+  rendering of the brief — and the request's quoted state gained the quote read
+  back plus "Revise or withdraw it" (UIUX-176, wave 8). Parity was refused:
+  duplicating Withdraw is two places for one guard to drift.
+- **UIUX-192's real defect** was two hand-written renderers of the buyer's ask
+  that **had already drifted** — one carried the quotable reference, a file link
+  and a hidden BOM row; the other printed bare counts and said "3D" where the
+  first said "3D printing". Every difference was a fix from this same review
+  landing on one copy only. There is one component now, and what legitimately
+  differs is a prop.
+- **UIUX-196** — the identical heading "General information" appeared on
+  **three** surfaces over two different field sets. They now say whose
+  information they hold. A colour accent was refused: colour already means state
+  (UIUX-116) and urgency (UIUX-183), and a hue that means three things means
+  none of them.
+- **UIUX-189** — the buyer's target sits above the breakdown with the difference
+  worked out. **Over is stated as plainly as under**: a platform that renders an
+  honest high price as a failure teaches shops to quote one they cannot deliver
+  at. Answered from the domain — nothing reads `targetPriceMinor`, so it is a
+  target and not a ceiling.
+- **Already true**: UIUX-185 (every value renders at full ink; the muted tone is
+  used once, for an absence, and says why), UIUX-190 (the spec-version stamp and
+  the stale warning landed with UIUX-171 in wave 7).
+- **Named as blocked**: pinning the *file manifest* to a quote — each file
+  carries a revision and a hash, but the quote records the requirements' freeze
+  rather than a manifest. That belongs with UIUX-146's project traceability,
+  which needs the source-project model this build does not have.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |
