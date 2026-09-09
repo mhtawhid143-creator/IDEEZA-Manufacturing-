@@ -434,6 +434,56 @@ something was, or what to do about it.
   needs a project model, and UIUX-126's per-pipeline stage split belongs to
   UIUX-206, not here.
 
+## Wave 7 — the Submit Quote modal · done
+
+Seven tickets on one screen: the only binding step in the flow, and the least
+protected one in it.
+
+- **UIUX-166** — a unit price can be itemised, and the lines have to add up to
+  it. Two new tables (`QuoteCostLine`, `QuoteDeviation`) and a domain
+  invariant, because the alternative is the buyer reading two prices for one
+  thing. Two families of line, and `quoteCostKindsFor()` decides which a
+  request can carry — a fabrication-only board is never *offered* a stencil and
+  the invariant *refuses* one, so a future importer cannot get it wrong either.
+  Itemising stays optional; an unexplained price is not the same as a price made
+  of zeros, and the screen says which it is.
+- **UIUX-164** — the summary block had no header and no stated relationship to
+  the fields above it, so a shop could not tell a live calculation from a number
+  out of nowhere. It was always a calculation; now it says so, and the shipping
+  and tooling lines that separate subtotal from grand total are shown.
+- **UIUX-167** — Submit was enabled whatever the form held. One gate now, and it
+  says what it is waiting for in words. The server checks are untouched: the
+  harness still proves a lead time of `0` — which is filled in, so the button is
+  live — is refused by the domain.
+- **UIUX-170** — the acknowledgment, feeding that same one gate rather than a
+  second mechanism. **Attachments are blocked**: this build records a file's
+  name, revision, size and hash, not its bytes, so an upload control would
+  accept a quote PDF and have nowhere to put it. Same dependency as UIUX-149 and
+  UIUX-150; all three should land on one storage decision.
+- **UIUX-171** — the quote records which frozen requirements it answered
+  (`quotedAgainstLockedAt`), and a later freeze flags it as answering the
+  earlier ask. **Flagged, not invalidated**: a buyer touching a field should not
+  be able to destroy a price that may still be perfectly good, and requiring
+  re-confirmation is the same problem more slowly.
+- **UIUX-168** — both date fields name the buyer's own window. Where they
+  disagree it **warns rather than blocks**, because "I can make this, but later
+  than you asked" is a real answer and the buyer's to accept. The comparison is
+  production time *plus express transit* against the wanted-by date, which is
+  the arithmetic the ticket was really about.
+- **UIUX-169** — the split the ticket asks for already existed: the quoted lead
+  time is production only, transit is `TRANSIT_DAYS` and the courier is the
+  buyer's choice at checkout. The modal now shows the delivered-by estimate for
+  both couriers. **Two recommendations refused, on domain grounds**: a shipping
+  method on the quote would take a decision away from the buyer, and a **deposit
+  percentage cannot exist here** — IDEEZA secures the whole amount and money
+  leaves escrow only against a documented trigger, so "50% upfront" would be
+  either a promise the platform will not keep or a hole in the escrow model.
+
+One incidental finding worth recording: the `removeCard` failures treated all
+session as a known flake were **orphaned embedded-postgres processes** from
+killed harness runs — thirty of them, holding the machine at half load. With
+them cleared the shop harness ran **355/355** with nothing failing.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |
