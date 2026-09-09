@@ -20,6 +20,25 @@ const MEMBER = asId<UserId>('seed_user_member_a');
 const BUYER = asId<UserId>('seed_user_buyer');
 const ORDER = asId<OrderId>('seed_order_1');
 
+/**
+ * Ticks every open check under a stage, the way the shop floor does it
+ * (UIUX-206). A stage no longer closes over open checks, so any test that
+ * wants a stage completed has to report the work first — which is the
+ * behaviour being protected.
+ */
+const reportChecks = async (key: string): Promise<number> => {
+  const stage = await prisma.productionStage.findUniqueOrThrow({
+    where: { orderId_key: { orderId: ORDER, key: key as never } },
+    include: { tasks: { orderBy: { position: 'asc' } } },
+  });
+  const open = stage.tasks.filter((task) => task.status !== 'completed');
+  for (const task of open) {
+    const done = await orders.setTaskStatus(SHOP, MEMBER, ORDER, task.id, 'completed');
+    expect(done.ok).toBe(true);
+  }
+  return open.length;
+};
+
 beforeAll(async () => {
   database = await startTestDatabase();
   prisma = database.prisma;
@@ -124,6 +143,20 @@ describe('moving the production line', () => {
       },
     });
 
+    // Completing over open checks is refused, and says which are open.
+    const early = await orders.moveStage(
+      SHOP,
+      MEMBER,
+      ORDER,
+      'in_production',
+      'completed',
+      undefined,
+    );
+    expect(early.ok).toBe(false);
+    if (!early.ok) expect(early.message).toMatch(/still open/);
+
+    expect(await reportChecks('in_production')).toBeGreaterThan(0);
+
     const moved = await orders.moveStage(
       SHOP,
       MEMBER,
@@ -154,13 +187,25 @@ describe('moving the production line', () => {
     expect(event.actorManufacturerId).toBe(SHOP);
   });
 
-  it('completes the tasks under a stage it completes', async () => {
+  it('carries the checks this kind of work actually has', async () => {
+    // UIUX-206: the seeded order is a full product, assembled, with a bill of
+    // materials — so both families' gates are under one stage, in parallel,
+    // rather than a fixed list half of which never applied.
     const stage = await prisma.productionStage.findFirstOrThrow({
       where: { orderId: ORDER, key: 'in_production' },
       include: { tasks: true },
     });
-    expect(stage.tasks.length).toBeGreaterThan(0);
+    const labels = stage.tasks.map((task) => task.label);
+    expect(labels).toContain('Solder mask');
+    expect(labels).toContain('Support removal');
+    expect(labels).toContain('Part placement');
+    // And by now the floor has reported them, so the stage could close.
     expect(stage.tasks.every((task) => task.status === 'completed')).toBe(true);
+
+    const detail = await orders.getOrder(SHOP, ORDER);
+    const view = detail?.stages.find((row) => row.key === 'in_production');
+    expect(view?.tasks.some((task) => task.family === 'board')).toBe(true);
+    expect(view?.tasks.some((task) => task.family === 'printed')).toBe(true);
   });
 
   it('starts a stage when the first task is ticked', async () => {
@@ -234,6 +279,7 @@ describe('records and shipping', () => {
   it('records the shipment and the delivery, in that order', async () => {
     // Finish what is between production and shipping.
     for (const key of ['quality_check', 'ready_to_ship'] as const) {
+      await reportChecks(key);
       const moved = await orders.moveStage(SHOP, MEMBER, ORDER, key, 'completed', undefined);
       expect(moved.ok).toBe(true);
     }

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
+import { stageChecks } from '@ideeza/domain';
 import { seedDatabase } from '../prisma/seed.js';
 import { startTestDatabase, type TestDatabase } from '../test-support/index.js';
 
@@ -200,7 +201,9 @@ describe('seed', () => {
     expect(await prisma.manufacturingOrder.count()).toBe(1);
     expect(await prisma.acceptedQuoteSnapshot.count()).toBe(1);
     expect(await prisma.productionStage.count()).toBe(10);
-    expect(await prisma.productionTask.count()).toBe(10);
+    // One check per gate the seeded work actually has (UIUX-206), across the
+    // five stages that have any.
+    expect(await prisma.productionTask.count()).toBe(28);
     expect(await prisma.payment.count()).toBe(1);
     expect(await prisma.payout.count()).toBe(1);
     expect(await prisma.messageThread.count()).toBe(2);
@@ -666,12 +669,19 @@ describe('production stages are the canonical ten, in order', () => {
       include: { tasks: { orderBy: { position: 'asc' } } },
     });
 
-    expect(stage.tasks.map((task) => task.label)).toEqual([
-      'Bare board fabrication',
-      'Assembly',
-      'Firmware flashing',
-      'Enclosure production',
-    ]);
+    // The checks are the ones this order's kind of work has (UIUX-206): the
+    // seeded order is a full product, assembled, with a bill of materials, so
+    // both families' gates are here — and they are exactly what the domain
+    // says, rather than a list the seed made up.
+    expect(stage.tasks.map((task) => task.label)).toEqual(
+      stageChecks('in_production', {
+        packageKind: 'full_product',
+        assemblyAsked: true,
+        multiPart: true,
+      }).map((check) => check.label),
+    );
+    expect(stage.tasks.map((task) => task.label)).toContain('Solder mask');
+    expect(stage.tasks.map((task) => task.label)).toContain('Support removal');
     expect(stage.tasks.every((task) => task.stageId === stage.id)).toBe(true);
     expect(stage.tasks.every((task) => task.orderId === 'seed_order_1')).toBe(true);
   });

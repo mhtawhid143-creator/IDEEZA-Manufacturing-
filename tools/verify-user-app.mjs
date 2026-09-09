@@ -689,12 +689,32 @@ const main = async () => {
     // browser, and the page simply stays where it was. A person whose click did
     // nothing clicks again, and so does this.
     let onCompare = false;
-    for (let attempt = 0; attempt < 3 && !onCompare; attempt += 1) {
+    for (let attempt = 0; attempt < 4 && !onCompare; attempt += 1) {
       await page.getByRole('link', { name: 'Compare' }).click();
+      // Fifteen seconds a try, not eight: this is a soft navigation into a wide
+      // read, and on a loaded machine a slow route was being reported as a
+      // click that never landed.
       onCompare = await page
-        .waitForURL(/\/manufacturing\/rfq\/new\/compare\?draft=/, { timeout: 8_000 })
+        .waitForURL(/\/manufacturing\/rfq\/new\/compare\?draft=/, { timeout: 15_000 })
         .then(() => true)
         .catch(() => false);
+    }
+    if (!onCompare) {
+      // A press that lands and goes nowhere is either a router that has not
+      // attached yet or a route that failed on the server, and only the console
+      // and a picture tell those apart. The message alone never has.
+      await page
+        .screenshot({ path: join(shotDir, 'compare-stuck.png'), fullPage: false })
+        .catch(() => undefined);
+      const href = await page
+        .getByRole('link', { name: 'Compare' })
+        .getAttribute('href')
+        .catch(() => null);
+      process.stdout.write(
+        `      (Compare went nowhere; href ${href ?? 'missing'}; browser said: ${
+          consoleErrors.slice(-3).join(' | ') || 'nothing'
+        })\n`,
+      );
     }
     check('Compare opens the comparison', onCompare, page.url());
     check(
@@ -1629,15 +1649,15 @@ const main = async () => {
         (await visible(page.getByText(/^Request · /))),
     );
 
-    const withQuote = page
+    // The newest conversation is the one this request became an order in:
+    // `promoteThreadToOrder` carries the thread across rather than opening a
+    // second one, so the quote card is in its history and the list label
+    // says "Order". Looking for the word "Quote" in the list was looking in
+    // the wrong place, and found the wrong thread when it found one at all.
+    const thread = page
       .getByRole('list', { name: 'Conversations' })
       .getByRole('link')
-      .filter({ hasText: /quote came back|Quote/ })
       .first();
-    const thread =
-      (await withQuote.count()) > 0
-        ? withQuote
-        : page.getByRole('list', { name: 'Conversations' }).getByRole('link').first();
     // Centred before pressing. The navbar is sticky, so a row the page brings
     // to the top of itself sits underneath it and no click can reach it — the
     // same trap the shop harness's row menus were failing on.
@@ -1646,12 +1666,20 @@ const main = async () => {
       element.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
     await page.waitForTimeout(300);
+    const threadHref = await thread.getAttribute('href');
     await thread.click();
-    await page.waitForURL(/\/messages\/[^/]+/, { timeout: 20_000 }).catch(() => undefined);
-    if (!/\/messages\/[^/]+/.test(new URL(page.url()).pathname)) {
+    // Thirty seconds, because this is a soft navigation into a wide read and
+    // the question the check asks is whether the row goes anywhere, not how
+    // fast — the same allowance the shop harness makes for its row menus.
+    await page.waitForURL(/\/messages\/[^/]+/, { timeout: 30_000 }).catch(() => undefined);
+    const pressWent = /\/messages\/[^/]+/.test(new URL(page.url()).pathname);
+    check('pressing a conversation opens it', pressWent, page.url());
+    if (!pressWent) {
       // A press that did not go. The message only ever says "still on the
       // list", so the picture and whatever the browser complained about are
-      // the evidence worth keeping.
+      // the evidence worth keeping — and then the thread is opened directly,
+      // so the checks about what a conversation *shows* still get to run
+      // rather than being lost behind one that failed to reach it.
       await page
         .screenshot({ path: join(shotDir, 'thread-stuck.png'), fullPage: false })
         .catch(() => undefined);
@@ -1660,6 +1688,9 @@ const main = async () => {
           consoleErrors.slice(-2).join(' | ') || 'nothing'
         })\n`,
       );
+      if (threadHref !== null) {
+        await page.goto(`${base}${threadHref}`, { waitUntil: 'networkidle' });
+      }
     }
     check(
       'a conversation shows what was said and the record it is about',

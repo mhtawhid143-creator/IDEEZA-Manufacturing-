@@ -674,6 +674,71 @@ Verified: `pnpm run typecheck`, `pnpm run lint`, `pnpm exec vitest run --project
 (579 passed, four of them new on the families), the database projects, and the
 shop harness at **371/371**.
 
+## Wave 12 — the orders page, and what a stage claims · done
+
+Four tickets on the execution half of the portal. The largest of them, UIUX-206,
+turned out to be about honesty rather than layout.
+
+- **UIUX-198** — audited clean and closed with evidence: the heading reads "My
+  orders", the search placeholder names the column it searches, and Orders was
+  never cloned from Quotes here. What was built instead is the ticket's **rec 5**:
+  the harness now walks all nine rail pages and fails if any page's H1 equals a
+  *different* rail item's label. One wrong heading is a typo; a page scaffolded
+  from another page is a habit, and the rule is now stated once for every page
+  this portal will ever have.
+- **UIUX-203** — the headline row *is* the filter. Four cards — In flight, Due or
+  overdue, Needing an answer, Not funded yet — each a button with `aria-pressed`,
+  each pressing to filter and again to clear, in MFG-77's exact pattern from the
+  Quotes page.
+- **A card's count is the rows it shows, by construction.** The four views are
+  one predicate, `matchesView()`, and `orderCounters` counts with it while
+  `listOrders` filters with it. This was the whole reason the five Orders tickets
+  could not be patched separately: two independently written conditions disagree
+  the first time either is edited. The harness reads the number off the card,
+  presses it, and counts the rows.
+- **The Due column** shows the date the quoted lead time lands on, toned by how
+  close it is. That date was already being computed for the `late` flag and then
+  thrown away, so the table could say an order *was* late but never that it was
+  *about to be* — which is the only moment a shop can still do something.
+- **UIUX-206** — the checks under a production stage are now the ones the work
+  actually has, from `stageChecks()` in `packages/domain/src/production/stage-checks.ts`:
+  a board gets its six fabrication gates (and four more once assembly was asked
+  for), a printed part gets its five, and an order holding both gets both,
+  **grouped rather than sequenced** — nothing about imaging copper precedes
+  printing an enclosure. The fixed list it replaced named "Bare board
+  fabrication" beside "Enclosure production" on every order, so half of it was
+  always inapplicable and a shop learned to tick past all of it.
+- **And "Complete" no longer manufactures evidence.** `moveStage(…, 'completed')`
+  used to tick the open checks *for* the shop: pressing one button wrote to the
+  database that the solder mask and the surface finish had passed. It now
+  refuses, naming what is open, and the panel does not offer the control while
+  any check is — with the reason said in place. The refusal sits after the
+  platform's own rules, because an order that was never shipped cannot be
+  delivered whatever the floor has ticked.
+- **The per-component split was refused, with the reason on the ticket.** This
+  build has one stage set per order, and the buyer's screen reads the same rows;
+  splitting tracking per component is a schema change and a decision about what
+  the order's status means when two components disagree. That is UIUX-207's, not
+  a half-measure here.
+- **UIUX-209** — this tab was never a fourth copy of the quote: it holds the
+  frozen snapshot, which is the one thing no other surface can show. Added the
+  two things it lacked: the quote named by its reference rather than a raw row
+  id, and one way through — "Open QUOTE-1A2B3C4D in full" — with a line saying
+  what is behind it. The breadcrumb already read `My Orders → Beacon Light Board`.
+
+The seed and both fixture sets now generate their checks from `stageChecks()`,
+so a demo database cannot show a check the platform would never create.
+
+Verified: `pnpm run typecheck`, `pnpm run lint`, `pnpm exec vitest run --project unit`
+(587 passed, eight new on the checks), `--project database` and
+`--project database-manufacturer` (188 each), and the shop harness at **382/382**.
+
+Two harness flakes were also chased to their cause rather than retried: a card's
+kebab and a conversation row were both being clicked while a transition was in
+flight, which disables every control on the page. Both now reload first — and
+`removeCard` puts the open tab back, because which tab a page is on is client
+state and a reload lands on the first one.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |

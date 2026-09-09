@@ -1,9 +1,18 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, DefinitionList, Text, majorAmount as major } from '@ideeza/ui';
+import {
+  Card,
+  CardHeader,
+  DefinitionList,
+  Text,
+  buttonAppearance,
+  majorAmount as major,
+} from '@ideeza/ui';
 import {
   asId,
   counted,
   orderReference,
+  quoteReference,
   requestReference,
   type OrderId,
 } from '@ideeza/domain';
@@ -61,7 +70,7 @@ const OrderTermsPage = async ({
           columns={2}
           items={[
             { label: 'Order', value: orderReference(order.orderId) },
-            { label: 'Quote', value: order.quoteId },
+            { label: 'Quote', value: quoteReference(order.quoteId) },
             { label: 'Request', value: requestReference(order.rfqId) },
             { label: 'Quantity', value: counted(order.quantity, 'unit') },
             {
@@ -93,6 +102,26 @@ const OrderTermsPage = async ({
           Snapshot checksum {order.snapshotChecksum.slice(0, 16)}… — the platform can
           prove these terms have not moved since the buyer accepted them.
         </Text>
+
+        {/*
+          A summary and a way through, not a second copy of the quote page
+          (UIUX-209). What is above is the frozen snapshot — the terms both
+          sides are held to — and it is the only thing this tab owns. The
+          quote's own working, its itemised costing and its history, stay on
+          the quote, so there is one place they can drift from: none.
+        */}
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
+          <Link
+            href={`/quotes/${order.quoteId}`}
+            className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
+          >
+            Open {quoteReference(order.quoteId)} in full
+          </Link>
+          <Text tone="muted" size="xs">
+            The costing you wrote, and everything the buyer asked for. It cannot
+            change these terms.
+          </Text>
+        </div>
       </Card>
 
       <Card>

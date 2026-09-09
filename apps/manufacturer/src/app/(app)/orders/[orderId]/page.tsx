@@ -169,10 +169,12 @@ const OrderProductionPage = async ({
             label: task.label,
             status: task.status,
             completedOn: task.completedAt === null ? null : day(task.completedAt),
+            family: task.family,
           })),
           evidenceCount: stage.evidenceCount,
           movable: stage.movable,
           blockedReason: stage.blockedReason,
+          completable: stage.completable,
           waitingFor:
             stage.advancedBy === 'buyer'
               ? 'Waiting on the buyer'

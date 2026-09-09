@@ -29,6 +29,7 @@
     "vitest": "^2.1.8",
     "@ideeza/auth": "workspace:*",
     "@ideeza/db": "workspace:*",
-    "@prisma/client": "^6.19.3"
+    "@prisma/client": "^6.19.3",
+    "@ideeza/domain": "workspace:*"
   }
 }

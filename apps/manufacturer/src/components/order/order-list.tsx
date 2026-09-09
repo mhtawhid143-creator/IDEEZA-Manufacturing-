@@ -34,6 +34,9 @@ export interface OrderListRow {
   readonly currency: string;
   readonly unitPriceMajor: string;
   readonly totalPriceMajor: string;
+  /** The date the quoted lead time lands on, null before the order is funded. */
+  readonly dueOn: string | null;
+  readonly dueInDays: number | null;
   readonly currentStageLabel: string | null;
   readonly completedStages: number;
   readonly totalStages: number;
@@ -45,7 +48,10 @@ export interface OrderListRow {
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Any status' },
-  { value: 'in_flight', label: 'Everything in flight' },
+  { value: 'in_production', label: 'Everything in flight' },
+  { value: 'due', label: 'Due or overdue' },
+  { value: 'attention', label: 'Needing an answer' },
+  { value: 'unfunded', label: 'Not funded yet' },
   { value: 'late', label: 'Past the quoted date' },
   { value: 'awaiting_payment', label: 'Awaiting payment' },
   { value: 'confirmed', label: 'Confirmed' },
@@ -260,16 +266,37 @@ export const OrderList = ({
             ),
           },
           {
-            id: 'date',
-            header: 'Date',
+            id: 'due',
+            header: 'Due',
             cell: (row) => (
               <div>
-                <p className="whitespace-nowrap text-sm text-text-secondary">{row.orderedOn}</p>
-                {row.late && (
-                  <Text tone="danger" size="xs">
-                    late
-                  </Text>
-                )}
+                {/*
+                  The date the quoted lead time lands on (UIUX-203). It was
+                  already worked out for the "late" flag and then thrown away,
+                  so the table could say an order was late but never that it was
+                  about to be — which is the only point at which a shop can
+                  still do something about it.
+                */}
+                <p
+                  className={
+                    row.late
+                      ? 'whitespace-nowrap text-sm font-semibold text-text-error'
+                      : row.dueInDays !== null && row.dueInDays <= 3
+                        ? 'whitespace-nowrap text-sm font-semibold text-text-warning'
+                        : 'whitespace-nowrap text-sm text-text-secondary'
+                  }
+                >
+                  {row.dueOn ?? '—'}
+                </p>
+                <Text tone="muted" size="xs">
+                  {row.late
+                    ? 'past the date you quoted'
+                    : row.dueInDays === null
+                      ? `ordered ${row.orderedOn}`
+                      : row.dueInDays <= 0
+                        ? 'due today'
+                        : `in ${counted(row.dueInDays, 'day')}`}
+                </Text>
               </div>
             ),
           },
@@ -295,6 +322,40 @@ export const OrderList = ({
                           href: `/orders/${row.orderId}/disputes/${row.disputeId}`,
                         },
                       ]),
+                  // Only on the rows carrying it (UIUX-203). A menu that offers
+                  // "Answer the refund request" on every row teaches a shop
+                  // that the menu does not know anything about the row.
+                  //
+                  // Approving a *cancellation* is deliberately not here: a shop
+                  // raises one and IDEEZA decides it, so the shop has nothing
+                  // to approve — the entry says where its own request stands.
+                  ...(row.status === 'refund_requested'
+                    ? [
+                        {
+                          id: 'refund',
+                          label: 'Answer the refund request',
+                          href: `/orders/${row.orderId}`,
+                        },
+                      ]
+                    : []),
+                  ...(row.status === 'cancel_requested'
+                    ? [
+                        {
+                          id: 'cancellation',
+                          label: 'The cancellation you raised',
+                          href: `/orders/${row.orderId}`,
+                        },
+                      ]
+                    : []),
+                  ...(row.openAlerts > 0
+                    ? [
+                        {
+                          id: 'shortage',
+                          label: counted(row.openAlerts, 'part shortage'),
+                          href: `/orders/${row.orderId}`,
+                        },
+                      ]
+                    : []),
                   {
                     id: 'production',
                     label: 'View order details',

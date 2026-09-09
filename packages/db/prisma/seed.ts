@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { stageChecks } from '@ideeza/domain';
 
 /**
  * Deterministic development seed.
@@ -115,18 +116,40 @@ const stagePlan = [
   { key: 'completed', position: 10, status: 'pending' },
 ] as const;
 
-const taskPlan = [
-  { stage: 'files_under_review', label: 'Design file review', position: 0, status: 'completed' },
-  { stage: 'files_under_review', label: 'Manufacturability review', position: 1, status: 'completed' },
-  { stage: 'materials_confirmed', label: 'Inventory check', position: 0, status: 'completed' },
-  { stage: 'materials_confirmed', label: 'Substitution approvals applied', position: 1, status: 'completed' },
-  { stage: 'in_production', label: 'Bare board fabrication', position: 0, status: 'completed' },
-  { stage: 'in_production', label: 'Assembly', position: 1, status: 'in_progress' },
-  { stage: 'in_production', label: 'Firmware flashing', position: 2, status: 'pending' },
-  { stage: 'in_production', label: 'Enclosure production', position: 3, status: 'pending' },
-  { stage: 'quality_check', label: 'Optical inspection', position: 0, status: 'pending' },
-  { stage: 'quality_check', label: 'Functional test', position: 1, status: 'pending' },
-] as const;
+/**
+ * The shop-floor checks under each stage, for the work this order actually is
+ * (UIUX-206): a full product, assembled, with a bill of materials — so both a
+ * board's fabrication gates and a printed part's appear, side by side.
+ *
+ * Generated from the domain rather than typed out, so the demo database cannot
+ * show a check the platform would never create.
+ */
+const SEEDED_WORK = {
+  packageKind: 'full_product' as const,
+  assemblyAsked: true,
+  multiPart: true,
+};
+
+/** Where the seeded order has got to: the first two board gates are done. */
+const CHECKS_DONE = 2;
+
+const taskPlan = stagePlan.flatMap((stage) =>
+  stageChecks(stage.key, SEEDED_WORK).map((check, position) => ({
+    stage: stage.key,
+    label: check.label,
+    position,
+    status:
+      stage.status === 'completed'
+        ? ('completed' as const)
+        : stage.status !== 'in_progress'
+          ? ('pending' as const)
+          : position < CHECKS_DONE
+            ? ('completed' as const)
+            : position === CHECKS_DONE
+              ? ('in_progress' as const)
+              : ('pending' as const),
+  })),
+);
 
 const eventPlan = [
   { id: 'seed_event_1', kind: 'rfq_submitted', subjectKind: 'rfq', subjectId: ID.rfq, role: 'buyer', at: T.rfqSubmitted, order: false },

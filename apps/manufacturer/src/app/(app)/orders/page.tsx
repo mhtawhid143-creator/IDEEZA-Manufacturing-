@@ -1,7 +1,14 @@
-import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
+import { Card, PageHeader, majorAmount as major } from '@ideeza/ui';
 import { ORDER_STATUSES, type OrderStatus } from '@ideeza/domain';
+import { OrderCards } from '@/components/order/order-cards.js';
 import { OrderList } from '@/components/order/order-list.js';
-import { listOrders, orderCounters } from '@/data/orders.js';
+import {
+  DUE_SOON_DAYS,
+  ORDER_VIEWS,
+  listOrders,
+  orderCounters,
+  type OrderView,
+} from '@/data/orders.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
@@ -12,9 +19,11 @@ const day = (value: Date | null): string =>
 
 const statusFilter = (
   value: string | undefined,
-): OrderStatus | 'all' | 'in_flight' | 'late' => {
+): OrderStatus | 'all' | 'in_flight' | 'late' | OrderView => {
   if (value === undefined) return 'all';
   if (value === 'in_flight' || value === 'late') return value;
+  // The four card views, which cut across the status set (UIUX-203).
+  if ((ORDER_VIEWS as readonly string[]).includes(value)) return value as OrderView;
   return (ORDER_STATUSES as readonly string[]).includes(value)
     ? (value as OrderStatus)
     : 'all';
@@ -30,34 +39,6 @@ const pageNumber = (value: string | undefined): number => {
   const parsed = Number(value ?? '1');
   return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
 };
-
-const Counter = ({
-  value,
-  label,
-  note,
-  tone = 'neutral',
-}: {
-  readonly value: number;
-  readonly label: string;
-  readonly note: string;
-  readonly tone?: 'neutral' | 'danger';
-}) => (
-  <Card className={tone === 'danger' ? 'border-border-error' : undefined}>
-    <p data-numeric className="text-3xl font-semibold tracking-near text-text-primary">
-      {value}
-    </p>
-    <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
-      {label}
-    </Text>
-    <Text
-      tone={tone === 'danger' ? 'danger' : 'muted'}
-      size="xs"
-      className="mt-0.5 block"
-    >
-      {note}
-    </Text>
-  </Card>
-);
 
 /**
  * My Orders: everything this shop is building or has built.
@@ -100,34 +81,21 @@ const OrdersPage = async ({
         description="What you are building, where each one has got to, and what is waiting on somebody."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Counter
-          value={counters.total}
-          label="Orders"
-          note={`${counters.completed} finished`}
-        />
-        <Counter
-          value={counters.inFlight}
-          label="In flight"
-          note={
-            counters.awaitingFunding === 0
-              ? 'All funded'
-              : `${counters.awaitingFunding} not funded yet`
-          }
-        />
-        <Counter
-          value={counters.late}
-          label="Past the quoted date"
-          note="Against the lead time you quoted"
-          tone={counters.late === 0 ? 'neutral' : 'danger'}
-        />
-        <Counter
-          value={counters.inTrouble}
-          label="Needing attention"
-          note="Cancellations, refunds and disputes"
-          tone={counters.inTrouble === 0 ? 'neutral' : 'danger'}
-        />
-      </div>
+      {/*
+        The headline row is the filter (UIUX-203). Each count is the predicate
+        the table filters by, so pressing a card shows exactly the rows it
+        counted — see `matchesView` in the data layer.
+      */}
+      <OrderCards
+        total={counters.total}
+        inFlight={counters.inFlight}
+        dueOrLate={counters.dueOrLate}
+        late={counters.late}
+        inTrouble={counters.inTrouble}
+        awaitingFunding={counters.awaitingFunding}
+        completed={counters.completed}
+        dueSoonDays={DUE_SOON_DAYS}
+      />
 
       <Card padded={false} data-tour="order-list">
         <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -152,6 +120,13 @@ const OrdersPage = async ({
               currency: row.currency,
               unitPriceMajor: major(row.unitPriceMinor),
               totalPriceMajor: major(row.totalPriceMinor),
+              dueOn: row.estimatedShipAt === null ? null : day(row.estimatedShipAt),
+              dueInDays:
+                row.estimatedShipAt === null
+                  ? null
+                  : Math.ceil(
+                      (row.estimatedShipAt.getTime() - Date.now()) / 86_400_000,
+                    ),
               currentStageLabel: row.currentStageLabel,
               completedStages: row.completedStages,
               totalStages: row.totalStages,

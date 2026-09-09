@@ -94,32 +94,3 @@ export const stagePosition = (key: ProductionStageKey): number =>
 
 export const nextStageKey = (key: ProductionStageKey): ProductionStageKey | undefined =>
   PRODUCTION_STAGES[stagePosition(key)];
-
-/**
- * Default shop-floor activities, expressed as tasks under a canonical stage.
- *
- * The manufacturer panel shows this level of detail; the buyer panel shows the
- * canonical stage. Both read the same order, so the detail may never become a
- * stage of its own.
- */
-export const DEFAULT_STAGE_TASK_TEMPLATES: Readonly<
-  Partial<Record<ProductionStageKey, readonly string[]>>
-> = Object.freeze({
-  files_under_review: Object.freeze([
-    'Design file review',
-    'Manufacturability review',
-  ]),
-  materials_confirmed: Object.freeze([
-    'Inventory check',
-    'Parts sourcing',
-    'Substitution approvals applied',
-  ]),
-  in_production: Object.freeze([
-    'Bare board fabrication',
-    'Assembly',
-    'Firmware flashing',
-    'Enclosure production',
-  ]),
-  quality_check: Object.freeze(['Optical inspection', 'Functional test']),
-  ready_to_ship: Object.freeze(['Packaging', 'Shipping documents']),
-});

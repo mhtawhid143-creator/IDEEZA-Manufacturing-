@@ -98,9 +98,32 @@ const removeCard = async (page, cards, text) => {
   let why = 'still on the page after three tries';
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if ((await cards.filter({ hasText: text }).count()) === 0) return true;
-    // Wait out the refresh from whatever came before. The kebab is disabled
-    // while a write is in flight, and a menu opened mid-render is closed by it,
-    // so a click in that gap lands on nothing.
+    // Reloaded first, rather than waiting out the write that came before.
+    //
+    // Every control on this page is disabled while a transition is in flight,
+    // and the profile is a wide read, so the soft refresh after an edit can
+    // hold the kebab disabled for longer than any click will wait. A fresh
+    // load has no transition pending, which is the difference between a slow
+    // delete and a click that never lands.
+    // The tab a page is on is client state, so a reload lands on its first
+    // one. Put it back, or the caller finds a different page than it left.
+    const openTab = await page
+      .locator('[role="tab"][aria-selected="true"]')
+      .first()
+      .textContent()
+      .catch(() => null);
+    await page.reload({ waitUntil: 'networkidle' }).catch(() => undefined);
+    if (openTab !== null && openTab.trim() !== '') {
+      await page
+        .getByRole('tab', { name: openTab.trim(), exact: true })
+        .first()
+        .click({ timeout: 10_000 })
+        .catch(() => undefined);
+    }
+    await page.waitForTimeout(500);
+    if ((await cards.filter({ hasText: text }).count()) === 0) return true;
+    // The kebab is disabled while a write is in flight, and a menu opened
+    // mid-render is closed by it, so a click in that gap lands on nothing.
     const trigger = cards
       .filter({ hasText: text })
       .first()
@@ -1783,8 +1806,8 @@ const main = async () => {
       'the rail reaches the orders, and they count what a shop plans on',
       (await visible(page.getByRole('heading', { name: 'My orders' }))) &&
         (await visible(page.getByText('In flight'))) &&
-        (await visible(page.getByText('Past the quoted date').first())) &&
-        (await visible(page.getByText('Needing attention'))),
+        (await visible(page.getByText('Due or overdue'))) &&
+        (await visible(page.getByText('Needing an answer'))),
     );
     check(
       'each order says where it has got to, against the canonical stages',
@@ -1828,6 +1851,79 @@ const main = async () => {
         (await first.locator('..').textContent()) ?? '',
       );
     }
+    // ---- UIUX-198 rec 5: no page wears another page's name
+    //
+    // The finding was a cloned page: Orders kept the heading "Quotes". One
+    // instance is a typo; the class is a scaffolding habit, and it recurs
+    // every time a new page is copied from an old one. So this walks the rail
+    // and refuses a heading that belongs to a different rail item — which is
+    // exactly the defect, stated once, for every page there will ever be.
+    const railPages = [
+      ['/dashboard', 'Dashboard'],
+      ['/rfqs', 'RFQs'],
+      ['/quotes', 'My Quotes'],
+      ['/orders', 'My Orders'],
+      ['/inventory', 'Inventory'],
+      ['/payouts', 'Payouts & Earnings'],
+      ['/messages', 'Messages'],
+      ['/profile', 'Profile'],
+      ['/settings', 'Settings'],
+    ];
+    const wrongName = [];
+    for (const [path, own] of railPages) {
+      await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
+      const heading = ((await page.locator('h1').first().textContent()) ?? '').trim();
+      const stolen = railPages.find(
+        ([, label]) =>
+          label !== own &&
+          heading.toLowerCase().replace(/^my /, '') ===
+            label.toLowerCase().replace(/^my /, ''),
+      );
+      if (stolen !== undefined) wrongName.push(`${path}: "${heading}"`);
+    }
+    check(
+      'no page in the rail wears another page’s name',
+      wrongName.length === 0,
+      wrongName.join(' · '),
+    );
+
+    await page.goto(`${base}/orders`, { waitUntil: 'networkidle' });
+    // ------- UIUX-203 / UIUX-198: the headline row is the filter, and it
+    // counts what pressing it shows.
+    const orderCards = page.getByRole('group', { name: 'Order counts, and the filter' });
+    check(
+      'the orders page cards are the four decisions, not the Quotes page’s',
+      (await visible(orderCards)) &&
+        /In flight/.test(await orderCards.innerText()) &&
+        /Due or overdue/.test(await orderCards.innerText()) &&
+        /Needing an answer/.test(await orderCards.innerText()) &&
+        !/Quote/.test(await orderCards.innerText()),
+      (await orderCards.innerText()).replace(/\s+/g, ' ').slice(0, 140),
+    );
+    const attention = orderCards.getByRole('button', { name: /Needing an answer/ });
+    const attentionCount = Number(
+      ((await attention.innerText()).match(/^\s*(\d+)/) ?? ['', '0'])[1],
+    );
+    await attention.click();
+    await page.waitForURL(/status=attention/, { timeout: 30_000 });
+    await page.waitForTimeout(900);
+    check(
+      'pressing a card filters the table to exactly what it counted',
+      (await attention.getAttribute('aria-pressed')) === 'true' &&
+        (await page.locator('tbody tr').count()) === attentionCount,
+      `card ${attentionCount}, rows ${await page.locator('tbody tr').count()}`,
+    );
+    await attention.click();
+    await page.waitForURL((url) => !url.search.includes('status='), { timeout: 30_000 });
+    await page.waitForTimeout(600);
+    check(
+      'and pressing it again clears the filter',
+      (await attention.getAttribute('aria-pressed')) === 'false',
+    );
+    check(
+      'the table says when each order is due, not only when it was ordered',
+      (await page.getByRole('columnheader', { name: 'Due' }).count()) === 1,
+    );
     await page.screenshot({ path: join(shotDir, 'orders.png'), fullPage: false });
 
     // ------------------------------------------ M08: what the platform owns
@@ -1861,6 +1957,32 @@ const main = async () => {
         (await page.getByText(/Waiting for In production to finish/).count()) >= 1,
       (await page.locator('ol[aria-label="Production stages"] > li').nth(5).textContent()) ?? '',
     );
+    // ---- UIUX-206: the checks under a stage are the ones this work has
+    const madeOf = page.getByText('What this stage is made of').first();
+    check(
+      'a stage says what it is made of, and how much of it is ticked',
+      (await visible(madeOf)) && (await visible(page.getByText(/\d+\/\d+ ticked/).first())),
+      (await page.getByText(/\d+\/\d+ ticked/).first().textContent()) ?? '',
+    );
+    const production = page
+      .locator('ol[aria-label="Production stages"] > li')
+      .nth(4);
+    const productionWords = (await production.textContent()) ?? '';
+    check(
+      'a board being assembled is asked about its own fabrication gates',
+      /Solder mask/.test(productionWords) && /Part placement/.test(productionWords),
+      productionWords.replace(/\s+/g, ' ').slice(0, 180),
+    );
+    check(
+      'and never about a printed part it is not making',
+      !/Support removal/.test(productionWords) && !/3D printing/.test(productionWords),
+    );
+    check(
+      'a stage with open checks does not offer Complete, and says why',
+      /still to tick before this stage can be completed/.test(productionWords),
+      productionWords.replace(/\s+/g, ' ').slice(0, 120),
+    );
+
     check(
       'the money is held, and the screen says what releases it',
       (await visible(page.getByText('Held by IDEEZA'))) &&
@@ -1888,6 +2010,36 @@ const main = async () => {
     );
 
     // ------------------------------------------------- M08: moving the line
+    //
+    // UIUX-206: a stage closes only once its own checks are ticked, so this is
+    // the floor reporting the work rather than one toggle standing in for it.
+    const reportChecks = async (stageLabel) => {
+      for (let guard = 0; guard < 40; guard += 1) {
+        // Reloaded between ticks rather than trusting the soft refresh: every
+        // control on the panel is disabled while a transition is in flight, so
+        // a loop that clicks straight on waits on a button that cannot be
+        // pressed yet.
+        await page.goto(`${base}/orders/mfrfix_order_beacon`, {
+          waitUntil: 'networkidle',
+        });
+        const row = page.getByRole('listitem').filter({ hasText: stageLabel }).first();
+        const open = row.getByRole('button', { name: /^Mark .+ done$/ });
+        if ((await open.count()) === 0) return guard;
+        const next = open.first();
+        await next.scrollIntoViewIfNeeded();
+        await next.click();
+        await page.waitForTimeout(1_200);
+      }
+      return -1;
+    };
+
+    const ticked = await reportChecks('In production');
+    check(
+      'the floor can report every check the work has',
+      ticked > 0,
+      `${ticked} checks ticked`,
+    );
+    await page.goto(`${base}/orders/mfrfix_order_beacon`, { waitUntil: 'networkidle' });
     await productionRow.getByRole('button', { name: /Move In production/ }).click();
     await page.getByRole('menuitem', { name: 'Complete' }).click();
     await page.waitForTimeout(2_500);
@@ -1904,6 +2056,7 @@ const main = async () => {
 
     // ------------------------------------------- M08: shipping and delivery
     for (const label of ['Quality check', 'Ready to ship']) {
+      await reportChecks(label);
       const row = page.getByRole('listitem').filter({ hasText: label }).first();
       await row.getByRole('button', { name: new RegExp(`Move ${label}`) }).click();
       await page.getByRole('menuitem', { name: 'Complete' }).click();
@@ -1957,6 +2110,17 @@ const main = async () => {
       'the terms it was opened against are the frozen snapshot, with its checksum',
       (await visible(page.getByText('The terms this order was opened against'))) &&
         (await visible(page.getByText('Snapshot checksum', { exact: false }))),
+    );
+    // ---- UIUX-209: a summary and a way through, not a fourth copy of the quote
+    check(
+      'the quote is named by its reference, never by a raw row id',
+      (await visible(page.getByText(/QUOTE-/).first())) &&
+        (await page.getByText(/^q[a-z0-9_]{8,}$/).count()) === 0,
+      (await page.getByText(/QUOTE-/).first().textContent()) ?? '',
+    );
+    check(
+      'and there is one way through to the quote itself',
+      (await page.getByRole('link', { name: /Open QUOTE-.* in full/ }).count()) === 1,
     );
     await page.goto(`${base}/orders/mfrfix_order_beacon/files`, {
       waitUntil: 'networkidle',

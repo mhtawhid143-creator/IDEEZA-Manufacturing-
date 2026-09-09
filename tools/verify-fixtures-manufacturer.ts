@@ -13,6 +13,7 @@
  *   node --import tsx tools/verify-fixtures-manufacturer.ts
  */
 import { PrismaClient } from '@prisma/client';
+import { stageChecks } from '@ideeza/domain';
 
 const prisma = new PrismaClient();
 
@@ -812,12 +813,14 @@ const liveOrder = async (): Promise<void> => {
     { key: 'completed', status: 'pending' },
   ] as const;
 
-  const tasks: Readonly<Record<string, readonly string[]>> = {
-    files_under_review: ['Design file review', 'Manufacturability review'],
-    materials_confirmed: ['Inventory check', 'Parts sourcing'],
-    in_production: ['Bare board fabrication', 'Assembly', 'Firmware flashing'],
-    quality_check: ['Optical inspection', 'Functional test'],
-    ready_to_ship: ['Packaging', 'Shipping documents'],
+  // The checks this order actually has: a board, assembled (UIUX-206). Taken
+  // from the domain so the fixture cannot show a check the platform would
+  // never create — and so a board-only order demonstrably carries no printed
+  // ones.
+  const beaconWork = {
+    packageKind: 'pcb' as const,
+    assemblyAsked: true,
+    multiPart: false,
   };
 
   for (const [index, stage] of stages.entries()) {
@@ -842,7 +845,7 @@ const liveOrder = async (): Promise<void> => {
       },
     });
 
-    for (const [taskIndex, label] of (tasks[stage.key] ?? []).entries()) {
+    for (const [taskIndex, check] of stageChecks(stage.key, beaconWork).entries()) {
       await prisma.productionTask.upsert({
         where: { stageId_position: { stageId, position: taskIndex + 1 } },
         update: {},
@@ -850,7 +853,7 @@ const liveOrder = async (): Promise<void> => {
           id: `${stageId}_task_${taskIndex + 1}`,
           orderId: 'mfrfix_order_beacon',
           stageId,
-          label,
+          label: check.label,
           position: taskIndex + 1,
           status: stage.status === 'completed' ? 'completed' : 'pending',
           ...(stage.status === 'completed'

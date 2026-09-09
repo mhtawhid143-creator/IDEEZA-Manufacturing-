@@ -41,7 +41,9 @@ describe('reading how an order is being made', () => {
     expect(view?.completedStageCount).toBe(4);
 
     const live = view?.stages.find((stage) => stage.key === 'in_production');
-    expect(live?.tasks.map((task) => task.label)).toContain('Assembly');
+    // The checks under the stage are the ones this order's work has: the
+    // seeded order is a board, assembled, plus a printed part (UIUX-206).
+    expect(live?.tasks.map((task) => task.label)).toContain('Part placement');
     expect(live?.tasks.some((task) => task.status === 'in_progress')).toBe(true);
   });
 

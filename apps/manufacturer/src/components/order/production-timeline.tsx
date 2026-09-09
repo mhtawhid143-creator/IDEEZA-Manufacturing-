@@ -20,7 +20,13 @@ import {
   buttonAppearance,
   useToast,
 } from '@ideeza/ui';
-import { issueReasonLabel } from '@ideeza/domain';
+import {
+  STAGE_CHECK_FAMILIES,
+  STAGE_CHECK_FAMILY_LABEL,
+  counted,
+  issueReasonLabel,
+  type StageCheckFamily,
+} from '@ideeza/domain';
 import {
   attachEvidenceAction,
   moveStageAction,
@@ -32,6 +38,8 @@ export interface TimelineTask {
   readonly label: string;
   readonly status: 'pending' | 'in_progress' | 'completed' | 'blocked';
   readonly completedOn: string | null;
+  /** Which kind of work this check belongs to (UIUX-206). */
+  readonly family: StageCheckFamily;
 }
 
 export interface TimelineStage {
@@ -47,6 +55,8 @@ export interface TimelineStage {
   readonly evidenceCount: number;
   readonly movable: boolean;
   readonly blockedReason: string | null;
+  /** False while a check under it is open (UIUX-206). */
+  readonly completable: boolean;
   /** What this stage is waiting for, in the shop's words. */
   readonly waitingFor: string;
 }
@@ -100,6 +110,21 @@ export const ProductionTimeline = ({
   const { push } = useToast();
 
   useEffect(() => setHydrated(true), []);
+
+  /**
+   * The checks under a stage, grouped by the kind of work they belong to
+   * (UIUX-206).
+   *
+   * Grouped, not sequenced: imaging copper and printing an enclosure have no
+   * dependency on each other, so they sit side by side under one stage rather
+   * than in a line implying one waits for the other. The stages that do wait
+   * — quality check, ready to ship — are stages of their own already.
+   */
+  const groupsOf = (stage: TimelineStage) =>
+    STAGE_CHECK_FAMILIES.flatMap((family) => {
+      const checks = stage.tasks.filter((task) => task.family === family);
+      return checks.length === 0 ? [] : [{ family, checks }];
+    });
 
   const move = (stage: TimelineStage, to: 'in_progress' | 'completed'): void => {
     setError(undefined);
@@ -172,8 +197,9 @@ export const ProductionTimeline = ({
           <div>
             <p className="text-base font-semibold text-text-primary">Production tracking</p>
             <Text tone="muted" size="xs">
-              The ten stages the platform and the buyer read. What you tick inside one
-              is your own work.
+              The ten stages the platform and the buyer read. The checks inside one
+              are the ones this order&rsquo;s kind of work actually has, and a stage is
+              complete when they are.
             </Text>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -272,6 +298,16 @@ export const ProductionTimeline = ({
                         {stage.blockedReason}
                       </Text>
                     )}
+                    {stage.movable && !stage.completable && (
+                      <Text tone="muted" size="xs" className="mt-1 block">
+                        {counted(
+                          stage.tasks.filter((task) => task.status !== 'completed')
+                            .length,
+                          'check',
+                        )}{' '}
+                        still to tick before this stage can be completed.
+                      </Text>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -289,11 +325,19 @@ export const ProductionTimeline = ({
                                 },
                               ]
                             : []),
-                          {
-                            id: 'complete',
-                            label: 'Complete',
-                            onSelect: () => move(stage, 'completed'),
-                          },
+                          // Offered only once the checks are ticked
+                          // (UIUX-206). The data layer refuses it either way;
+                          // a control that fails on being pressed is worse
+                          // than one that is honestly absent.
+                          ...(stage.completable
+                            ? [
+                                {
+                                  id: 'complete',
+                                  label: 'Complete',
+                                  onSelect: () => move(stage, 'completed'),
+                                },
+                              ]
+                            : []),
                           {
                             id: 'evidence',
                             label: 'Attach a record',
@@ -328,11 +372,38 @@ export const ProductionTimeline = ({
                 </div>
 
                 {stage.tasks.length > 0 && (
-                  <ul
-                    aria-label={`Tasks in ${stage.label}`}
-                    className="mt-3 flex flex-col gap-2 rounded-lg border border-border-subtle bg-bg-page p-3"
-                  >
-                    {stage.tasks.map((task) => (
+                  <div className="mt-3 rounded-lg border border-border-subtle bg-bg-page p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-caps text-text-tertiary">
+                        What this stage is made of
+                      </p>
+                      <span
+                        data-numeric
+                        className="text-xs font-semibold text-text-secondary"
+                      >
+                        {stage.tasks.filter((task) => task.status === 'completed').length}/
+                        {stage.tasks.length} ticked
+                      </span>
+                    </div>
+                    {groupsOf(stage).map((group, _index, groups) => (
+                      <div key={group.family} className="mt-3">
+                        {/*
+                          Named only when the order holds more than one kind of
+                          work: a board-only order gains nothing from "PCB"
+                          above every check.
+                        */}
+                        {groups.length > 1 && (
+                          <p className="mb-2 text-xs font-semibold text-text-secondary">
+                            {STAGE_CHECK_FAMILY_LABEL[group.family]}
+                          </p>
+                        )}
+                        <ul
+                          aria-label={`${
+                            STAGE_CHECK_FAMILY_LABEL[group.family]
+                          } checks in ${stage.label}`}
+                          className="flex flex-col gap-2"
+                        >
+                          {group.checks.map((task) => (
                       <li
                         key={task.id}
                         className="flex flex-wrap items-center justify-between gap-2"
@@ -347,25 +418,47 @@ export const ProductionTimeline = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <StatusChip status={task.status} />
-                          {stage.status !== 'completed' && task.status !== 'completed' && (
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              disabled={!hydrated || pending || !stage.movable}
-                              onClick={() =>
-                                tick(
-                                  task,
-                                  task.status === 'pending' ? 'in_progress' : 'completed',
-                                )
-                              }
-                            >
-                              {task.status === 'pending' ? 'Start' : 'Done'}
-                            </Button>
-                          )}
+                          {stage.status !== 'completed' &&
+                            task.status !== 'completed' && (
+                              <>
+                                {/*
+                                  Starting a check is optional and marking it
+                                  done is not: a shop that has finished one
+                                  should not have to say it started first,
+                                  now that the stage will not close without
+                                  it (UIUX-206). Both controls name the check
+                                  they act on, because there are as many of
+                                  them as the work has gates.
+                                */}
+                                {task.status === 'pending' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    aria-label={`Start ${task.label}`}
+                                    disabled={!hydrated || pending || !stage.movable}
+                                    onClick={() => tick(task, 'in_progress')}
+                                  >
+                                    Start
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="xs"
+                                  aria-label={`Mark ${task.label} done`}
+                                  disabled={!hydrated || pending || !stage.movable}
+                                  onClick={() => tick(task, 'completed')}
+                                >
+                                  Done
+                                </Button>
+                              </>
+                            )}
                         </div>
                       </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
             </li>

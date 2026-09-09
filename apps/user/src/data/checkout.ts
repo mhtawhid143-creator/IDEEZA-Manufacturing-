@@ -7,7 +7,7 @@ import {
   asId,
   CANONICAL_STAGES,
   checkoutTotalMinor,
-  DEFAULT_STAGE_TASK_TEMPLATES,
+  stageChecks,
   orderMachine,
   readPromoCode,
   printSpecificationRows,
@@ -453,7 +453,20 @@ export const payOrder = async (
 
   const order = await database().manufacturingOrder.findFirst({
     where: { id: orderId, buyerId },
-    include: { snapshot: true, payment: true, rfq: { select: { id: true } } },
+    include: {
+      snapshot: true,
+      payment: true,
+      // The kind of work decides which shop-floor checks this order carries
+      // (UIUX-206), so the stages are opened knowing what is being made.
+      rfq: {
+        select: {
+          id: true,
+          package: { select: { kind: true } },
+          requirements: { select: { assembly: true } },
+          _count: { select: { items: true } },
+        },
+      },
+    },
   });
   if (order === null || order.snapshot === null) {
     throw new Error('That order does not exist.');
@@ -607,9 +620,15 @@ export const payOrder = async (
     });
     await transaction.productionStage.createMany({ data: stageRows });
 
+    const work = {
+      packageKind: order.rfq.package.kind,
+      assemblyAsked: (order.rfq.requirements?.assembly ?? 'none') !== 'none',
+      multiPart: order.rfq._count.items > 0,
+    };
+
     await transaction.productionTask.createMany({
       data: stageRows.flatMap((stage) =>
-        (DEFAULT_STAGE_TASK_TEMPLATES[stage.key] ?? []).map((label, position) => ({
+        stageChecks(stage.key, work).map(({ label }, position) => ({
           id: identifier(`task${stage.position}x${position}`),
           orderId,
           stageId: stage.id,

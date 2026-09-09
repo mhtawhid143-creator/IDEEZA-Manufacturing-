@@ -4,16 +4,19 @@ import {
   asId,
   assertProductionMayStart,
   assertStageProgression,
+  counted,
   isFundingSecured,
   orderMachine,
   orderSchedule,
   quoteReference,
+  stageChecks,
   stageDefinition,
   type ManufacturerId,
   type OrderId,
   type OrderStatus,
   type ProductionProgressStatus,
   type ProductionStageKey,
+  type StageCheckFamily,
   type UserId,
 } from '@ideeza/domain';
 import { toDatabaseEventKind } from '@ideeza/db';
@@ -65,12 +68,14 @@ export interface OrderCounters {
   readonly awaitingFunding: number;
   readonly inFlight: number;
   readonly late: number;
+  /** Late, or close enough that leaving it until tomorrow is a decision. */
+  readonly dueOrLate: number;
   readonly completed: number;
   readonly inTrouble: number;
 }
 
 export interface OrderFilters {
-  readonly status?: OrderStatus | 'all' | 'in_flight' | 'late';
+  readonly status?: OrderStatus | 'all' | 'in_flight' | 'late' | OrderView;
   readonly search?: string;
   readonly from?: Date;
   readonly to?: Date;
@@ -85,6 +90,33 @@ export interface OrderPage {
   readonly pageCount: number;
 }
 
+/**
+ * The four questions a shop opens this page with (UIUX-203).
+ *
+ * These are not statuses. Three of them cut across the status set — what is
+ * due, what is waiting on the shop, what has not been funded — and the point
+ * of naming them here is that the headline count and the filtered table are
+ * the same predicate. A card reading 6 that filters to 4 rows is worse than
+ * no card, and that is exactly what two independently written conditions
+ * produce the first time either is edited.
+ */
+export const ORDER_VIEWS = ['in_production', 'due', 'attention', 'unfunded'] as const;
+
+export type OrderView = (typeof ORDER_VIEWS)[number];
+
+const isView = (value: string): value is OrderView =>
+  (ORDER_VIEWS as readonly string[]).includes(value);
+
+/** Near enough that a shop should be looking at it today. */
+export const DUE_SOON_DAYS = 3;
+
+/** Statuses where somebody is waiting on a decision rather than on work. */
+const NEEDS_ATTENTION: readonly OrderStatus[] = [
+  'cancel_requested',
+  'refund_requested',
+  'disputed',
+];
+
 /** Statuses where the shop still has work to do or money to be paid. */
 const IN_FLIGHT: readonly OrderStatus[] = [
   'confirmed',
@@ -94,6 +126,32 @@ const IN_FLIGHT: readonly OrderStatus[] = [
   'shipped',
   'delivered',
 ];
+
+const matchesView = (row: OrderRow, view: OrderView, now: Date): boolean => {
+  switch (view) {
+    case 'in_production':
+      return IN_FLIGHT.includes(row.status);
+    case 'due':
+      // Late, or close enough that leaving it until tomorrow is a decision.
+      // An order with no schedule has no date to be near, so it is not due.
+      return (
+        IN_FLIGHT.includes(row.status) &&
+        row.estimatedShipAt !== null &&
+        row.estimatedShipAt.getTime() <=
+          now.getTime() + DUE_SOON_DAYS * 86_400_000
+      );
+    case 'attention':
+      // A dispute is not always the order's status — one can be raised and
+      // answered while production carries on — so the open case counts too.
+      return (
+        NEEDS_ATTENTION.includes(row.status) ||
+        (row.disputeId !== null && row.disputeStatus !== 'resolved') ||
+        row.openAlerts > 0
+      );
+    case 'unfunded':
+      return row.status === 'awaiting_payment';
+  }
+};
 
 const orderInclude = {
   rfq: {
@@ -133,7 +191,7 @@ export const listOrders = async (
   const statusWhere =
     status === 'in_flight'
       ? { status: { in: [...IN_FLIGHT] } }
-      : status === 'all' || status === 'late'
+      : status === 'all' || status === 'late' || isView(status)
         ? {}
         : { status };
 
@@ -225,9 +283,15 @@ export const listOrders = async (
     };
   });
 
-  // "Late" is a judgement about the clock and the quoted lead time, so it is
-  // filtered after the schedule is worked out rather than in the query.
-  const visible = status === 'late' ? mapped.filter((row) => row.late) : mapped;
+  // "Late", and the three views that cut across the status set, are judgements
+  // about the clock and about open cases, so they are filtered after the
+  // schedule is worked out rather than in the query.
+  const visible =
+    status === 'late'
+      ? mapped.filter((row) => row.late)
+      : isView(status)
+        ? mapped.filter((row) => matchesView(row, status, now))
+        : mapped;
 
   const total = visible.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -251,28 +315,27 @@ export const orderCounters = async (
     now,
   );
 
+  // Every count is the view's own predicate, so the number on a card is the
+  // number of rows pressing it shows (UIUX-203).
+  const inView = (view: OrderView): number =>
+    rows.rows.filter((row) => matchesView(row, view, now)).length;
+
   return {
     total: rows.total,
-    awaitingFunding: rows.rows.filter((row) => row.status === 'awaiting_payment').length,
-    inFlight: rows.rows.filter((row) => IN_FLIGHT.includes(row.status)).length,
+    awaitingFunding: inView('unfunded'),
+    inFlight: inView('in_production'),
     late: rows.rows.filter((row) => row.late).length,
+    dueOrLate: inView('due'),
     completed: rows.rows.filter((row) => row.status === 'completed').length,
-    inTrouble: rows.rows.filter((row) =>
-      [
-        'cancel_requested',
-        'cancelled',
-        'refund_requested',
-        'refunded',
-        'partially_refunded',
-        'disputed',
-      ].includes(row.status),
-    ).length,
+    inTrouble: inView('attention'),
   };
 };
 
 export interface StageTaskView {
   readonly id: string;
   readonly label: string;
+  /** Which kind of work this check belongs to (UIUX-206). */
+  readonly family: StageCheckFamily;
   readonly status: ProductionProgressStatus;
   readonly startedAt: Date | null;
   readonly completedAt: Date | null;
@@ -293,6 +356,11 @@ export interface StageView {
   /** True when this shop may move it, with the reason when it may not. */
   readonly movable: boolean;
   readonly blockedReason: string | null;
+  /**
+   * Completing the stage is refused while its own checks are open
+   * (UIUX-206), so the menu says so instead of offering a move that fails.
+   */
+  readonly completable: boolean;
 }
 
 export interface OrderEvidenceView {
@@ -380,11 +448,14 @@ export const getOrder = async (
           buyer: { select: { displayName: true } },
           package: {
             select: {
+              kind: true,
               product: {
                 select: { name: true, owner: { select: { displayName: true } } },
               },
             },
           },
+          requirements: { select: { assembly: true } },
+          _count: { select: { items: true } },
         },
       },
       stages: {
@@ -408,8 +479,23 @@ export const getOrder = async (
   const funded = isFundingSecured(order.payment?.status);
   const openAlerts = order.alerts.filter((alert) => alert.status === 'open').length;
 
+  // What is being made, which is what decides the checks under each stage
+  // (UIUX-206). Read once for the whole order rather than per stage.
+  const work = {
+    packageKind: order.rfq.package.kind,
+    assemblyAsked: (order.rfq.requirements?.assembly ?? 'none') !== 'none',
+    multiPart: order.rfq._count.items > 0,
+  };
+
   const stages: readonly StageView[] = order.stages.map((stage) => {
     const definition = stageDefinition(stage.key);
+    // The family comes from the same function that created the rows, so a
+    // check cannot be grouped under work it does not belong to. A row this
+    // build did not put there — an order opened before the checks were per
+    // kind of work — is grouped under the order rather than guessed at.
+    const expected = stageChecks(stage.key, work);
+    const familyOf = (label: string): StageCheckFamily =>
+      expected.find((entry) => entry.label === label)?.family ?? 'either';
 
     let blockedReason: string | null = null;
     if (definition.advancedBy !== 'manufacturer') {
@@ -480,6 +566,7 @@ export const getOrder = async (
       tasks: stage.tasks.map((task) => ({
         id: task.id,
         label: task.label,
+        family: familyOf(task.label),
         status: task.status,
         startedAt: task.startedAt,
         completedAt: task.completedAt,
@@ -487,6 +574,9 @@ export const getOrder = async (
       evidenceCount: stage.evidence.length,
       movable: blockedReason === null,
       blockedReason,
+      completable:
+        blockedReason === null &&
+        stage.tasks.every((task) => task.status === 'completed'),
     };
   });
 
@@ -627,7 +717,7 @@ export const moveStage = async (
       payment: { select: { status: true } },
       stages: { orderBy: { position: 'asc' } },
       alerts: { where: { status: 'open' }, select: { id: true } },
-      tasks: { select: { id: true, stageId: true, status: true } },
+      tasks: { select: { id: true, stageId: true, status: true, label: true } },
     },
   });
   if (order === null) return { ok: false, message: 'That order is not yours.' };
@@ -682,11 +772,6 @@ export const moveStage = async (
     return { ok: false, message: 'That stage is already in progress.' };
   }
 
-  // Completing a stage completes what is under it: a stage that is done with
-  // tasks left open would be a claim the shop floor did not make.
-  const openTasks = order.tasks.filter(
-    (task) => task.stageId === stage.id && task.status !== 'completed',
-  );
 
   const orderStatusFor: Partial<Record<ProductionStageKey, OrderStatus>> = {
     in_production: 'in_production',
@@ -728,6 +813,30 @@ export const moveStage = async (
     };
   }
 
+  // Last, because the platform's own rules answer first: an order that was
+  // never shipped cannot be delivered whatever the floor has ticked.
+  //
+  // A stage is complete when its own checks are (UIUX-206).
+  //
+  // This used to tick them for the shop, which made the stage button one
+  // unverified toggle standing in for six or seven real fabrication gates:
+  // the platform would record that the solder mask and the surface finish
+  // passed because somebody pressed Complete. Refusing instead is what makes
+  // the checks mean anything — and the shop can still tick them all in a row.
+  const openChecks = order.tasks.filter(
+    (task) => task.stageId === stage.id && task.status !== 'completed',
+  );
+  if (to === 'completed' && openChecks.length > 0) {
+    return {
+      ok: false,
+      message: `${counted(openChecks.length, 'check')} under "${
+        stageDefinition(key).label
+      }" ${openChecks.length === 1 ? 'is' : 'are'} still open: ${openChecks
+        .map((task) => task.label)
+        .join(', ')}. Tick them as the floor reports them.`,
+    };
+  }
+
   await database().$transaction(async (transaction) => {
     await transaction.productionStage.update({
       where: { id: stage.id },
@@ -739,12 +848,6 @@ export const moveStage = async (
       },
     });
 
-    if (to === 'completed' && openTasks.length > 0) {
-      await transaction.productionTask.updateMany({
-        where: { id: { in: openTasks.map((task) => task.id) } },
-        data: { status: 'completed', completedAt: now },
-      });
-    }
 
     if (orderStatusAfter !== undefined) {
       await transaction.manufacturingOrder.update({
