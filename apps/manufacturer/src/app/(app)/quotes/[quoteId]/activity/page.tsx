@@ -28,6 +28,7 @@ const EVENT_LABEL: Readonly<Record<string, string>> = {
   substitution_suggested: 'suggested a replacement part',
   substitution_approved: 'approved a replacement part',
   substitution_rejected: 'rejected a replacement part',
+  substitution_unavailable: 'said a part cannot be supplied',
 };
 
 const when = (value: Date): string =>

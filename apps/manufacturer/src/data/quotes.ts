@@ -39,6 +39,14 @@ export interface QuoteRow {
   readonly expiresAt: Date;
   readonly version: number;
   readonly pendingSuggestions: number;
+  /**
+   * Lines this shop said it cannot cover (UIUX-162).
+   *
+   * A quote can carry them and still be a real quote — the buyer takes the rest
+   * and decides about the gap — so it is a fact layered on "Quoted" rather than
+   * a status of its own.
+   */
+  readonly unfulfilledParts: number;
   readonly orderId: string | null;
 }
 
@@ -158,6 +166,9 @@ export const listQuotes = async (
     version: row.version,
     pendingSuggestions: row.substitutions.filter(
       (substitution) => substitution.status === 'proposed',
+    ).length,
+    unfulfilledParts: row.substitutions.filter(
+      (substitution) => substitution.status === 'unavailable',
     ).length,
     orderId: row.order?.id ?? null,
   }));
@@ -319,6 +330,9 @@ export const getQuote = async (
     version: row.version,
     pendingSuggestions: row.substitutions.filter(
       (substitution) => substitution.status === 'proposed',
+    ).length,
+    unfulfilledParts: row.substitutions.filter(
+      (substitution) => substitution.status === 'unavailable',
     ).length,
     orderId: row.order?.id ?? null,
     shippingEstimateMinor:

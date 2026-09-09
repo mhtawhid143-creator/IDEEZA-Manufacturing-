@@ -59,6 +59,7 @@ const CARD_ICON: Readonly<Record<string, IconName>> = {
   'quote.revised': 'send',
   'quote.withdrawn': 'close',
   'substitution.suggested': 'parts',
+  'substitution.unavailable': 'alert',
   'quote.accepted': 'check',
   'order.confirmed': 'payouts',
   'payment.secured': 'payouts',

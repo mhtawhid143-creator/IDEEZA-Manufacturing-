@@ -295,6 +295,64 @@ describe('suggesting a substitute', () => {
     ).toBeNull();
   });
 
+  it('records a line the shop cannot cover at all, and stops counting it unanswered', async () => {
+    const before = await match.matchRequestAgainstInventory(SHOP, RFQ);
+    expect(before?.unanswered).toBe(1);
+
+    const declared = await match.saveSubstituteSuggestions(SHOP, RFQ, [
+      {
+        rfqItemId: 'match_item_short',
+        inventoryItemId: null,
+        justification: 'Discontinued by the maker and nothing equivalent is on our shelves.',
+        unavailable: true,
+      },
+    ]);
+    expect(declared.ok).toBe(true);
+
+    const row = await prisma.substitution.findFirstOrThrow({
+      where: { rfqItemId: 'match_item_short' },
+    });
+    expect(row.status).toBe('unavailable');
+    // The check constraints in the migration refuse anything else, and the
+    // writer must not be the only thing keeping them true.
+    expect(row.suggestedPartName).toBe('');
+    expect(row.suggestedInventoryItemId).toBeNull();
+    expect(Number(row.priceImpactMinor)).toBe(0);
+    expect(row.leadTimeImpactDays).toBe(0);
+
+    const event = await prisma.domainEvent.findFirstOrThrow({
+      where: { subjectId: row.id, kind: 'substitution_unavailable' },
+    });
+    expect(event.actorRole).toBe('manufacturer');
+
+    // It is an answer, so the shortage is no longer waiting on the shop.
+    const after = await match.matchRequestAgainstInventory(SHOP, RFQ);
+    expect(after?.unanswered).toBe(0);
+  });
+
+  it('refuses the declaration without a reason the buyer can act on', async () => {
+    const refused = await match.saveSubstituteSuggestions(SHOP, RFQ, [
+      {
+        rfqItemId: 'match_item_absent',
+        inventoryItemId: null,
+        justification: 'none',
+        unavailable: true,
+      },
+    ]);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.message).toMatch(/why the part cannot be sourced/);
+  });
+
+  it('takes the declaration back when the shop clears the line', async () => {
+    const cleared = await match.saveSubstituteSuggestions(SHOP, RFQ, [
+      { rfqItemId: 'match_item_short', inventoryItemId: null, justification: '' },
+    ]);
+    expect(cleared.ok).toBe(true);
+    expect(
+      await prisma.substitution.findFirst({ where: { rfqItemId: 'match_item_short' } }),
+    ).toBeNull();
+  });
+
   it('refuses any suggestion when the buyer allowed no substitutions', async () => {
     await prisma.manufacturingRequirements.update({
       where: { id: 'match_requirements' },

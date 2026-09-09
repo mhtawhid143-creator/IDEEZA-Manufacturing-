@@ -183,6 +183,7 @@ const ACTIVITY_LABEL: Readonly<Record<string, string>> = {
   substitution_suggested: 'Substitute suggested',
   substitution_approved: 'Substitute approved',
   substitution_rejected: 'Substitute rejected',
+  substitution_unavailable: 'Part cannot be supplied',
   payment_initiated: 'Payment started',
   payment_secured: 'Payment held by IDEEZA',
   payment_failed: 'Payment failed',

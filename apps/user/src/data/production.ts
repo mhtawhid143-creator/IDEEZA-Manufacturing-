@@ -144,6 +144,7 @@ const EVENT_DETAIL: Readonly<Record<string, string>> = {
   'quote.submitted': 'A quote came back.',
   'quote.accepted': 'You accepted a quote, which opened this order.',
   'substitution.suggested': 'A replacement part was suggested.',
+  'substitution.unavailable': 'The manufacturer said a part cannot be supplied.',
   'substitution.approved': 'A replacement part was approved.',
   'substitution.rejected': 'A replacement part was refused.',
   'payment.initiated': 'Payment started.',

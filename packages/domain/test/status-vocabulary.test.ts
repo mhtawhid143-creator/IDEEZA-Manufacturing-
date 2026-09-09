@@ -46,7 +46,12 @@ describe('status vocabulary', () => {
   });
 
   it('locks substitution states', () => {
-    expect(SUBSTITUTION_STATUSES).toEqual(['proposed', 'approved', 'rejected']);
+    expect(SUBSTITUTION_STATUSES).toEqual([
+      'proposed',
+      'approved',
+      'rejected',
+      'unavailable',
+    ]);
   });
 
   it('locks the order lifecycle including the awaiting-payment state', () => {

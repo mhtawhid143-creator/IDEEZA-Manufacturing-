@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import {
   Alert,
+  Badge,
   Button,
   Modal,
   Select,
@@ -32,7 +33,7 @@ export interface ShortLine {
   readonly shortfall: number;
   readonly candidates: readonly CandidateOption[];
   readonly suggestion: {
-    readonly status: 'proposed' | 'approved' | 'rejected';
+    readonly status: 'proposed' | 'approved' | 'rejected' | 'unavailable';
     readonly inventoryItemId: string | null;
     readonly suggestedPartName: string;
     readonly justification: string;
@@ -49,6 +50,16 @@ export interface MissingPartsProps {
   readonly quoteSent: boolean;
 }
 
+/**
+ * The shop's answer of last resort, as a value the select can hold (UIUX-162).
+ *
+ * It is not an inventory id and can never collide with one, because the id
+ * scheme is `prefix_base36` and this is neither. Choosing it is a positive act,
+ * which is the whole point: an unanswerable line and an unanswered one used to
+ * look identical, so the quote could not move and nothing said why.
+ */
+const NO_SUBSTITUTE = 'no-substitute-available';
+
 interface RowState {
   readonly inventoryItemId: string;
   readonly note: string;
@@ -60,7 +71,10 @@ const initialState = (lines: readonly ShortLine[]): Record<string, RowState> =>
     lines.map((line) => [
       line.rfqItemId,
       {
-        inventoryItemId: line.suggestion?.inventoryItemId ?? '',
+        inventoryItemId:
+          line.suggestion?.status === 'unavailable'
+            ? NO_SUBSTITUTE
+            : (line.suggestion?.inventoryItemId ?? ''),
         note: line.suggestion?.justification ?? '',
         noteOpen: false,
       },
@@ -109,6 +123,9 @@ export const MissingParts = ({
   const chosen = lines.filter(
     (line) => (rows[line.rfqItemId]?.inventoryItemId ?? '') !== '',
   );
+  const declared = lines.filter(
+    (line) => rows[line.rfqItemId]?.inventoryItemId === NO_SUBSTITUTE,
+  );
   const everythingAnswered = chosen.length === lines.length;
 
   const save = (): void => {
@@ -116,14 +133,15 @@ export const MissingParts = ({
     startTransition(async () => {
       const result = await saveSuggestionsAction(
         rfqId,
-        lines.map((line) => ({
-          rfqItemId: line.rfqItemId,
-          inventoryItemId:
-            (rows[line.rfqItemId]?.inventoryItemId ?? '') === ''
-              ? null
-              : (rows[line.rfqItemId]?.inventoryItemId ?? null),
-          justification: rows[line.rfqItemId]?.note ?? '',
-        })),
+        lines.map((line) => {
+          const value = rows[line.rfqItemId]?.inventoryItemId ?? '';
+          return {
+            rfqItemId: line.rfqItemId,
+            inventoryItemId: value === '' || value === NO_SUBSTITUTE ? null : value,
+            justification: rows[line.rfqItemId]?.note ?? '',
+            unavailable: value === NO_SUBSTITUTE,
+          };
+        }),
       );
 
       if (!result.saved) {
@@ -132,7 +150,12 @@ export const MissingParts = ({
       }
       push({
         title: 'Substitute suggestions saved',
-        body: 'They travel with your quote, and the buyer decides on each one.',
+        body:
+          declared.length === 0
+            ? 'They travel with your quote, and the buyer decides on each one.'
+            : `${counted(declared.length, 'part')} ${
+                declared.length === 1 ? 'is' : 'are'
+              } marked as one you cannot source. Your quote can still go out, and the buyer decides what to do about the gap.`,
         tone: 'success',
       });
       setOpen(false);
@@ -209,9 +232,11 @@ export const MissingParts = ({
                 {chosen.length} of {lines.length} answered
               </span>
               <Text tone="muted" size="xs">
-                {everythingAnswered
-                  ? 'Every line has a substitute. The buyer decides on each one.'
-                  : 'A line left without a substitute goes to the buyer as one you cannot cover.'}
+                {declared.length > 0
+                  ? `${counted(declared.length, 'line')} marked as one you cannot source. The quote still goes out with it.`
+                  : everythingAnswered
+                    ? 'Every line has a substitute. The buyer decides on each one.'
+                    : 'A line with no substitute needs one, or the answer that none exists.'}
               </Text>
             </div>
           )}
@@ -265,61 +290,82 @@ export const MissingParts = ({
                         </Text>
                         {line.suggestion !== null && (
                           <div className="mt-1">
-                            <StatusChip
-                              status={line.suggestion.status}
-                              label={
-                                line.suggestion.status === 'proposed'
-                                  ? 'Suggested to the buyer'
-                                  : line.suggestion.status === 'approved'
-                                    ? 'Buyer approved'
-                                    : 'Buyer rejected'
-                              }
-                            />
+                            {line.suggestion.status === 'unavailable' ? (
+                              // Not a suggestion, so not a status the buyer
+                              // decides: it is a declaration, and it reads as a
+                              // warning because it is the buyer's problem now.
+                              <Badge tone="warning">You cannot source this</Badge>
+                            ) : (
+                              <StatusChip
+                                status={line.suggestion.status}
+                                label={
+                                  line.suggestion.status === 'proposed'
+                                    ? 'Suggested to the buyer'
+                                    : line.suggestion.status === 'approved'
+                                      ? 'Buyer approved'
+                                      : 'Buyer rejected'
+                                }
+                              />
+                            )}
                           </div>
                         )}
                       </td>
                       <td className="px-3 py-3">
-                        {line.candidates.length === 0 ? (
-                          <Text tone="muted" size="xs">
+                        <Select
+                          aria-label={`Substitute for ${line.componentName}`}
+                          options={[
+                            ...line.candidates.map((candidate) => ({
+                              value: candidate.inventoryItemId,
+                              label: candidate.label,
+                            })),
+                            { value: NO_SUBSTITUTE, label: 'No substitute available' },
+                          ]}
+                          placeholder={
+                            line.candidates.length === 0
+                              ? 'Nothing in your stock covers this'
+                              : 'Select substitute'
+                          }
+                          value={row?.inventoryItemId ?? ''}
+                          disabled={!substitutionsAllowed || quoteSent}
+                          onChange={(event) =>
+                            set(line.rfqItemId, { inventoryItemId: event.target.value })
+                          }
+                        />
+                        {line.candidates.length === 0 && (
+                          <Text tone="muted" size="xs" className="mt-1 block">
                             Nothing in your inventory covers {line.requiredTotal} of these.
                           </Text>
-                        ) : (
-                          <>
-                            <Select
-                              aria-label={`Substitute for ${line.componentName}`}
-                              options={line.candidates.map((candidate) => ({
-                                value: candidate.inventoryItemId,
-                                label: candidate.label,
-                              }))}
-                              placeholder="Select substitute"
-                              value={row?.inventoryItemId ?? ''}
-                              disabled={!substitutionsAllowed || quoteSent}
-                              onChange={(event) =>
-                                set(line.rfqItemId, { inventoryItemId: event.target.value })
-                              }
-                            />
-                            {(row?.inventoryItemId ?? '') !== '' && (
-                              <Text tone="muted" size="xs" className="mt-1 block">
-                                {line.candidates.find(
-                                  (candidate) =>
-                                    candidate.inventoryItemId === row?.inventoryItemId,
-                                )?.detail ?? ''}
-                              </Text>
-                            )}
-                            {line.suggestion !== null && (
-                              <Text tone="muted" size="xs" className="mt-1 block">
-                                {line.suggestion.impact}
-                              </Text>
-                            )}
-                          </>
                         )}
+                        {row?.inventoryItemId === NO_SUBSTITUTE ? (
+                          <Text tone="muted" size="xs" className="mt-1 block">
+                            The quote still goes out. This line travels with it as a part
+                            you cannot supply, and the buyer decides what to do about it.
+                          </Text>
+                        ) : (
+                          (row?.inventoryItemId ?? '') !== '' && (
+                            <Text tone="muted" size="xs" className="mt-1 block">
+                              {line.candidates.find(
+                                (candidate) =>
+                                  candidate.inventoryItemId === row?.inventoryItemId,
+                              )?.detail ?? ''}
+                            </Text>
+                          )
+                        )}
+                        {line.suggestion !== null &&
+                          line.suggestion.status !== 'unavailable' && (
+                            <Text tone="muted" size="xs" className="mt-1 block">
+                              {line.suggestion.impact}
+                            </Text>
+                          )}
                       </td>
                       <td className="px-3 py-3">
                         <Tooltip
                           content={
                             noteWritten
                               ? 'The buyer reads this reason'
-                              : 'Required: why this part can stand in'
+                              : row?.inventoryItemId === NO_SUBSTITUTE
+                                ? 'Required: why the part cannot be sourced'
+                                : 'Required: why this part can stand in'
                           }
                         >
                           <Button
@@ -348,11 +394,14 @@ export const MissingParts = ({
                 className="rounded-lg border border-border-subtle bg-bg-surface-raised p-3"
               >
                 <p className="text-sm font-semibold text-text-primary">
-                  Why this stands in for {line.componentName}
+                  {rows[line.rfqItemId]?.inventoryItemId === NO_SUBSTITUTE
+                    ? `Why ${line.componentName} cannot be sourced`
+                    : `Why this stands in for ${line.componentName}`}
                 </p>
                 <Text tone="muted" size="xs" className="mt-0.5 block">
-                  The buyer&rsquo;s engineer judges the part on this. Package, ratings,
-                  and anything the change affects.
+                  {rows[line.rfqItemId]?.inventoryItemId === NO_SUBSTITUTE
+                    ? 'The buyer chooses between waiting, sourcing it themselves and taking the request elsewhere. They choose on this sentence, so say what you know: discontinued, on allocation, nothing equivalent in stock.'
+                    : 'The buyer’s engineer judges the part on this. Package, ratings, and anything the change affects.'}
                 </Text>
                 <Textarea
                   className="mt-2"

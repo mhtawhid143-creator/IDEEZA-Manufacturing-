@@ -84,6 +84,18 @@ describe('quote lifecycle', () => {
 });
 
 describe('substitution lifecycle', () => {
+  it('has nowhere to go once the shop says no substitute exists', () => {
+    // The buyer decides between substitutes; there is no substitute here to
+    // decide about, so the state is where the line ends.
+    expect(substitutionMachine.terminal).toContain('unavailable');
+    expect(() =>
+      applyTransition(substitutionMachine, 'unavailable', 'approved', undefined),
+    ).toThrow(InvalidTransitionError);
+    expect(() =>
+      applyTransition(substitutionMachine, 'proposed', 'unavailable', undefined),
+    ).toThrow(InvalidTransitionError);
+  });
+
   it('is decided once and only once', () => {
     expect(applyTransition(substitutionMachine, 'proposed', 'approved', undefined)).toBe(
       'approved',

@@ -56,6 +56,8 @@ describe('migrations apply to a clean database', () => {
       '20260902114625_tour_progress',
       '20260906104240_print_specification_detail',
       '20260906121932_inventory_part_description',
+      '20260909110000_substitution_unavailable',
+      '20260909110100_substitution_unavailable_check',
     ]);
   });
 

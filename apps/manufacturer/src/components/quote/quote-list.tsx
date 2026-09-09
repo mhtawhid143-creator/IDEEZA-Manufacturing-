@@ -14,6 +14,7 @@ import {
   StatusChip,
   Text,
 } from '@ideeza/ui';
+import { counted } from '@ideeza/domain';
 import { RowMenu } from '@/components/row-menu.js';
 
 export interface QuoteListRow {
@@ -32,6 +33,8 @@ export interface QuoteListRow {
   readonly sentOn: string;
   readonly expiresOn: string;
   readonly pendingSuggestions: number;
+  /** Lines this shop said it cannot cover, carried by the quote (UIUX-162). */
+  readonly unfulfilledParts: number;
 }
 
 const STATUS_OPTIONS = [
@@ -171,6 +174,14 @@ export const QuoteList = ({
                       : ` · ${row.pendingSuggestions} substitute${
                           row.pendingSuggestions === 1 ? '' : 's'
                         } undecided`}
+                    {/*
+                      A partly fulfillable quote is still "Quoted"; what it is
+                      short of rides alongside the status rather than becoming a
+                      seventh one (UIUX-162), which is how the other quote
+                      nuances are already carried.
+                    */}
+                    {row.unfulfilledParts > 0 &&
+                      ` · ${counted(row.unfulfilledParts, 'part')} unfulfilled`}
                   </Text>
                 </div>
               </div>

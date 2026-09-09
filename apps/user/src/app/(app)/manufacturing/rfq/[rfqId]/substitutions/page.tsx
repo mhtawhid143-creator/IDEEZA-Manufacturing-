@@ -51,12 +51,20 @@ const SubstitutionsPage = async ({
     })),
   );
   const undecided = rows.filter((row) => row.status === 'proposed');
+  // Counted apart from the suggestions, because a part nobody can supply is not
+  // a suggestion and does not hold up acceptance (UIUX-162).
+  const unsuppliable = rows.filter((row) => row.status === 'unavailable');
+  const suggested = rows.length - unsuppliable.length;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Replacement parts"
-        description={`${request.productName} · ${rows.length} suggested, ${undecided.length} undecided`}
+        description={`${request.productName} · ${suggested} suggested, ${undecided.length} undecided${
+          unsuppliable.length === 0
+            ? ''
+            : `, ${unsuppliable.length} cannot be supplied`
+        }`}
         breadcrumbs={
           <Crumbs
             items={[
@@ -81,6 +89,14 @@ const SubstitutionsPage = async ({
         {POLICY_COPY[request.substitutionPolicy] ?? request.substitutionPolicy}
         {undecided.length > 0 &&
           ' A quote cannot be accepted until every suggestion here has an answer.'}
+        {unsuppliable.length > 0 && (
+          <span className="mt-1 block">
+            {unsuppliable.length === 1 ? 'One part' : `${unsuppliable.length} parts`}{' '}
+            {unsuppliable.length === 1 ? 'has' : 'have'} no replacement on offer at all.
+            That does not block acceptance — the quote covers the rest, and what you do
+            about the gap is your call.
+          </span>
+        )}
       </Alert>
 
       {rows.length === 0 ? (
@@ -97,7 +113,7 @@ const SubstitutionsPage = async ({
           }
         />
       ) : (
-        <SubstitutionDecisions substitutions={rows} />
+        <SubstitutionDecisions substitutions={rows} rfqId={rfqId} />
       )}
 
       <Text tone="muted" size="xs">

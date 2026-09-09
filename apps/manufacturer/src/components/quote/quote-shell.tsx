@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
+import { counted } from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
@@ -224,6 +225,15 @@ export const QuoteShell = ({
           </Link>
           <Tag tone="neutral">Version {quote.version}</Tag>
         </div>
+
+        {quote.unfulfilledParts > 0 && (
+          <Alert tone="warning" title="This quote covers part of the request">
+            {counted(quote.unfulfilledParts, 'part')} on the bill of materials{' '}
+            {quote.unfulfilledParts === 1 ? 'is one' : 'are ones'} you said you cannot
+            supply. The buyer can still accept this quote — what they decide about the
+            gap is theirs, and the reason you gave is what they decide on.
+          </Alert>
+        )}
 
         {quote.pendingSuggestions > 0 && (
           <Alert tone="warning" title="Substitutes still waiting on the buyer">

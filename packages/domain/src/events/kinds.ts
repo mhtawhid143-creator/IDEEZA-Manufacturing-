@@ -27,6 +27,10 @@ export const DOMAIN_EVENT_KINDS = [
   'substitution.suggested',
   'substitution.approved',
   'substitution.rejected',
+  // The shop said it cannot cover the line at all. Recorded as an event of its
+  // own because "no substitute exists" is a different fact from a suggestion,
+  // and the buyer's feed has to be able to tell them apart.
+  'substitution.unavailable',
 
   // money in
   'payment.initiated',

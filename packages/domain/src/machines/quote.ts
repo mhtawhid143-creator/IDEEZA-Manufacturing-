@@ -73,6 +73,9 @@ export const substitutionMachine: StateMachine<SubstitutionStatus, undefined> = 
     proposed: ['approved', 'rejected'],
     approved: [],
     rejected: [],
+    // Declared by the shop, not decided by the buyer: there is no substitute to
+    // judge, so the line has nowhere left to go.
+    unavailable: [],
   },
-  terminal: ['approved', 'rejected'],
+  terminal: ['approved', 'rejected', 'unavailable'],
 };

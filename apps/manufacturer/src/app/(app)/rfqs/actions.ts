@@ -75,6 +75,8 @@ export const saveSuggestionsAction = async (
     readonly rfqItemId: string;
     readonly inventoryItemId: string | null;
     readonly justification: string;
+    /** The shop declares no substitute exists for this line (UIUX-162). */
+    readonly unavailable?: boolean;
   }[],
 ): Promise<SuggestionsState> => {
   const actor = await requireManufacturer(`/rfqs/${rfqIdInput}/substitutions`);

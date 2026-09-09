@@ -271,9 +271,17 @@ export const matchRequestAgainstInventory = async (
 
 export interface SuggestionInput {
   readonly rfqItemId: string;
-  /** The inventory row that will stand in, or null to withdraw the suggestion. */
+  /** The inventory row that will stand in, or null when none is chosen. */
   readonly inventoryItemId: string | null;
   readonly justification: string;
+  /**
+   * The shop declares it cannot cover this line at all (UIUX-162).
+   *
+   * This is what tells a deliberate "there is no substitute" apart from a line
+   * left alone: with no substitute chosen, the flag records the declaration and
+   * its absence withdraws whatever was there before.
+   */
+  readonly unavailable?: boolean;
 }
 
 export type SuggestionOutcome =
@@ -333,6 +341,12 @@ export const saveSubstituteSuggestions = async (
     readonly priceImpactMinor: number;
     readonly leadTimeImpactDays: number;
   }[] = [];
+  // Lines the shop says it cannot cover. They are written as rows too, because
+  // an answer nobody stored is not an answer.
+  const declarations: {
+    readonly line: (typeof match.lines)[number];
+    readonly justification: string;
+  }[] = [];
   const withdrawals: string[] = [];
 
   for (const input of inputs) {
@@ -342,6 +356,20 @@ export const saveSubstituteSuggestions = async (
     }
 
     if (input.inventoryItemId === null) {
+      if (input.unavailable === true) {
+        // The buyer has to decide what to do about a part nobody can supply —
+        // accept the rest, wait for stock, or take the request elsewhere — and
+        // they cannot decide that on a blank row. So the reason is required
+        // here for the same reason it is required on a suggestion.
+        if (input.justification.trim().length < 10) {
+          return {
+            ok: false,
+            message: `${line.reference}: say why the part cannot be sourced. The buyer decides what to do about it, and they decide on this sentence.`,
+          };
+        }
+        declarations.push({ line, justification: input.justification.trim() });
+        continue;
+      }
       if (line.suggestion !== null) withdrawals.push(line.suggestion.substitutionId);
       continue;
     }
@@ -387,7 +415,7 @@ export const saveSubstituteSuggestions = async (
     });
   }
 
-  if (writes.length === 0 && withdrawals.length === 0) {
+  if (writes.length === 0 && declarations.length === 0 && withdrawals.length === 0) {
     return { ok: false, message: 'Nothing was chosen, so there is nothing to save.' };
   }
 
@@ -425,7 +453,7 @@ export const saveSubstituteSuggestions = async (
     // Opened once for the whole act rather than per part: it is one
     // conversation however many replacements this visit suggests.
     const threadId =
-      writes.length === 0
+      writes.length === 0 && declarations.length === 0
         ? null
         : await ensureRecordThread(transaction, { rfqId, manufacturerId });
 
@@ -481,7 +509,56 @@ export const saveSubstituteSuggestions = async (
         await postEventCard(transaction, { threadId, eventId, at: now });
       }
     }
+
+    // A line the shop cannot cover. The row names no part and carries no
+    // impact — the check constraints in the migration refuse anything else —
+    // so what it carries is the reason, which is the whole of its content.
+    for (const declaration of declarations) {
+      const data = {
+        status: 'unavailable' as const,
+        requestedPartReference: declaration.line.reference,
+        suggestedPartName: '',
+        suggestedInventoryItemId: null,
+        technicalJustification: declaration.justification,
+        currency: match.currency,
+        priceImpactMinor: 0n,
+        leadTimeImpactDays: 0,
+        decidedAt: now,
+      };
+
+      const existing = declaration.line.suggestion;
+      const substitutionId = existing?.substitutionId ?? identifier('sub');
+      if (existing === null) {
+        await transaction.substitution.create({
+          data: { id: substitutionId, quoteId, rfqItemId: declaration.line.rfqItemId, ...data },
+        });
+      } else {
+        await transaction.substitution.update({ where: { id: substitutionId }, data });
+      }
+
+      const eventId = identifier('evt');
+      await transaction.domainEvent.create({
+        data: {
+          id: eventId,
+          kind: toDatabaseEventKind('substitution.unavailable'),
+          actorRole: 'manufacturer',
+          actorManufacturerId: manufacturerId,
+          subjectKind: 'substitution',
+          subjectId: substitutionId,
+          payload: {
+            rfqId,
+            reference: declaration.line.reference,
+            reason: declaration.justification,
+          },
+          occurredAt: now,
+        },
+      });
+
+      if (threadId !== null) {
+        await postEventCard(transaction, { threadId, eventId, at: now });
+      }
+    }
   });
 
-  return { ok: true, quoteId, saved: writes.length };
+  return { ok: true, quoteId, saved: writes.length + declarations.length };
 };

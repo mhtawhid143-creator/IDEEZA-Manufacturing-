@@ -247,6 +247,10 @@ enum SubstitutionStatus {
   proposed
   approved
   rejected
+  /// The shop declares the line cannot be covered and no substitute exists.
+  /// A check constraint keeps such a row empty of a suggested part, because a
+  /// named substitute would contradict the declaration.
+  unavailable
 }
 
 /// How a shortage raised during production was settled.
@@ -439,6 +443,7 @@ enum DomainEventKind {
   substitution_suggested
   substitution_approved
   substitution_rejected
+  substitution_unavailable
   payment_initiated
   payment_secured
   payment_failed

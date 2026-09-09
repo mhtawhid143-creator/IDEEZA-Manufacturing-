@@ -39,7 +39,14 @@ export const coverageOf = (input: CoverageInput): Coverage => {
   return { state: 'short', shortfall: input.requiredTotal - input.available };
 };
 
-/** The lines that stop a quote being priced honestly until they are answered. */
+/**
+ * The lines that stop a quote being priced honestly until they are answered.
+ *
+ * "Answered" includes a line the shop has declared it cannot cover
+ * (`SubstitutionStatus.unavailable`): that is an answer the buyer can act on,
+ * so it clears the shortage from this count even though nothing was substituted.
+ * What is not an answer is silence.
+ */
 export const unansweredShortages = (
   lines: readonly {
     readonly coverage: CoverageState;

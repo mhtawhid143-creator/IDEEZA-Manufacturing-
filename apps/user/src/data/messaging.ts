@@ -199,6 +199,7 @@ const EVENT_PREVIEW: Readonly<Record<string, string>> = {
   quote_revised: 'A quote was revised',
   quote_withdrawn: 'A quote was withdrawn',
   substitution_suggested: 'A replacement part was suggested',
+  substitution_unavailable: 'A part cannot be supplied',
   quote_accepted: 'You accepted the quote',
   order_confirmed: 'The order is confirmed',
   payment_secured: 'The payment is held',
@@ -277,6 +278,30 @@ const cardFor = (
               {
                 label: 'Decide the replacement',
                 href: `/manufacturing/rfq/${context.rfqId}/substitutions`,
+              },
+            ],
+    };
+  }
+
+  // The buyer's side of a shop declaring it cannot cover a line. They decide
+  // what to do about the gap, so the card carries the shop's reason and sends
+  // them to the quote it travels with rather than to a decision on the part
+  // itself — there is no substitute to approve.
+  if (kind === 'substitution.unavailable') {
+    return {
+      kind,
+      title: 'A part cannot be supplied',
+      rows: [
+        { label: 'Part', value: String(payload['reference'] ?? '—') },
+        { label: 'Their reason', value: String(payload['reason'] ?? '—') },
+      ],
+      actions:
+        context.rfqId === null
+          ? []
+          : [
+              {
+                label: 'The quotes on this request',
+                href: `/manufacturing/rfq/${context.rfqId}/compare`,
               },
             ],
     };

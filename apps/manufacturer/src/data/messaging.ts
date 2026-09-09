@@ -168,6 +168,7 @@ const EVENT_PREVIEW: Readonly<Record<string, string>> = {
   quote_revised: 'You revised the quote',
   quote_withdrawn: 'You withdrew the quote',
   substitution_suggested: 'You suggested a replacement part',
+  substitution_unavailable: 'You said a part cannot be supplied',
   quote_accepted: 'The buyer accepted your quote',
   order_confirmed: 'The money is held — you can start',
   payment_secured: 'The money is held — you can start',
@@ -292,6 +293,22 @@ const cardFor = (
         { label: 'Asked for', value: String(payload['reference'] ?? '—') },
         { label: 'You offered', value: String(payload['suggestedPartName'] ?? '—') },
         { label: 'Price impact', value: money(payload['priceImpactMinor']) },
+      ],
+      actions:
+        context.rfqId === null
+          ? []
+          : [{ label: 'The parts on this request', href: `/rfqs/${context.rfqId}/bom` }],
+    };
+  }
+
+  if (kind === 'substitution.unavailable') {
+    return {
+      kind,
+      title: 'You said a part cannot be supplied',
+      tone: 'neutral',
+      rows: [
+        { label: 'Asked for', value: String(payload['reference'] ?? '—') },
+        { label: 'Your reason', value: String(payload['reason'] ?? '—') },
       ],
       actions:
         context.rfqId === null

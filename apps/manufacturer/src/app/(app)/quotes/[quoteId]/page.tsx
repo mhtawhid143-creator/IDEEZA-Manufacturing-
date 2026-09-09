@@ -66,6 +66,15 @@ const QuoteDetailPage = async ({
                   ? 'None'
                   : `${quote.suggestions.length} · ${quote.pendingSuggestions} undecided`,
             },
+            // Named on the quote itself, because a shop revising a quote needs
+            // to know what it already told the buyer it could not supply.
+            {
+              label: 'Parts you cannot supply',
+              value:
+                quote.unfulfilledParts === 0
+                  ? 'None'
+                  : counted(quote.unfulfilledParts, 'part'),
+            },
             { label: 'Sent', value: day(quote.submittedAt) },
             { label: 'Valid until', value: day(quote.expiresAt) },
             {

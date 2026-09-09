@@ -162,6 +162,7 @@ const QuotesPage = async ({
               sentOn: day(row.submittedAt),
               expiresOn: day(row.expiresAt),
               pendingSuggestions: row.pendingSuggestions,
+              unfulfilledParts: row.unfulfilledParts,
             }))}
           />
         </div>

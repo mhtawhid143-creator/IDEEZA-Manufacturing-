@@ -774,7 +774,9 @@ const main = async () => {
       'it says how many lines are answered, and what happens to the rest',
       (await visible(shortage.getByText(/\d+ of \d+ answered/))) &&
         (await visible(
-          shortage.getByText(/goes to the buyer as one you cannot cover|decides on each one/),
+          shortage.getByText(
+            /needs one, or the answer that none exists|decides on each one|cannot source/,
+          ),
         )),
       (await shortage.getByText(/\d+ of \d+ answered/).first().textContent()) ?? '',
     );
@@ -789,6 +791,36 @@ const main = async () => {
       (driverOptions[1] ?? '').includes('DRV-8323RS'),
       driverOptions.join(' | ').slice(0, 140),
     );
+
+    // ------------- UIUX-162: the answer for a line no substitute can cover
+    check(
+      'every line can also be answered with “no substitute available”',
+      (driverOptions.at(-1) ?? '') === 'No substitute available',
+      driverOptions.at(-1) ?? '',
+    );
+
+    await shortage
+      .getByLabel('Substitute for DRV8353 gate driver')
+      .selectOption({ label: 'No substitute available' });
+    check(
+      'choosing it says the quote still goes out, and who decides the gap',
+      await visible(
+        shortage.getByText('the buyer decides what to do about it', { exact: false }),
+      ),
+    );
+    const unavailableRow = shortage
+      .getByRole('row')
+      .filter({ hasText: 'DRV8353 gate driver' });
+    await unavailableRow.getByRole('button', { name: /Add note|View note/ }).click();
+    // The heading of the note panel, not the tooltip that carries the same
+    // words while hidden — the hidden one would pass without the panel opening.
+    check(
+      'and it asks why the part cannot be sourced, not why one stands in',
+      await visible(
+        shortage.getByText('Why DRV8353 gate driver cannot be sourced'),
+      ),
+    );
+    await unavailableRow.getByRole('button', { name: /Add note|View note/ }).click();
 
     // A substitute with no reason the buyer could judge is refused.
     await shortage
