@@ -1,5 +1,11 @@
 import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
-import { QUOTE_STATUSES, type QuoteStatus } from '@ideeza/domain';
+import {
+  counted,
+  QUOTE_LIFECYCLE,
+  QUOTE_LIFECYCLE_LABEL,
+  type QuoteLifecycle,
+} from '@ideeza/domain';
+import { QuoteCards } from '@/components/quote/quote-cards.js';
 import { QuoteList } from '@/components/quote/quote-list.js';
 import { listQuotes, quoteCounters } from '@/data/quotes.js';
 import { requireManufacturer } from '@/lib/auth.js';
@@ -10,23 +16,14 @@ const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);
 
 
-/** The shop's own word for where its quote stands. */
-const STATUS_LABEL: Readonly<Record<string, string>> = {
-  draft: 'Draft',
-  submitted: 'With the buyer',
-  revision_requested: 'Revision asked for',
-  revised: 'Revised',
-  accepted: 'Accepted',
-  rejected: 'Not chosen',
-  expired: 'Expired',
-  withdrawn: 'Withdrawn',
-};
-
-const statusFilter = (value: string | undefined): QuoteStatus | 'all' | 'expired' => {
+// The five the list is partitioned into, plus the alert card's own filter
+// (UIUX-177, UIUX-180). The words come from the domain so this page and the
+// request inbox cannot drift apart again.
+const statusFilter = (value: string | undefined): QuoteLifecycle | 'all' | 'action' => {
   if (value === undefined) return 'all';
-  if (value === 'expired') return 'expired';
-  return (QUOTE_STATUSES as readonly string[]).includes(value)
-    ? (value as QuoteStatus)
+  if (value === 'action') return 'action';
+  return (QUOTE_LIFECYCLE as readonly string[]).includes(value)
+    ? (value as QuoteLifecycle)
     : 'all';
 };
 
@@ -40,28 +37,6 @@ const pageNumber = (value: string | undefined): number => {
   const parsed = Number(value ?? '1');
   return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
 };
-
-const Counter = ({
-  value,
-  label,
-  note,
-}: {
-  readonly value: number;
-  readonly label: string;
-  readonly note: string;
-}) => (
-  <Card>
-    <p data-numeric className="text-3xl font-semibold tracking-near text-text-primary">
-      {value}
-    </p>
-    <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
-      {label}
-    </Text>
-    <Text tone="muted" size="xs" className="mt-0.5 block">
-      {note}
-    </Text>
-  </Card>
-);
 
 /**
  * Quotes: what this shop has answered, and what became of it.
@@ -105,35 +80,45 @@ const QuotesPage = async ({
         description="Everything you have answered, and what the buyer did with it."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Counter
-          value={counters.total}
-          label="Quotes sent"
-          note="Every quote your shop has sent"
-        />
-        <Counter
-          value={counters.live}
-          label="With the buyer"
-          note={
-            counters.revisionRequested === 0
-              ? 'Still open for a decision'
-              : `${counters.revisionRequested} waiting on a revision from you`
-          }
-        />
-        <Counter
-          value={counters.accepted}
-          label="Accepted"
-          note="Turned into an order"
-        />
-        <Counter
-          value={counters.rejected + counters.expired}
-          label="Closed without an order"
-          note={`${counters.rejected} not chosen · ${counters.expired} expired`}
-        />
-      </div>
+      {/*
+        Four decisions rather than one card per status (UIUX-179), and pressing
+        one is the filter (UIUX-180).
+      */}
+      <QuoteCards
+        currency={counters.currency}
+        openCount={counters.live}
+        openValueMajor={major(counters.openValueMinor)}
+        expiringSoon={counters.expiringSoon}
+        requiringAction={counters.requiringAction}
+        revisionRequested={counters.revisionRequested}
+        acceptedCount={counters.accepted}
+        wonValueMajor={major(counters.wonValueMinor)}
+        winRate={counters.winRate}
+        decided={counters.accepted + counters.rejected}
+      />
+
+      {/*
+        Where the counts are measured, said once (UIUX-180). Leaving it
+        unstated means a card and the table disagreeing cannot be told from a
+        bug.
+      */}
+      <Text tone="muted" size="xs">
+        The four counts above are everything your shop has ever sent. The dates
+        below narrow the table only.
+      </Text>
 
       <Card padded={false} data-tour="quote-list">
         <div className="flex flex-col gap-4 p-4 md:p-6">
+          {/*
+            The denominator, beside the thing it is a denominator for
+            (UIUX-179). It was a card, which gave a quarter of the page's best
+            space to a number with no period, no trend and nothing to press.
+          */}
+          <Text tone="muted" size="sm">
+            Showing {quotes.rows.length} of {counted(counters.total, 'quote')} you have
+            sent
+            {status === 'all' ? '' : ` · ${quotes.total} match this filter`}
+          </Text>
           <QuoteList
             page={quotes.page}
             pageCount={quotes.pageCount}
@@ -154,10 +139,9 @@ const QuotesPage = async ({
               landedTotalMajor: major(row.landedTotalMinor),
               currency: row.currency,
               status: row.status,
-              statusLabel:
-                row.expired && row.status !== 'accepted'
-                  ? 'Expired'
-                  : (STATUS_LABEL[row.status] ?? row.status),
+              lifecycle: row.lifecycle,
+              statusLabel: QUOTE_LIFECYCLE_LABEL[row.lifecycle],
+              reason: row.reason,
               expired: row.expired,
               sentOn: day(row.submittedAt),
               expiresOn: day(row.expiresAt),

@@ -3,8 +3,12 @@ import {
   PACKAGE_KIND_LABEL,
   packageKindsIncluding,
   quoteCostKindsFor,
+  quoteLifecycle,
+  quoteReason,
   requestLifecycle,
   type QuoteCostKind,
+  type QuoteLifecycle,
+  type QuoteReason,
   type RequestLifecycle,
   asId,
   declineReasonLabel,
@@ -410,9 +414,15 @@ export interface RequestDetail {
     readonly id: string;
     readonly status: string;
     readonly submittedAt: Date | null;
+    readonly unitPriceMinor: number;
     readonly totalPriceMinor: number;
     readonly leadTimeDays: number;
     readonly expiresAt: Date;
+    /** Which of the five it reads as, and why it wants attention (UIUX-176). */
+    readonly lifecycle: QuoteLifecycle;
+    readonly reason: QuoteReason | null;
+    /** Whether it can still be revised or taken off the table. */
+    readonly changeable: boolean;
   } | null;
   /** Substitute suggestions prepared but not sent, on this shop's draft quote. */
   readonly draftSuggestionCount: number;
@@ -635,9 +645,24 @@ export const getRoutedRequest = async (
             id: myQuote.id,
             status: myQuote.status,
             submittedAt: myQuote.submittedAt,
+            unitPriceMinor: Number(myQuote.unitPriceMinor),
             totalPriceMinor: Number(myQuote.totalPriceMinor),
             leadTimeDays: myQuote.leadTimeDays,
             expiresAt: myQuote.expiresAt,
+            lifecycle: quoteLifecycle({
+              status: myQuote.status,
+              expired: myQuote.expiresAt.getTime() < Date.now(),
+            }),
+            reason: quoteReason({
+              status: myQuote.status,
+              expiresAt: myQuote.expiresAt,
+              expired: myQuote.expiresAt.getTime() < Date.now(),
+              now: new Date(),
+            }),
+            changeable:
+              myQuote.status === 'submitted' ||
+              myQuote.status === 'revised' ||
+              myQuote.status === 'revision_requested',
           },
     draftSuggestionCount: draftQuote?._count.substitutions ?? 0,
     declineReason: recipient.declineReason,

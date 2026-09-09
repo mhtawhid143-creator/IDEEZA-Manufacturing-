@@ -10,11 +10,15 @@ import {
   quoteGoodsTotalMinor,
   quoteHasExpired,
   quoteLandedTotalMinor,
+  quoteLifecycle,
+  quoteReason,
   quoteMachine,
   rfqRecipientMachine,
   type ManufacturerId,
   type QuoteCostKind,
   type QuoteId,
+  type QuoteLifecycle,
+  type QuoteReason,
   type QuoteStatus,
   type RfqId,
   type SubstitutionStatus,
@@ -32,6 +36,9 @@ export interface QuoteRow {
   readonly buyerName: string;
   readonly status: QuoteStatus;
   readonly expired: boolean;
+  /** Which of the five it is shown as, and why it needs attention (UIUX-177). */
+  readonly lifecycle: QuoteLifecycle;
+  readonly reason: QuoteReason | null;
   readonly quantity: number;
   readonly currency: string;
   readonly unitPriceMinor: number;
@@ -53,17 +60,53 @@ export interface QuoteRow {
   readonly orderId: string | null;
 }
 
+/**
+ * The four decisions the quotes page is read for (UIUX-179), plus what the
+ * removed cards' numbers moved to.
+ *
+ * Deliberately not one count per status: four slots against five states can
+ * only ever be an arbitrary subset, and the subset that matters is the one a
+ * shop can act on. `total` stays, but as a denominator beside the table rather
+ * than a card — it is lifetime, has no period and nothing to press.
+ */
 export interface QuoteCounters {
   readonly total: number;
+  /** Open and awaiting a buyer decision. */
   readonly live: number;
+  /** What those open quotes are worth, landed, if every one were accepted. */
+  readonly openValueMinor: number;
+  /** Open quotes whose validity runs out within the shared window. */
+  readonly expiringSoon: number;
+  /** Open quotes waiting on this shop: a revision asked, or a clock running out. */
+  readonly requiringAction: number;
+  readonly revisionRequested: number;
   readonly accepted: number;
+  /** What the accepted quotes were worth. */
+  readonly wonValueMinor: number;
   readonly rejected: number;
   readonly expired: number;
-  readonly revisionRequested: number;
+  readonly withdrawn: number;
+  /**
+   * Accepted over decided, never over submitted.
+   *
+   * A quote still with the buyer is silence, not a loss — the same rule the
+   * dashboard's win rate uses, so the two cannot disagree. Null when nothing
+   * has been decided, because a shop with no decisions has no rate rather than
+   * a rate of zero.
+   */
+  readonly winRate: number | null;
+  readonly currency: string;
 }
 
 export interface QuoteFilters {
-  readonly status?: QuoteStatus | 'all' | 'expired';
+  /**
+   * One of the five the list is partitioned into, or `action` (UIUX-180).
+   *
+   * `action` is not a status: it is the open quotes with a reason on them, and
+   * it is what the alert card above the table filters to. Keeping it out of the
+   * status set is what stops a reason being promoted into a sixth state.
+   */
+  readonly status?: QuoteLifecycle | 'all' | 'action';
   readonly search?: string;
   /** Submitted on or after this date, from the design's date-range control. */
   readonly from?: Date;
@@ -107,12 +150,27 @@ export const listQuotes = async (
   const pageSize = filters.pageSize ?? 10;
   const status = filters.status ?? 'all';
 
+  // The five displayed states are not stored states: "quoted" is a submitted or
+  // revised quote whose clock has not run out, and "expired" is a fact about the
+  // clock rather than a column. So the narrowing that SQL can do is done here
+  // and the rest is done on the rows, which is why `total` is counted from the
+  // filtered set below rather than by the database (UIUX-177, UIUX-180).
+  const stored: readonly QuoteStatus[] =
+    status === 'quoted' || status === 'action'
+      ? ['submitted', 'revised', 'revision_requested']
+      : status === 'accepted'
+        ? ['accepted']
+        : status === 'declined'
+          ? ['rejected']
+          : status === 'withdrawn'
+            ? ['withdrawn']
+            : status === 'expired'
+              ? ['submitted', 'revised', 'revision_requested', 'expired']
+              : [];
+
   const where = {
     manufacturerId,
-    status:
-      status === 'all' || status === 'expired'
-        ? { not: 'draft' as const }
-        : (status as QuoteStatus),
+    status: stored.length === 0 ? { not: 'draft' as const } : { in: [...stored] },
     ...(filters.from === undefined && filters.to === undefined
       ? {}
       : {
@@ -132,17 +190,32 @@ export const listQuotes = async (
         }),
   };
 
-  const total = await database().quote.count({ where });
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const page = Math.min(Math.max(1, filters.page ?? 1), pageCount);
-
-  const rows = await database().quote.findMany({
+  // Read whole and then narrowed, because the last step of the filter is a
+  // judgement about the clock. The set is one shop's own quotes, so it is
+  // bounded by the shop rather than by the page.
+  const all = await database().quote.findMany({
     where,
     include: listInclude,
     orderBy: [{ submittedAt: 'desc' }, { createdAt: 'desc' }],
-    skip: (page - 1) * pageSize,
-    take: pageSize,
   });
+
+  const matches = all.filter((row) => {
+    const expired = quoteHasExpired(row, now);
+    const state = quoteLifecycle({ status: row.status, expired });
+    if (status === 'action') {
+      return (
+        state === 'quoted' &&
+        quoteReason({ status: row.status, expiresAt: row.expiresAt, expired, now }) !== null
+      );
+    }
+    if (status === 'all') return true;
+    return state === status;
+  });
+
+  const total = matches.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, filters.page ?? 1), pageCount);
+  const rows = matches.slice((page - 1) * pageSize, page * pageSize);
 
   const mapped = rows.map((row) => ({
     quoteId: asId<QuoteId>(row.id),
@@ -151,6 +224,13 @@ export const listQuotes = async (
     buyerName: row.rfq.buyer.displayName,
     status: row.status,
     expired: quoteHasExpired(row, now),
+    lifecycle: quoteLifecycle({ status: row.status, expired: quoteHasExpired(row, now) }),
+    reason: quoteReason({
+      status: row.status,
+      expiresAt: row.expiresAt,
+      expired: quoteHasExpired(row, now),
+      now,
+    }),
     quantity: row.quantity,
     currency: row.currency,
     unitPriceMinor: Number(row.unitPriceMinor),
@@ -176,15 +256,11 @@ export const listQuotes = async (
     orderId: row.order?.id ?? null,
   }));
 
-  // "Expired" is a fact about the clock rather than a stored status, so it is
-  // filtered after the rows are read and their expiry judged.
-  const visible = status === 'expired' ? mapped.filter((row) => row.expired) : mapped;
-
   return {
-    rows: visible,
-    total: status === 'expired' ? visible.length : total,
+    rows: mapped,
+    total,
     page,
-    pageCount: status === 'expired' ? 1 : pageCount,
+    pageCount,
   };
 };
 
@@ -194,23 +270,65 @@ export const quoteCounters = async (
 ): Promise<QuoteCounters> => {
   const rows = await database().quote.findMany({
     where: { manufacturerId, status: { not: 'draft' } },
-    select: { status: true, expiresAt: true },
+    select: {
+      status: true,
+      expiresAt: true,
+      currency: true,
+      totalPriceMinor: true,
+      shippingEstimateMinor: true,
+      toolingSetupCostMinor: true,
+    },
   });
 
   const count = (status: QuoteStatus): number =>
     rows.filter((row) => row.status === status).length;
 
+  // Read through the same function the rows and the filter read, so a card and
+  // the pill on a row it points at cannot disagree about where a quote is.
+  const stateOf = (row: (typeof rows)[number]): QuoteLifecycle =>
+    quoteLifecycle({ status: row.status, expired: quoteHasExpired(row, now) });
+
+  const landed = (row: (typeof rows)[number]): number =>
+    Number(row.totalPriceMinor) +
+    Number(row.shippingEstimateMinor ?? 0n) +
+    Number(row.toolingSetupCostMinor ?? 0n);
+
+  const open = rows.filter((row) => stateOf(row) === 'quoted');
+  const won = rows.filter((row) => stateOf(row) === 'accepted');
+  const declined = rows.filter((row) => stateOf(row) === 'declined');
+  const attention = open.filter(
+    (row) =>
+      quoteReason({
+        status: row.status,
+        expiresAt: row.expiresAt,
+        expired: quoteHasExpired(row, now),
+        now,
+      }) !== null,
+  );
+  const decided = won.length + declined.length;
+
   return {
     total: rows.length,
-    live: rows.filter(
+    live: open.length,
+    openValueMinor: open.reduce((sum, row) => sum + landed(row), 0),
+    expiringSoon: open.filter(
       (row) =>
-        (row.status === 'submitted' || row.status === 'revised') &&
-        !quoteHasExpired(row, now),
+        quoteReason({
+          status: row.status,
+          expiresAt: row.expiresAt,
+          expired: quoteHasExpired(row, now),
+          now,
+        }) === 'expiring',
     ).length,
-    accepted: count('accepted'),
-    rejected: count('rejected'),
-    expired: rows.filter((row) => quoteHasExpired(row, now)).length,
+    requiringAction: attention.length,
     revisionRequested: count('revision_requested'),
+    accepted: won.length,
+    wonValueMinor: won.reduce((sum, row) => sum + landed(row), 0),
+    rejected: declined.length,
+    expired: rows.filter((row) => stateOf(row) === 'expired').length,
+    withdrawn: rows.filter((row) => stateOf(row) === 'withdrawn').length,
+    winRate: decided === 0 ? null : won.length / decided,
+    currency: rows[0]?.currency ?? 'USD',
   };
 };
 
@@ -332,6 +450,13 @@ export const getQuote = async (
 
   const expired = quoteHasExpired(row, now);
   const live = row.status === 'submitted' || row.status === 'revised';
+  const lifecycle = quoteLifecycle({ status: row.status, expired });
+  const reason = quoteReason({
+    status: row.status,
+    expiresAt: row.expiresAt,
+    expired,
+    now,
+  });
 
   return {
     quoteId: asId<QuoteId>(row.id),
@@ -427,6 +552,8 @@ export const getQuote = async (
       requirement: entry.requirement,
       capability: entry.capability,
     })),
+    lifecycle,
+    reason,
     quotedAgainstLockedAt: row.quotedAgainstLockedAt,
     specLockedAt: row.rfq.requirements.lockedAt,
     revisable: live && !expired,

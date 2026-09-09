@@ -10,11 +10,30 @@ import {
   Input,
   Pagination,
   SearchInput,
-  Select,
   StatusChip,
   Text,
 } from '@ideeza/ui';
-import { counted } from '@ideeza/domain';
+import {
+  counted,
+  QUOTE_REASON_LABEL,
+  type QuoteLifecycle,
+  type QuoteReason,
+} from '@ideeza/domain';
+
+/**
+ * The pill's tone per state (UIUX-183).
+ *
+ * One pill per row, and the reason a row needs attention sits under it as a
+ * caption rather than a second badge — two badges of equal weight make a reader
+ * decide which is the status, which is the thing the pill is for.
+ */
+const QUOTE_LIFECYCLE_STATUS: Readonly<Record<QuoteLifecycle, string>> = {
+  quoted: 'submitted',
+  accepted: 'accepted',
+  declined: 'rejected',
+  expired: 'expired',
+  withdrawn: 'withdrawn',
+};
 import { RowMenu } from '@/components/row-menu.js';
 
 export interface QuoteListRow {
@@ -28,7 +47,10 @@ export interface QuoteListRow {
   readonly landedTotalMajor: string;
   readonly currency: string;
   readonly status: string;
+  /** Which of the five it reads as, and why it needs attention (UIUX-177). */
+  readonly lifecycle: QuoteLifecycle;
   readonly statusLabel: string;
+  readonly reason: QuoteReason | null;
   readonly expired: boolean;
   readonly sentOn: string;
   readonly expiresOn: string;
@@ -37,16 +59,6 @@ export interface QuoteListRow {
   readonly unfulfilledParts: number;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'all', label: 'Any status' },
-  { value: 'submitted', label: 'With the buyer' },
-  { value: 'revised', label: 'Revised' },
-  { value: 'revision_requested', label: 'Revision asked for' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'rejected', label: 'Not chosen' },
-  { value: 'withdrawn', label: 'Withdrawn' },
-  { value: 'expired', label: 'Expired' },
-];
 
 /**
  * The quotes this shop has sent, and the two filters the design gives: a status
@@ -112,13 +124,6 @@ export const QuoteList = ({
         </form>
 
         <div className="flex flex-wrap items-end gap-3">
-          <FormField label="Status" labelHidden className="min-w-[170px]">
-            <Select
-              options={STATUS_OPTIONS}
-              value={params.get('status') ?? 'all'}
-              onChange={(event) => apply({ status: event.target.value })}
-            />
-          </FormField>
           <FormField label="Sent from" className="min-w-[150px]">
             <Input
               type="date"
@@ -213,10 +218,28 @@ export const QuoteList = ({
             id: 'status',
             header: 'Status',
             cell: (row) => (
-              <StatusChip
-                status={row.expired && row.status === 'submitted' ? 'expired' : row.status}
-                label={row.statusLabel}
-              />
+              <div>
+                {/*
+                  One pill, always. A reason can only exist while a quote is
+                  still quoted — every other state is terminal — so it is drawn
+                  as a ring and a dot on that same pill rather than a second
+                  badge of equal weight. Two badges make the eye decide which
+                  one is the status, which is what the column is for.
+                */}
+                <StatusChip
+                  status={QUOTE_LIFECYCLE_STATUS[row.lifecycle]}
+                  label={row.statusLabel}
+                  withDot={row.reason !== null}
+                  className={
+                    row.reason === null ? undefined : 'ring-2 ring-border-warning'
+                  }
+                />
+                {row.reason !== null && (
+                  <Text tone="muted" size="xs" className="mt-0.5 block">
+                    {QUOTE_REASON_LABEL[row.reason]}
+                  </Text>
+                )}
+              </div>
             ),
           },
           {

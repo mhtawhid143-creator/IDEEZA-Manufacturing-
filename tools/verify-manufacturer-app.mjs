@@ -1251,9 +1251,36 @@ const main = async () => {
     check(
       'the rail reaches the quotes this shop has sent',
       (await visible(page.getByRole('heading', { name: 'My Quotes' }))) &&
-        (await visible(page.getByText('Quotes sent').first())) &&
-        (await visible(page.getByText('With the buyer').first())),
+        (await visible(page.getByText('Quoted', { exact: true }).first())) &&
+        (await visible(page.getByText('Quote win rate'))),
     );
+    // ------- UIUX-179: four decisions, with the money and the rate on them
+    check(
+      'the row above the table reads as the funnel, with value and a rate',
+      (await visible(page.getByText('Requiring action'))) &&
+        (await visible(page.getByText(/USD .* open/))) &&
+        (await visible(page.getByText(/USD .* won/))) &&
+        (await page.getByText('Quotes sent', { exact: true }).count()) === 0,
+      (await page.getByText(/USD .* open/).first().textContent()) ?? '',
+    );
+    check(
+      'the lifetime count is beside the table, not a card',
+      await visible(page.getByText(/Showing \d+ of \d+ quotes you have sent/)),
+    );
+    // ------- UIUX-180: the cards are the filter, and the dropdown is gone
+    check(
+      'there is no second control on the same axis',
+      (await page.getByLabel('Status').count()) === 0,
+    );
+    await page.getByRole('button', { name: /Accepted/ }).first().click();
+    await page.waitForURL(/status=accepted/, { timeout: 15_000 }).catch(() => undefined);
+    check(
+      'pressing a card filters the table and says it is filtering',
+      /status=accepted/.test(page.url()) &&
+        (await visible(page.getByText('Filtering the table · press to clear'))),
+      page.url(),
+    );
+    await page.goto(`${base}/quotes`, { waitUntil: 'networkidle' });
     check(
       'the quote is in the list with its price and its state',
       (await visible(page.getByRole('link', { name: 'Rover Motor Driver v3' }))) &&
@@ -1265,6 +1292,20 @@ const main = async () => {
     check(
       'the status filter narrows the list',
       (await page.getByRole('link', { name: 'Rover Motor Driver v3' }).count()) === 0,
+    );
+    // ------- UIUX-177: one vocabulary, and a revision is not a status
+    await page.goto(`${base}/quotes`, { waitUntil: 'networkidle' });
+    const quoteStates = await page
+      .getByRole('table', { name: 'Quotes your shop has sent' })
+      .getByText(/^(Quoted|Accepted|Declined by the buyer|Expired|Withdrawn)$/)
+      .count();
+    check(
+      'every row reads as one of the five, in the settled words',
+      quoteStates >= 1 &&
+        (await page.getByText('Pending', { exact: true }).count()) === 0 &&
+        (await page.getByText('Revised', { exact: true }).count()) === 0 &&
+        (await page.getByText('Not chosen', { exact: true }).count()) === 0,
+      `${quoteStates} rows carry one of the five`,
     );
 
     // A draft is not a quote anybody has answered, so it is not in the list.
@@ -1278,8 +1319,21 @@ const main = async () => {
     await page.goto(`${base}/rfqs/mfrfix_rfq_driver`, { waitUntil: 'networkidle' });
     check(
       'a request that has been quoted shows the quote instead of the form',
-      (await visible(page.getByText('You quoted USD', { exact: false }))) &&
+      (await visible(page.getByText('Your quote', { exact: true }))) &&
         (await page.getByRole('button', { name: 'Submit quote' }).count()) === 0,
+    );
+    // ------- UIUX-176: what was sent is read back beside the buyer's ask, and
+    // the way to change or withdraw it is named rather than hidden.
+    check(
+      'the quoted state reads back the price, the unit price and the dates',
+      (await visible(page.getByText(/USD .* per unit/))) &&
+        (await visible(page.getByText(/to make · sent/))) &&
+        (await visible(page.getByRole('link', { name: 'Revise or withdraw it' }))),
+      (await page.getByText(/USD .* per unit/).first().textContent()) ?? '',
+    );
+    check(
+      'and the buyer’s own figure is still labelled as theirs',
+      await visible(page.getByText('Buyer’s target')),
     );
 
     // ----- UIUX-113/108/111 (MFG-08/03/06): one production panel, four stages
@@ -2113,7 +2167,25 @@ const main = async () => {
       // not that answer.
       for (let attempt = 0; attempt < 3; attempt += 1) {
         await page.goto(`${base}${list.path}`, { waitUntil: 'networkidle' });
-        await page.locator('tbody tr button', { hasText: '⋮' }).first().click();
+        // `networkidle` says the requests are done, not that React has taken
+        // over the markup. A menu item pressed in that gap is a plain anchor
+        // inside a popover the client has not adopted yet, and the press can be
+        // swallowed by the menu closing itself. The question this check asks is
+        // "does this menu go anywhere", so it waits for the page to be its own
+        // client before asking.
+        await page.waitForLoadState('load');
+        await page.waitForTimeout(750);
+        // Centred, not scrolled into view. The navbar is sticky, so a kebab the
+        // page brings to the top of itself sits underneath it and no click can
+        // reach it — which is what the screenshot of a "menu that went nowhere"
+        // showed, and is the same trap `removeCard` documents above.
+        const kebab = page.locator('tbody tr button', { hasText: '⋮' }).first();
+        await kebab.waitFor({ state: 'visible', timeout: 15_000 });
+        await kebab.evaluate((element) => {
+          element.scrollIntoView({ block: 'center', inline: 'nearest' });
+        });
+        await page.waitForTimeout(200);
+        await kebab.click();
         const entry = page.getByRole('menuitem', { name: list.item }).first();
         if (attempt === 0) {
           isLink = await entry.evaluate((node) => node.tagName === 'A').catch(() => false);
@@ -2124,6 +2196,15 @@ const main = async () => {
           entry.click(),
         ]);
         if (list.lands.test(new URL(page.url()).pathname)) break;
+        // A picture of the moment it did not go. The message only ever says
+        // "still on the list", and the useful question is what the list looked
+        // like when the item was pressed.
+        await page
+          .screenshot({
+            path: join(shotDir, `menu-stuck-${list.path.replace(/[^a-z]+/gi, '')}.png`),
+            fullPage: false,
+          })
+          .catch(() => undefined);
       }
       check(
         `the ${list.path} row menu offers "${list.item}" as a link`,

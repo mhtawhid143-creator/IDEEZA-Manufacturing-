@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
+import { counted, QUOTE_LIFECYCLE_LABEL, QUOTE_REASON_LABEL } from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
@@ -100,22 +101,47 @@ export const RequestShell = ({
 
         <aside className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3">
+            {/*
+              What this shop sent, read back beside the buyer's ask rather than
+              only behind a button (UIUX-176) — and where it can still be
+              changed, so "Withdrawn" is a state the shop can actually reach.
+            */}
             {request.myQuote !== null ? (
               <>
-                <Text size="sm" className="font-semibold text-text-primary">
-                  You quoted {request.currency} {major(request.myQuote.totalPriceMinor)}
-                </Text>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Text size="sm" className="font-semibold text-text-primary">
+                    Your quote
+                  </Text>
+                  <StatusChip
+                    status={request.myQuote.lifecycle === 'quoted' ? 'submitted' : request.myQuote.lifecycle}
+                    label={QUOTE_LIFECYCLE_LABEL[request.myQuote.lifecycle]}
+                  />
+                </div>
+                <p className="text-xl font-bold text-text-primary">
+                  {request.currency} {major(request.myQuote.totalPriceMinor)}
+                </p>
                 <Text tone="muted" size="xs">
-                  {request.myQuote.leadTimeDays} days lead time · sent{' '}
+                  {request.currency} {major(request.myQuote.unitPriceMinor)} per unit ·{' '}
+                  {counted(request.myQuote.leadTimeDays, 'day')} to make · sent{' '}
                   {day(request.myQuote.submittedAt)} · valid to{' '}
                   {day(request.myQuote.expiresAt)}
                 </Text>
+                {request.myQuote.reason !== null && (
+                  <Text tone="danger" size="xs">
+                    {QUOTE_REASON_LABEL[request.myQuote.reason]}
+                  </Text>
+                )}
                 <Link
                   href={`/quotes/${request.myQuote.id}`}
                   className={buttonAppearance({ className: 'justify-center' })}
                 >
-                  View your quote
+                  {request.myQuote.changeable ? 'Revise or withdraw it' : 'View your quote'}
                 </Link>
+                <Text tone="muted" size="xs">
+                  {request.myQuote.changeable
+                    ? 'Changing the price and taking the quote off the table both happen on the quote itself, where the history of what you offered is kept.'
+                    : 'This quote is settled. Its record stays readable.'}
+                </Text>
               </>
             ) : request.status === 'declined' ? (
               <>
