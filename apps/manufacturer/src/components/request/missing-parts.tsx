@@ -13,6 +13,7 @@ import {
   Tooltip,
   useToast,
 } from '@ideeza/ui';
+import { counted } from '@ideeza/domain';
 import { saveSuggestionsAction } from '@/app/(app)/rfqs/actions.js';
 
 export interface CandidateOption {
@@ -147,14 +148,14 @@ export const MissingParts = ({
         actions={
           quoteSent ? undefined : (
             <Button variant="primary" onClick={() => setOpen(true)}>
-              Manage substitute
+              Manage substitutes
             </Button>
           )
         }
       >
-        {lines.length} {lines.length === 1 ? 'component' : 'components'}{' '}
-        {lines.length === 1 ? 'needs' : 'need'} a substitute suggestion, and the buyer has
-        to approve each one before production can start.
+        {counted(lines.length, 'component')} {lines.length === 1 ? 'needs' : 'need'} a
+        substitute suggestion, and the buyer has to approve each one before production
+        can start.
         <span className="mt-1 block font-medium text-text-primary">
           {lines
             .map((line, index) => `(${index + 1}) ${line.componentName}`)
@@ -167,10 +168,16 @@ export const MissingParts = ({
         )}
       </Alert>
 
+      {/*
+        The dialog is named after the button that opens it (UIUX-159). It read
+        "Missing parts" while the control said "Manage substitute", so a shop
+        arrived somewhere that looked like a different screen from the one it
+        had asked for.
+      */}
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Missing parts"
+        title="Manage substitutes"
         description={`Priced for ${lines[0]?.requiredTotal ?? 0} or more parts per line. ${policyLabel}`}
         size="lg"
         footer={
@@ -190,6 +197,25 @@ export const MissingParts = ({
         }
       >
         <div className="flex flex-col gap-4">
+          {/*
+            How many are answered, and what happens to the rest (UIUX-160).
+            Saving does not require every line — a shop can answer what it can
+            and come back — so the honest thing is a count and the consequence,
+            not a gate with no stated reason.
+          */}
+          {substitutionsAllowed && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-bg-surface-raised px-3 py-2">
+              <span className="text-sm font-medium text-text-primary" data-numeric>
+                {chosen.length} of {lines.length} answered
+              </span>
+              <Text tone="muted" size="xs">
+                {everythingAnswered
+                  ? 'Every line has a substitute. The buyer decides on each one.'
+                  : 'A line left without a substitute goes to the buyer as one you cannot cover.'}
+              </Text>
+            </div>
+          )}
+
           {!substitutionsAllowed && (
             <Alert tone="warning" title="This request does not allow substitutions">
               The buyer specified the parts exactly. Either source them as specified, or

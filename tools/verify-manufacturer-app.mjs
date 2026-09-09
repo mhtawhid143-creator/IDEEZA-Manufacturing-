@@ -758,12 +758,25 @@ const main = async () => {
     );
     await page.screenshot({ path: join(shotDir, 'rfq-bom.png'), fullPage: true });
 
-    await page.getByRole('button', { name: 'Manage substitute' }).click();
-    const shortage = page.getByRole('dialog', { name: 'Missing parts' });
+    await page.getByRole('button', { name: 'Manage substitutes' }).click();
+    const shortage = page.getByRole('dialog', { name: 'Manage substitutes' });
     check(
       'the shortage opens as a list of what is missing',
       (await visible(shortage)) &&
         (await visible(shortage.getByText('DRV8353 gate driver'))),
+    );
+    // ------- UIUX-159 / UIUX-160: one name for the flow, and a stated count
+    check(
+      'the dialog is named after the button that opened it',
+      (await shortage.getByText('Missing parts', { exact: true }).count()) === 0,
+    );
+    check(
+      'it says how many lines are answered, and what happens to the rest',
+      (await visible(shortage.getByText(/\d+ of \d+ answered/))) &&
+        (await visible(
+          shortage.getByText(/goes to the buyer as one you cannot cover|decides on each one/),
+        )),
+      (await shortage.getByText(/\d+ of \d+ answered/).first().textContent()) ?? '',
     );
 
     // The shop's own declared alternative is what it is offered first.
