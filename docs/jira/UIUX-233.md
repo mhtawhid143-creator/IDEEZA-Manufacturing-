@@ -484,6 +484,57 @@ session as a known flake were **orphaned embedded-postgres processes** from
 killed harness runs — thirty of them, holding the machine at half load. With
 them cleared the shop harness ran **355/355** with nothing failing.
 
+## Wave 8 — the quotes list, and the state a quote is in · done
+
+Six tickets, and one vocabulary decision underneath all of them.
+
+- **UIUX-177** — a quote now reads as one of five, from `quoteLifecycle()` in
+  the domain beside the request's own six. "With the buyer" and "Not chosen"
+  were a third variant of the settled words. `Revised` and
+  `revision_requested` stop being statuses: a quote the buyer asked to see
+  again is still a quote with the buyer. **Departure, stated on the ticket**:
+  the label is "Declined **by the buyer**", because the request side already
+  uses the bare word for *this shop* turning work down, and one word for two
+  actors' decisions is worse than a longer label. A test asserts the actor stays
+  in it.
+- **UIUX-183** — one pill per row, always, with the reason drawn as a ring and
+  a dot **on that same pill** rather than a second badge of equal weight, and
+  the reason's words as a caption under it. Safe because a reason can only exist
+  while a quote is open — every other state is terminal — and that is enforced,
+  not assumed: `quoteReason()` returns null for all four terminal states and a
+  test walks them. The flag is derived rather than stored, so it cannot disagree
+  with the pill it draws.
+- **UIUX-179** — four decisions instead of one card per status, which cannot
+  work at four slots against five states. What is open and what it is worth,
+  what is waiting on you, what you won, how often you win. The lifetime total
+  moved beside the table where a denominator belongs; the rejected count lives
+  in the filter, which was its only use. "Requiring action" is drawn as an alert
+  because it double-counts a subset of "Quoted" by design.
+- **UIUX-180** — pressing a card *is* the filter, and the dropdown that said the
+  same thing is deleted. The alert card filters to `?status=action`, which is a
+  reason and deliberately not a sixth status. **The undefined coupling is now
+  stated on the page**: the counts are all-time, the dates narrow the table.
+  Leaving that unsaid meant a card disagreeing with the table could not be told
+  from a bug.
+- **UIUX-176** — the request's quoted state reads its own quote back (total,
+  unit price, lead time, both dates) beside the buyer's target and labelled
+  apart from it, and its button says **"Revise or withdraw it"** while the quote
+  can still be changed. Withdrawn was a status with no route to it. Linked
+  rather than duplicated, per the ticket's own later update: two Withdraw
+  buttons is two places for the guard to drift.
+- **UIUX-182** — decided control by control rather than left as-is: the Status
+  dropdown is **removed**, the date range is **kept and fully specified** (what
+  it narrows, default, clear, active-filter signal, empty state), and the row
+  menu's open question is **answered** — its set is fixed because every item is
+  a reading, which is the same rule that makes the RFQ inbox's menu
+  status-aware, since that one carries acts.
+
+And a harness finding worth keeping: presses that "went nowhere" on a long list
+— a row menu here, a conversation on the buyer's side — were the control sitting
+under the sticky navbar, which is the trap `removeCard` already documents. Both
+now centre the control first, and both keep the screenshot when a press still
+does not go.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |
