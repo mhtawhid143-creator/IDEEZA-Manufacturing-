@@ -151,3 +151,42 @@ caption {
 [id] {
   scroll-margin-top: calc(var(--layout-navbar-height) + 1rem);
 }
+
+/*
+ * The three status surfaces the system has no quiet value for, in dark.
+ *
+ * A "-subtle" surface is meant to be the faintest tint of its hue: in light it
+ * is the 50 step, barely off white. The dark theme keeps that intent for
+ * `info`, `brand` and `ai`, which land on the 950 step and sit almost flat
+ * against the page. `success`, `warning` and `error` cannot: the palette
+ * ships no red-950, yellow-950 or green-950, so those three fall back to 900 —
+ * #7f1d1d and #713f12 — and a danger banner paints as a solid maroon slab with
+ * a brown one under it. That is not a subtle surface; it is the loudest thing
+ * on the screen, and it is louder than the message it carries.
+ *
+ * Until the system ships the missing step (recorded in docs/DESIGN-SYSTEM.md
+ * §11), those three tones take the raised surface in dark and keep their own
+ * coloured border, which is what was carrying the severity anyway. Nothing is
+ * invented here — both values are the system's own semantic tokens — and the
+ * words get more contrast rather than less: a title goes from 9.58:1 on the
+ * maroon to 13.98:1, its body from 5.84:1 to 9.85:1, and the border reads at
+ * 5.29:1 (red) and 9.55:1 (yellow) against the new surface, well past the 3:1
+ * a boundary needs.
+ *
+ * Light is untouched: there the 50 step is exactly right, and this is the
+ * theme's problem rather than the component's.
+ */
+[data-theme='dark'] .ui-alert[data-tone='danger'],
+[data-theme='dark'] .ui-alert[data-tone='warning'],
+[data-theme='dark'] .ui-alert[data-tone='success'] {
+  background-color: var(--color-bg-surface-raised);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Mirrors the block above, for a reader who has set no explicit theme. */
+  :root:not([data-theme]) .ui-alert[data-tone='danger'],
+  :root:not([data-theme]) .ui-alert[data-tone='warning'],
+  :root:not([data-theme]) .ui-alert[data-tone='success'] {
+    background-color: var(--color-bg-surface-raised);
+  }
+}

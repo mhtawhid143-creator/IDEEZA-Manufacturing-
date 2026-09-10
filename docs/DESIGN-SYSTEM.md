@@ -423,3 +423,37 @@ lighter scrim colour and no scrim opacity step. The veil therefore uses
 step, which is the system's 0.4. Both are shipped tokens; what is missing is a
 name for the role. A `--color-scrim-subtle`, or an `--opacity-scrim`, would let
 this stop borrowing the disabled step for something that is not disabled.
+
+**The dark theme has no quiet surface for success, warning or error.** A
+`-subtle` background is the faintest tint of its hue — in light every one of
+them is the 50 step, barely off white. In dark the system keeps that intent for
+three of them and cannot for the other three:
+
+| Token | dark value | |
+| --- | --- | --- |
+| `--color-bg-brand-subtle` | `--color-violet-950` | sits almost flat against the page |
+| `--color-bg-info-subtle`, `--color-bg-blue-subtle` | `--color-blue-950` | same |
+| `--color-bg-ai-subtle` | `--color-violet-950` | same |
+| `--color-bg-success-subtle` | `--color-green-900` | a solid block |
+| `--color-bg-warning-subtle` | `--color-yellow-900` `#713f12` | a solid block |
+| `--color-bg-error-subtle` | `--color-red-900` `#7f1d1d` | a solid block |
+
+The cause is the palette rather than the mapping: **the system ships
+`blue-950` and `violet-950` but no `red-950`, `yellow-950` or
+`green-950`**, so those three semantic tokens have nowhere quieter to point.
+The effect is worst where it matters most — a dashboard carrying an unanswered
+refund claim and an open dispute paints a maroon slab with a brown one under
+it, and the two loudest objects on the screen are the surfaces rather than the
+words on them. Upstream `main` has the same values, so this is not a stale
+pin.
+
+**What the system needs:** a 950 step for red, yellow and green, and those
+three `-subtle` tokens repointed at it in the dark theme. Nothing else
+changes; light is already right.
+
+**What this repo does meanwhile:** `base.css` gives those three tones the
+raised surface in dark and leaves their coloured border to carry the severity,
+which is what it was doing anyway. Both values are the system's own semantic
+tokens — no colour is invented — and the words gain contrast rather than lose
+it (title 9.58:1 → 13.98:1, body 5.84:1 → 9.85:1, border 5.29:1 red and 9.55:1
+yellow against the new surface). Delete that block when the step ships.

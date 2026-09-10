@@ -31,7 +31,15 @@ const TONE = {
 export const Alert = ({ tone = 'info', title, children, actions, className }: AlertProps) => (
   <div
     role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}
-    className={cn('flex flex-wrap items-start gap-3 rounded-xl border p-4', TONE[tone], className)}
+    // The tone is on the element as well as in its classes so the dark-theme
+    // correction in `base.css` can reach the three tones the system has no
+    // quiet surface for. See the note there.
+    data-tone={tone}
+    className={cn(
+      'ui-alert flex flex-wrap items-start gap-3 rounded-xl border p-4',
+      TONE[tone],
+      className,
+    )}
   >
     <div className="min-w-0 flex-1">
       <p className="text-base font-medium text-text-primary">{title}</p>
