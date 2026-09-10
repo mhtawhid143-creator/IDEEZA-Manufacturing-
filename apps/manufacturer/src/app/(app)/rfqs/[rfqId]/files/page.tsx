@@ -1,20 +1,58 @@
 import { notFound } from 'next/navigation';
-import { Alert, Card, CardHeader, EmptyState, Tag, Text } from '@ideeza/ui';
+import { Alert, Card, CardHeader, EmptyState, Icon, Tag, Text } from '@ideeza/ui';
 import {
   asId,
   counted,
+  PRODUCTION_FILE_FAMILY,
   PRODUCTION_FILE_LABEL,
   PRODUCTION_FILE_PURPOSE,
+  QUOTE_COST_FAMILY_LABEL,
   productionFileRoleOf,
   requiredProductionFiles,
+  type ProductionFileRole,
   type RfqId,
 } from '@ideeza/domain';
+import type { IconName } from '@ideeza/ui';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getRoutedRequest, markSectionViewed, type RequestFile } from '@/data/rfqs.js';
 import { requireManufacturer } from '@/lib/auth.js';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * A glyph for what the file is for, not for what format it happens to be in
+ * (UIUX-150).
+ *
+ * The review asked for colour-coded icons per format — red PDF, purple ZIP. Two
+ * departures, both deliberate. **Colour is not used**: in this portal colour
+ * means state and urgency, and this tab's own danger alert sits a few pixels
+ * below the list, so a red icon on a healthy row would compete with it. And the
+ * glyph follows the file's *role* rather than its extension, because two ZIPs
+ * on one request are a Gerber set and a 3D model, which is the distinction a
+ * shop is actually scanning for. The extension is still printed beside it.
+ */
+const ROLE_ICON: Readonly<Record<ProductionFileRole, IconName>> = {
+  gerber: 'layers',
+  drill: 'grid',
+  fabrication_drawing: 'file',
+  pick_and_place: 'board',
+  assembly_drawing: 'file',
+  panelisation: 'layers',
+  model_3d: 'cube',
+  print_specification: 'list',
+  orientation_notes: 'compass',
+  finish_specification: 'settings',
+  bom: 'parts',
+  schematic: 'board',
+  other: 'file',
+};
+
+const FAMILY_LABEL: Readonly<Record<'board' | 'printed' | 'either', string>> = {
+  board: QUOTE_COST_FAMILY_LABEL.board,
+  printed: QUOTE_COST_FAMILY_LABEL.printed,
+  either: 'Either kind of work',
+};
 
 const size = (bytes: number): string =>
   bytes >= 1_048_576
@@ -62,6 +100,23 @@ const FilesPage = async ({
     (file) => !required.some((entry) => entry.role === roleOf(file)),
   );
 
+  /*
+    Grouped by the kind of work rather than stacked flat (UIUX-150).
+
+    The review's complaint was that identical sections repeat down the page and
+    stop scaling. This portal's request is one package rather than several named
+    components, so the repetition it saw is not here — but the same scaling
+    problem arrives with file count, and the answer is the one already used for
+    the quote's costs and the shop-floor checks: group by the work, and name the
+    group only when the request holds more than one kind of it.
+  */
+  const grouped = (['board', 'printed', 'either'] as const)
+    .map((family) => ({
+      family,
+      files: request.files.filter((file) => PRODUCTION_FILE_FAMILY[roleOf(file)] === family),
+    }))
+    .filter((group) => group.files.length > 0);
+
   return (
     <RequestShell request={request} client={client} activeTab="files">
       <Card padded={false}>
@@ -83,41 +138,56 @@ const FilesPage = async ({
             />
           </div>
         ) : (
-          <ul aria-label="Production files" className="border-t border-border-subtle">
-            {request.files.map((file) => (
-              <li
-                key={file.id}
-                className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-surface-raised text-xs font-semibold text-text-tertiary"
-                  >
-                    {file.name.split('.').pop()?.slice(0, 4).toUpperCase() ?? 'FILE'}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-text-primary">
-                      {file.name}
-                    </p>
-                    <Text tone="muted" size="xs">
-                      {size(file.byteSize)} · rev {file.revision} ·{' '}
-                      {PRODUCTION_FILE_PURPOSE[roleOf(file)]}
-                    </Text>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* What it is for, read from its name (UIUX-147, UIUX-148). */}
-                  <Tag tone={roleOf(file) === 'schematic' ? 'neutral' : 'brand'}>
-                    {PRODUCTION_FILE_LABEL[roleOf(file)]}
-                  </Tag>
-                  <code className="rounded bg-bg-surface-raised px-2 py-1 text-2xs text-text-tertiary">
-                    {file.contentHash.slice(0, 12)}…
-                  </code>
-                </div>
-              </li>
+          <div className="border-t border-border-subtle">
+            {grouped.map((group) => (
+              <section key={group.family}>
+                {grouped.length > 1 && (
+                  <p className="bg-bg-page px-4 py-2 text-xs font-semibold uppercase tracking-caps text-text-tertiary md:px-6">
+                    {FAMILY_LABEL[group.family]}
+                  </p>
+                )}
+                <ul
+                  aria-label={`${FAMILY_LABEL[group.family]} files`}
+                  className="border-t border-border-subtle"
+                >
+                  {group.files.map((file) => (
+                    <li
+                      key={file.id}
+                      className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span
+                          aria-hidden
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-surface-raised text-icon-secondary"
+                        >
+                          <Icon name={ROLE_ICON[roleOf(file)]} size={18} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-text-primary">
+                            {file.name}
+                          </p>
+                          <Text tone="muted" size="xs">
+                            {file.name.split('.').pop()?.toUpperCase() ?? 'FILE'} ·{' '}
+                            {size(file.byteSize)} · rev {file.revision} ·{' '}
+                            {PRODUCTION_FILE_PURPOSE[roleOf(file)]}
+                          </Text>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* What it is for, read from its name (UIUX-147, UIUX-148). */}
+                        <Tag tone={roleOf(file) === 'schematic' ? 'neutral' : 'brand'}>
+                          {PRODUCTION_FILE_LABEL[roleOf(file)]}
+                        </Tag>
+                        <code className="rounded bg-bg-surface-raised px-2 py-1 text-2xs text-text-tertiary">
+                          {file.contentHash.slice(0, 12)}…
+                        </code>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
       </Card>
 
@@ -186,12 +256,14 @@ const FilesPage = async ({
         </Card>
       )}
 
-      <Alert tone="info" title="File contents are not served in this environment">
+      <Alert tone="info" title="No file opens in the browser here, and none pretends to">
         The platform records each file&rsquo;s name, revision, size and content hash;
-        the bytes live in the design tool the package came from. The hash is what
-        you verify against once you have the file, and it is the same hash the
-        buyer sees. What each file is <em>for</em> is read from its name, so check
-        it by eye — a name is all this build holds.
+        the bytes live in the design tool the package came from. So there is no
+        preview and no download on a row — a Gerber viewer, a 3D viewer and a PDF
+        preview all need the file itself, and a control that opened nothing would
+        be worse than this sentence (UIUX-149). The hash is what you verify a file
+        against once you do have it, and it is the same hash the buyer sees. What
+        each file is <em>for</em> is read from its name, so check it by eye.
       </Alert>
     </RequestShell>
   );

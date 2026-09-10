@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
+import { recordChain } from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
+import { CoversLine, RecordChain } from '@/components/record-chain.js';
 import { OrderActs, type StockOption } from '@/components/order/order-acts.js';
 import type { ClientProfile } from '@/data/clients.js';
 import type { OrderDetail } from '@/data/orders.js';
@@ -72,6 +74,28 @@ export const OrderShell = ({
                 {order.quantity} units · {order.currency}{' '}
                 {major(order.totalPriceMinor)} · ordered {day(order.confirmedAt)}
               </Text>
+              {/*
+                The whole chain, ending here (UIUX-208). An order is where a
+                dispute is investigated from, so this is the surface that most
+                needed a way back to the design it was made from.
+              */}
+              <div className="mt-1">
+                <RecordChain
+                  links={recordChain({
+                    projectId: order.projectId,
+                    projectName: order.productName,
+                    rfqId: order.rfqId,
+                    quoteId: order.quoteId,
+                    orderId: order.orderId,
+                  })}
+                  current="order"
+                  hrefs={{
+                    request: `/rfqs/${order.rfqId}`,
+                    quote: `/quotes/${order.quoteId}`,
+                  }}
+                />
+                <CoversLine packageLabel={order.kindLabel} />
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {order.late && <Tag tone="danger">Past the quoted date</Tag>}

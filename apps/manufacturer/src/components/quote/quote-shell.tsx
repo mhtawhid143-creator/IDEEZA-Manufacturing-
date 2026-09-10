@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
-import { counted } from '@ideeza/domain';
+import { counted, recordChain } from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
+import { CoversLine, RecordChain } from '@/components/record-chain.js';
 import { QuoteForm } from '@/components/quote/quote-form.js';
 import { WithdrawQuote } from '@/components/quote/withdraw-quote.js';
 import type { ClientProfile } from '@/data/clients.js';
@@ -67,8 +68,30 @@ export const QuoteShell = ({
 
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
-          <h1 className="text-xl font-bold text-text-primary">{quote.productName}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle pb-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-text-primary">{quote.productName}</h1>
+            {/* The whole chain, from the design to the order (UIUX-208). */}
+            <div className="mt-1">
+              <RecordChain
+                links={recordChain({
+                  projectId: quote.projectId,
+                  projectName: quote.productName,
+                  rfqId: quote.rfqId,
+                  quoteId: quote.quoteId,
+                  orderId: quote.orderId,
+                })}
+                current="quote"
+                hrefs={{
+                  request: `/rfqs/${quote.rfqId}`,
+                  ...(quote.orderId === null
+                    ? {}
+                    : { order: `/orders/${quote.orderId}` }),
+                }}
+              />
+              <CoversLine packageLabel={quote.kindLabel} />
+            </div>
+          </div>
           <StatusChip
             status={quote.expired && quote.status === 'submitted' ? 'expired' : quote.status}
             label={

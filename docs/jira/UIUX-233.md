@@ -739,6 +739,72 @@ flight, which disables every control on the page. Both now reload first — and
 `removeCard` puts the open tab back, because which tab a page is on is client
 state and a reload lands on the first one.
 
+## Wave 13 — one chain, and the last of the file tab · done
+
+The final six tickets. Four of them were one thing wearing four hats, and the
+other two were the same blocker twice.
+
+- **UIUX-208 / UIUX-146** — the review found three broken links between the
+  buyer's design and the shop's live order and read them as three copy defects.
+  They were one missing piece of infrastructure, and it is now in the domain:
+  `recordChain()` in `packages/domain/src/read/record-chain.ts`, and a strip on
+  the request, the quote and the order reading
+  **Project PRJ-… · name › Request RFQ-… › Quote QUOTE-… › Order ORDER-…**, with
+  the reader's own position marked and every earlier stage a link.
+- **Every reference is a pure function of the row's id.** There is no second
+  identifier to keep in step and nothing to allocate, so the same record prints
+  the same string on both panels and in a support conversation about either —
+  which is what "one authoritative ID scheme" actually needs. A shared sequence
+  number would have been a new thing to break.
+- **Only the stages that exist appear.** A request nobody has quoted shows two
+  links, not four with two blanks: a blank says the stage exists and is empty,
+  which is a different and untrue thing.
+- **`PRJ-…` is quoted, not linked**, and the reasoning is on UIUX-146. There is
+  nothing on the other end a manufacturer may open — the design tool is a
+  different system — and "View source project" opening the shop's own files tab
+  would be a lie about where it went. What this platform holds *of* the project
+  is already three tabs away.
+- **The snapshot question was decided long ago and is now said out loud.**
+  `lockedAt` freezes the ask, `quotedAgainstLockedAt` records which frozen
+  version a quote answered, and the order carries a checksum. The brief now
+  opens with it: *"A frozen copy of PRJ-…, taken on 2026-05-01. Anything the
+  buyer changes afterwards does not reach this request."*
+- **UIUX-154** — the per-manufacturing-type completeness check now runs where
+  the ticket asked for it: the buyer's send step, reading the **same**
+  `requiredProductionFiles()` the shop's files tab reads. It follows the
+  assembly toggle live, because asking for the parts to be placed is what makes
+  a pick-and-place file necessary. It informs and does not block: a role is read
+  from a file's *name*, and refusing to send on a filename guess would stop
+  correct requests. The summary's hardcoded **"Board"** label went with it — it
+  said that on 3D-printed enclosures too.
+- **UIUX-150** — a glyph per file, by **role rather than format** (two ZIPs on
+  one request are a Gerber set and a 3D model), and **without colour**: colour
+  means state and urgency here, and this tab's own danger alert sits a few
+  pixels below the list. The rows group by kind of work with the heading shown
+  only when there is more than one — the third place that grouping appears, so a
+  shop learns one convention rather than three.
+- **UIUX-149** — the generic "PCB & 3D layout Viewer" bar does not exist here
+  and cannot come back: what replaced it is derived per file, so it cannot claim
+  a 3D viewer for a battery pack. The viewers themselves are blocked on one
+  thing — this build records a file's name, revision, size and hash, not its
+  bytes — and the full spec is recorded on the ticket keyed to the roles the
+  build already assigns, so it is a lookup rather than a fresh classification
+  once storage lands.
+- **UIUX-207** — half built, half named. Every surface now says *what it
+  covers* ("This request covers the PCB part of that project"), which is the
+  real defect in this build: a shop could not tell one piece of a project from
+  the whole of it. True multi-product is a schema change, and the ticket carries
+  its four parts — the join, the per-component pricing invariant, the stage
+  split, and the question nobody has answered: **what an order's status is when
+  one component has shipped and another has not.** Money leaves escrow against
+  that status, so it is not a UI ticket.
+
+Verified: `pnpm run typecheck`, `pnpm run lint`, `pnpm exec vitest run --project unit`
+(595 passed, eight new on the chain), the database projects, and both harnesses —
+the shop's at **388/388**.
+
+With this, all 127 children of UIUX-233 are out of To Do.
+
 ## Every ticket
 
 | Ticket | MFG | Priority | Summary |

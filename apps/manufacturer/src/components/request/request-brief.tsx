@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Card, CardHeader, DefinitionList, Tag, Text, buttonAppearance } from '@ideeza/ui';
-import { briefRows, counted, requestReference } from '@ideeza/domain';
+import { briefRows, counted, projectReference, requestReference } from '@ideeza/domain';
 import type { RequestDetail } from '@/data/rfqs.js';
 
 const day = (value: Date | null): string =>
@@ -162,12 +162,21 @@ export const RequestBrief = ({
         </div>
       )}
 
+      {/*
+        What this request is, relative to the design it came from (UIUX-146).
+        The review asked for the snapshot-or-sync question to be decided rather
+        than left open, because the undefined case is the expensive one: a shop
+        quotes, the buyer keeps editing, and neither side knows the drawing has
+        moved. This platform freezes it, and this is where it says so.
+      */}
       <Text tone="muted" size="xs" className="mt-4 block">
-        Requirements were frozen{' '}
+        A frozen copy of {projectReference(request.projectId)}
         {request.requirementsLockedAt === null
-          ? 'not yet — the buyer can still change them'
-          : `on ${day(request.requirementsLockedAt)}, so what you quote against cannot move under you`}
-        .
+          ? ', not yet frozen — the buyer can still change it'
+          : `, taken on ${day(request.requirementsLockedAt)}`}
+        . Anything the buyer changes in the design afterwards does not reach this
+        request; it would travel as a new one, so what you quote against cannot move
+        under you.
       </Text>
     </Card>
   </>

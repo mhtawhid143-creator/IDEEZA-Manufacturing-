@@ -379,6 +379,8 @@ export interface RequestDetail {
   readonly rfqStatus: string;
   readonly open: boolean;
   readonly productName: string;
+  /** The project this was designed as, which every later record descends from. */
+  readonly projectId: string;
   readonly creatorName: string;
   readonly buyerId: UserId;
   readonly buyerName: string;
@@ -474,7 +476,7 @@ export const getRoutedRequest = async (
           package: {
             include: {
               product: {
-                select: { name: true, owner: { select: { displayName: true } } },
+                select: { id: true, name: true, owner: { select: { displayName: true } } },
               },
               files: { include: { file: true } },
             },
@@ -538,6 +540,7 @@ export const getRoutedRequest = async (
     rfqStatus: rfq.status,
     open: rfq.status === 'submitted',
     productName: rfq.package.product.name,
+    projectId: rfq.package.product.id,
     creatorName: rfq.package.product.owner.displayName,
     buyerId: asId<UserId>(rfq.buyerId),
     buyerName: rfq.buyer.displayName,

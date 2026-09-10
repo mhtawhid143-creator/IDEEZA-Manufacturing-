@@ -6,6 +6,7 @@ import {
   assertQuoteTermsUsable,
   assertRequestStillTakesQuotes,
   assertVolumePricesAnswerTheRequest,
+  PACKAGE_KIND_LABEL,
   quoteCostKindsFor,
   quoteGoodsTotalMinor,
   quoteHasExpired,
@@ -364,6 +365,9 @@ export interface QuoteRevisionView {
 }
 
 export interface QuoteDetail extends QuoteRow {
+  /** The project this descends from, and what of it this quote answers. */
+  readonly projectId: string;
+  readonly kindLabel: string;
   readonly shippingEstimateMinor: number | null;
   readonly toolingSetupCostMinor: number | null;
   readonly materialProcessNotes: string;
@@ -429,7 +433,9 @@ export const getQuote = async (
           neededBy: true,
           buyer: { select: { displayName: true } },
           _count: { select: { items: true } },
-          package: { select: { kind: true, product: { select: { name: true } } } },
+          package: {
+            select: { kind: true, product: { select: { id: true, name: true } } },
+          },
           requirements: { select: { assembly: true, lockedAt: true } },
           items: { select: { id: true } },
         },
@@ -462,6 +468,8 @@ export const getQuote = async (
     quoteId: asId<QuoteId>(row.id),
     rfqId: asId<RfqId>(row.rfqId),
     productName: row.rfq.package.product.name,
+    projectId: row.rfq.package.product.id,
+    kindLabel: PACKAGE_KIND_LABEL[row.rfq.package.kind],
     buyerName: row.rfq.buyer.displayName,
     status: row.status,
     expired,

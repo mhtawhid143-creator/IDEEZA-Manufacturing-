@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
 import {
   counted,
+  recordChain,
   QUOTE_LIFECYCLE_LABEL,
   QUOTE_REASON_LABEL,
   REVIEW_SECTION_LABEL,
@@ -12,6 +13,7 @@ import {
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
 import { HubTabs } from '@/components/hub-tabs.js';
+import { CoversLine, RecordChain } from '@/components/record-chain.js';
 import { QuoteForm } from '@/components/quote/quote-form.js';
 import { DeclineRequest } from '@/components/request/decline-request.js';
 import type { RequestDetail } from '@/data/rfqs.js';
@@ -84,8 +86,34 @@ export const RequestShell = ({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-4">
-            <h1 className="text-xl font-bold text-text-primary">{request.productName}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border-subtle pb-4">
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-text-primary">{request.productName}</h1>
+              {/*
+                Where this request sits, from the design it was drawn as to the
+                order it may become (UIUX-208). The project is quoted rather
+                than linked, and the line under it says what this request is a
+                part of (UIUX-146, UIUX-207).
+              */}
+              <div className="mt-1">
+                <RecordChain
+                  links={recordChain({
+                    projectId: request.projectId,
+                    projectName: request.productName,
+                    rfqId: request.rfqId,
+                    quoteId: request.myQuote?.id ?? null,
+                    orderId: null,
+                  })}
+                  current="request"
+                  hrefs={
+                    request.myQuote === null
+                      ? {}
+                      : { quote: `/quotes/${request.myQuote.id}` }
+                  }
+                />
+                <CoversLine packageLabel={request.kindLabel} />
+              </div>
+            </div>
             <StatusChip
               status={request.status}
               label={INBOX_LABEL[request.status] ?? request.status}

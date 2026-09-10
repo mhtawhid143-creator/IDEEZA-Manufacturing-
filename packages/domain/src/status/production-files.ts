@@ -107,6 +107,32 @@ export const productionFileRoleOf = (fileName: string): ProductionFileRole => {
   return 'other';
 };
 
+/**
+ * Which kind of work each file belongs to (UIUX-150).
+ *
+ * The same three families the rest of the portal groups by — the quote's cost
+ * lines and the shop-floor checks — so a shop learns one grouping rather than
+ * three. 'either' is not a third kind of work: a bill of materials belongs to
+ * the order rather than to the board or the print.
+ */
+export const PRODUCTION_FILE_FAMILY: Readonly<
+  Record<ProductionFileRole, 'board' | 'printed' | 'either'>
+> = Object.freeze({
+  gerber: 'board',
+  drill: 'board',
+  fabrication_drawing: 'board',
+  pick_and_place: 'board',
+  assembly_drawing: 'board',
+  panelisation: 'board',
+  model_3d: 'printed',
+  print_specification: 'printed',
+  orientation_notes: 'printed',
+  finish_specification: 'printed',
+  bom: 'either',
+  schematic: 'either',
+  other: 'either',
+});
+
 export interface ProductionFileWork {
   readonly packageKind: PackageKind;
   /** Whether the buyer asked for the parts to be placed, not just the board made. */

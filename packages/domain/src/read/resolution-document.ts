@@ -145,6 +145,17 @@ export const caseReference = (disputeId: string): string => reference('CASE', di
 /** `CLAIM-1A2B3C4D` — a refund claim, as quoted by either side. */
 export const claimReference = (refundId: string): string => reference('CLAIM', refundId);
 
+/**
+ * `PRJ-1A2B3C4D` — the buyer's design, which every later record descends from
+ * (UIUX-146).
+ *
+ * A project needs a reference of its own precisely because it also has a name:
+ * the review found a field labelled "Project Name" showing the number 14, which
+ * is what happens when one field is asked to be both. The name is the buyer's
+ * words and may change; this does not.
+ */
+export const projectReference = (productId: string): string => reference('PRJ', productId);
+
 /** `RFQ-1A2B3C4D` — a request for quotes. */
 export const requestReference = (rfqId: string): string => reference('RFQ', rfqId);
 

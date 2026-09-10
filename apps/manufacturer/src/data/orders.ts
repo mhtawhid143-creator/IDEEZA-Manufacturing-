@@ -5,6 +5,7 @@ import {
   assertProductionMayStart,
   assertStageProgression,
   counted,
+  PACKAGE_KIND_LABEL,
   isFundingSecured,
   orderMachine,
   orderSchedule,
@@ -390,6 +391,9 @@ export interface OrderAlertView {
 export interface OrderDetail extends OrderRow {
   readonly rfqId: string;
   readonly quoteId: string;
+  /** The project this descends from, and what of it this order is. */
+  readonly projectId: string;
+  readonly kindLabel: string;
   readonly buyerId: UserId;
   readonly creatorName: string;
   readonly paymentStatus: string | null;
@@ -450,7 +454,7 @@ export const getOrder = async (
             select: {
               kind: true,
               product: {
-                select: { name: true, owner: { select: { displayName: true } } },
+                select: { id: true, name: true, owner: { select: { displayName: true } } },
               },
             },
           },
@@ -601,6 +605,8 @@ export const getOrder = async (
     quoteReference:
       order.acceptedQuoteId === null ? null : quoteReference(order.acceptedQuoteId),
     productName: order.rfq.package.product.name,
+    projectId: order.rfq.package.product.id,
+    kindLabel: PACKAGE_KIND_LABEL[order.rfq.package.kind],
     creatorName: order.rfq.package.product.owner.displayName,
     buyerId: asId<UserId>(order.rfq.buyerId),
     buyerName: order.rfq.buyer.displayName,

@@ -799,6 +799,18 @@ const main = async () => {
         (await visible(page.getByText('Gerber files').first())),
     );
     // ------- UIUX-147 / UIUX-148: what the work needs, not just what arrived
+    // ---- UIUX-150 / UIUX-149: what each file is, and why none of them opens
+    check(
+      'each file row carries a glyph for what the file is for',
+      (await page.locator('ul[aria-label$="files"] svg').count()) >= 2,
+      `${await page.locator('ul[aria-label$="files"] svg').count()} glyphs`,
+    );
+    check(
+      'the tab says plainly that no file opens in the browser, and why',
+      (await visible(
+        page.getByText('No file opens in the browser here, and none pretends to'),
+      )) && (await visible(page.getByText(/a control that opened nothing would/))),
+    );
     check(
       'the tab says how many files this kind of work needs',
       await visible(page.getByText(/this kind of work needs/)),
@@ -819,7 +831,7 @@ const main = async () => {
       'no download button pretends to serve bytes this build does not hold',
       (await page.getByRole('button', { name: /download/i }).count()) === 0 &&
         (await visible(
-          page.getByText('File contents are not served in this environment'),
+          page.getByText('No file opens in the browser here, and none pretends to'),
         )),
     );
 
@@ -1957,6 +1969,35 @@ const main = async () => {
         (await page.getByText(/Waiting for In production to finish/).count()) >= 1,
       (await page.locator('ol[aria-label="Production stages"] > li').nth(5).textContent()) ?? '',
     );
+    // ---- UIUX-208 / UIUX-146: one chain, from the design to the order
+    const chain = page.getByRole('navigation', {
+      name: 'Where this sits, from the design to the order',
+    });
+    const chainWords = (await chain.first().innerText()).replace(/\s+/g, ' ');
+    check(
+      'an order says which design, request and quote it came from',
+      /PRJ-[0-9A-Z]{8}/.test(chainWords) &&
+        /RFQ-[0-9A-Z]{8}/.test(chainWords) &&
+        /QUOTE-[0-9A-Z]{8}/.test(chainWords) &&
+        /ORDER-[0-9A-Z]{8}/.test(chainWords),
+      chainWords.slice(0, 150),
+    );
+    check(
+      'and the stages before it can be opened from there',
+      (await chain.getByRole('link').count()) === 2,
+      `${await chain.getByRole('link').count()} links`,
+    );
+    check(
+      'the project is named as well as numbered',
+      /Project PRJ-[0-9A-Z]{8} · Beacon Light Board/.test(chainWords),
+      chainWords.slice(0, 90),
+    );
+    // ---- UIUX-207: what this record covers, said rather than assumed
+    check(
+      'and says which part of that project it is',
+      await visible(page.getByText(/This request covers the .* part of that project/).first()),
+    );
+
     // ---- UIUX-206: the checks under a stage are the ones this work has
     const madeOf = page.getByText('What this stage is made of').first();
     check(

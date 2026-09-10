@@ -16,6 +16,9 @@ import {
   ASSEMBLY_MODES,
   ASSEMBLY_SIDES,
   MAX_RFQ_RECIPIENTS,
+  PRODUCTION_FILE_LABEL,
+  productionFileRoleOf,
+  requiredProductionFiles,
   servicesForKind,
 } from '@ideeza/domain';
 import type { AssemblyMode, AssemblySides, QuotedService } from '@ideeza/domain';
@@ -39,6 +42,13 @@ export interface RequestQuoteFormProps {
   readonly packageLabel: string;
   readonly specChips: readonly string[];
   readonly fileCount: number;
+  /**
+   * The names of the files travelling with the request.
+   *
+   * Names, because that is what this build records — a file's bytes are not
+   * held, so what a file is *for* is read from what it is called (UIUX-147).
+   */
+  readonly fileNames: readonly string[];
   readonly bomLineCount: number;
   readonly quantity: number;
   readonly leadTimeDays: number;
@@ -105,6 +115,7 @@ export const RequestQuoteForm = ({
   draftId,
   productName,
   packageKind,
+  fileNames,
   packageLabel,
   specChips,
   fileCount,
@@ -134,6 +145,7 @@ export const RequestQuoteForm = ({
   // part cannot be fabricated as a board, so the default follows the package
   // rather than assuming there is a board in it.
   const allowedServices = servicesForKind(packageKind);
+
   const [services, setServices] = useState<readonly QuotedService[]>(() => {
     const initial: QuotedService[] = [];
     if (allowedServices.includes('pcb_fabrication')) initial.push('pcb_fabrication');
@@ -148,6 +160,27 @@ export const RequestQuoteForm = ({
   const [recipients, setRecipients] = useState<readonly RequestRecipient[]>(initialRecipients);
   const [quantity, setQuantity] = useState(initialQuantity);
   const [tiers, setTiers] = useState<readonly number[]>([]);
+  /**
+   * What this kind of work needs, and whether it is here (UIUX-154).
+   *
+   * The completeness check belongs at the point the request is created, not at
+   * the point a shop opens it: a buyer who is told after routing that the drill
+   * file never travelled has already spent everybody's day. It reads
+   * `requiredProductionFiles()` — the same function the manufacturer's own
+   * files tab reads — so the two surfaces cannot disagree about what the work
+   * needs, and it follows the assembly choice live, because asking for parts to
+   * be placed is what makes a pick-and-place file necessary.
+   */
+  const arrivedRoles = new Set(fileNames.map((name) => productionFileRoleOf(name)));
+  const neededFiles = requiredProductionFiles({
+    packageKind,
+    assemblyAsked: assembly !== 'none',
+    multiPart: bomLineCount > 0,
+    // A panel the shop arranges needs no drawing from the buyer, and this build
+    // records no buyer-supplied panel on a draft.
+    panelised: false,
+  }).filter((entry) => entry.requirement === 'always');
+  const missingFiles = neededFiles.filter((entry) => !arrivedRoles.has(entry.role));
 
   useEffect(() => {
     if (state.redirectTo !== undefined) goTo(router, state.redirectTo);
@@ -539,7 +572,9 @@ export const RequestQuoteForm = ({
           <h3 className="text-sm font-semibold text-text-primary">Your request</h3>
           <dl className="flex flex-col gap-2 text-sm">
             {[
-              { label: 'Board', value: productName },
+              // Named by what it is: a printed enclosure is not a board
+              // (UIUX-154).
+              { label: packageLabel, value: productName },
               {
                 label: 'Service',
                 value:
@@ -577,7 +612,17 @@ export const RequestQuoteForm = ({
                 done={fileCount > 0}
                 label={`${fileCount} ${fileCount === 1 ? 'file' : 'files'} attached`}
               />
-              <ReadyRow done={quantity > 0} label="Board spec complete" />
+              <ReadyRow
+                done={missingFiles.length === 0}
+                label={
+                  missingFiles.length === 0
+                    ? `Everything ${packageLabel.toLowerCase()} needs is here`
+                    : `${missingFiles
+                        .map((entry) => PRODUCTION_FILE_LABEL[entry.role])
+                        .join(', ')} missing`
+                }
+              />
+              <ReadyRow done={quantity > 0} label={`${packageLabel} spec complete`} />
               <ReadyRow
                 done={services.length > 0}
                 label={

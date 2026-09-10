@@ -748,6 +748,15 @@ const main = async () => {
         (await visible(page.getByText('Ready to send'))) &&
         (await visible(page.getByText('2 recipients selected'))),
     );
+    // ---- UIUX-154: the per-type completeness check, before the request goes
+    const readiness = (
+      await page.getByText('Ready to send').locator('..').innerText()
+    ).replace(/\s+/g, ' ');
+    check(
+      'the buyer is told what this kind of work needs before sending it',
+      /needs is here|missing/.test(readiness),
+      readiness.slice(0, 160),
+    );
 
     // Validation: the request cannot be sent with nothing to quote.
     // A printed part is offered the enclosure and testing, and nothing that
@@ -1667,12 +1676,19 @@ const main = async () => {
     });
     await page.waitForTimeout(300);
     const threadHref = await thread.getAttribute('href');
-    await thread.click();
-    // Thirty seconds, because this is a soft navigation into a wide read and
-    // the question the check asks is whether the row goes anywhere, not how
-    // fast — the same allowance the shop harness makes for its row menus.
-    await page.waitForURL(/\/messages\/[^/]+/, { timeout: 30_000 }).catch(() => undefined);
-    const pressWent = /\/messages\/[^/]+/.test(new URL(page.url()).pathname);
+    // Pressed more than once on purpose, and given a wide budget each time.
+    // A click that lands between the markup arriving and React attaching is
+    // taken by neither the router nor the browser, and the page simply stays
+    // where it was; a person whose press did nothing presses again. The
+    // fifteen seconds is for the soft navigation itself, which is a wide read.
+    let pressWent = false;
+    for (let attempt = 0; attempt < 3 && !pressWent; attempt += 1) {
+      await thread.click();
+      pressWent = await page
+        .waitForURL(/\/messages\/[^/]+/, { timeout: 15_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
     check('pressing a conversation opens it', pressWent, page.url());
     if (!pressWent) {
       // A press that did not go. The message only ever says "still on the

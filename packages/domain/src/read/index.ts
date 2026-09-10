@@ -4,3 +4,4 @@ export * from './money.js';
 export * from './counting.js';
 export * from './request-lifecycle.js';
 export * from './quote-lifecycle.js';
+export * from './record-chain.js';
