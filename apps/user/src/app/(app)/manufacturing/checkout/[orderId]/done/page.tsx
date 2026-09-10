@@ -24,6 +24,16 @@ export const dynamic = 'force-dynamic';
 const money = (currency: string, minor: number): string =>
   `${currency} ${majorAmount(minor)}`;
 
+/** What the payment is doing, in the words the rest of this page uses. */
+const PAYMENT_STATE: Readonly<Record<string, string>> = {
+  initiated: 'Started, not held yet',
+  secured: 'Held by IDEEZA',
+  released: 'Released to the manufacturer',
+  refunded: 'Refunded to you',
+  partially_refunded: 'Partly refunded to you',
+  failed: 'Failed',
+};
+
 const METHOD_LABEL: Readonly<Record<string, string>> = {
   card: 'Card',
   paypal: 'PayPal',
@@ -107,7 +117,16 @@ const CheckoutDonePage = async ({
                 value:
                   payment === null ? '—' : (METHOD_LABEL[payment.method] ?? payment.method),
               },
-              { label: 'State', value: payment?.status ?? 'not started' },
+              {
+                label: 'State',
+                // The row beside it already reads "Card" rather than "card";
+                // this one printed the payment enum at a moment the buyer has
+                // just handed over money and wants plain words.
+                value:
+                  payment === null
+                    ? 'Not started'
+                    : (PAYMENT_STATE[payment.status] ?? payment.status),
+              },
               {
                 label: 'Held',
                 value:

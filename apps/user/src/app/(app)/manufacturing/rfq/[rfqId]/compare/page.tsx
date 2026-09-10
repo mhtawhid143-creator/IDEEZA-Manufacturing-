@@ -10,6 +10,17 @@ import {asId, type RfqId, counted } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
+/** What each quote state is, said to the buyer rather than to the database. */
+const QUOTE_STATE: Readonly<Record<string, string>> = {
+  submitted: 'Waiting on your decision',
+  revised: 'Revised, waiting on you',
+  revision_requested: 'You asked for a revision',
+  accepted: 'You accepted this one',
+  declined: 'You declined it',
+  withdrawn: 'The manufacturer withdrew it',
+  expired: 'Expired',
+};
+
 /**
  * The quotes side by side.
  *
@@ -97,7 +108,13 @@ const CompareQuotesPage = async ({
           ? '—'
           : `${Math.round(quote.onTimeDeliveryRate * 100)}%`,
     },
-    { label: 'State', value: (quote) => (quote.expired ? 'Expired' : quote.status) },
+    {
+      label: 'State',
+      // Every other row on this table is written in the buyer's language;
+      // this one printed the database value, so a quote waiting for a
+      // decision read as "submitted".
+      value: (quote) => (quote.expired ? 'Expired' : QUOTE_STATE[quote.status] ?? quote.status),
+    },
   ];
 
   return (

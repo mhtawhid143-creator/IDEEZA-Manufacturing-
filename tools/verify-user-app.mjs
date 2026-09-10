@@ -1293,8 +1293,37 @@ const main = async () => {
     await page.screenshot({ path: join(shotDir, 'order-items.png'), fullPage: false });
 
     // Production Progress.
-    await page.getByRole('link', { name: 'Production Progress' }).click();
-    await page.waitForURL(/\/progress$/, { timeout: 20_000 }).catch(() => undefined);
+    //
+    // Pressed more than once on purpose: a click that lands between the markup
+    // arriving and React attaching is taken by neither the router nor the
+    // browser, and the tab simply stays where it was — which then reads as a
+    // progress panel with no stages in it rather than as a press that missed.
+    let onProgress = false;
+    for (let attempt = 0; attempt < 3 && !onProgress; attempt += 1) {
+      await page.getByRole('link', { name: 'Production Progress' }).click();
+      onProgress = await page
+        .waitForURL(/\/progress$/, { timeout: 15_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    if (!onProgress) {
+      const href = await page
+        .getByRole('link', { name: 'Production Progress' })
+        .getAttribute('href')
+        .catch(() => null);
+      const count = await page.getByRole('link', { name: 'Production Progress' }).count();
+      await page
+        .screenshot({ path: join(shotDir, 'progress-stuck.png'), fullPage: false })
+        .catch(() => undefined);
+      process.stdout.write(
+        `      (progress went nowhere; ${count} link(s), href ${href ?? 'missing'}; browser said: ${
+          consoleErrors.slice(-3).join(' | ') || 'nothing'
+        })
+`,
+      );
+    }
+    check('the order opens its production progress', onProgress, page.url());
+    await page.waitForLoadState('networkidle');
     // Direct children only: a stage carries its own task list inside it.
     const stageCount = await page
       .locator('ol[aria-label="Production stages"] > li')
@@ -1649,6 +1678,52 @@ const main = async () => {
       await visible(page.getByText('Nothing unread')),
     );
     await page.screenshot({ path: join(shotDir, 'notifications.png'), fullPage: false });
+
+    // ---- the keyboard gets to the page without walking the rail
+    //
+    // Pressed rather than inspected: a skip link that exists in the markup
+    // and does not move focus is the usual way to have one and not have one.
+    await page.goto(`${base}/manufacturing`, { waitUntil: 'networkidle' });
+    await page.keyboard.press('Tab');
+    check(
+      'the first thing the keyboard reaches is a way past the navigation',
+      await visible(page.getByRole('link', { name: 'Skip to the page' }), 5_000),
+    );
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+    check(
+      'and pressing it puts the focus in the page itself',
+      (await page.evaluate(() => document.activeElement?.id ?? '')) === 'main',
+      await page.evaluate(() => document.activeElement?.tagName ?? 'none'),
+    );
+
+    // ---- WCAG 2.2 AA 2.4.11: the navbar must not sit over what has focus
+    //
+    // Scrolled to the bottom first, then focus something near the top: that
+    // is the case that fails, because the browser has to scroll up and it
+    // stops with the element at the very top of the viewport — which is
+    // where the sticky navbar is drawn.
+    const focusedTop = await page.evaluate(async () => {
+      const target = document.querySelector('main a[href]');
+      if (target === null) return null;
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      target.focus();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      return target.getBoundingClientRect().top;
+    });
+    const navbarHeight = await page.evaluate(() =>
+      Number.parseFloat(
+        window
+          .getComputedStyle(document.documentElement)
+          .getPropertyValue('--layout-navbar-height'),
+      ),
+    );
+    check(
+      'a control the keyboard reaches is never parked behind the navbar',
+      focusedTop === null || focusedTop >= navbarHeight,
+      `focused at ${focusedTop}px, navbar is ${navbarHeight}px`,
+    );
 
     // Conversations.
     await page.goto(`${base}/messages`, { waitUntil: 'networkidle' });

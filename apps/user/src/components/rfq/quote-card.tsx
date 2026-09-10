@@ -134,8 +134,9 @@ export const QuoteCard = ({ quote }: { readonly quote: QuoteCardData }) => {
           </Text>
           {quote.pendingSubstitutions > 0 && (
             <Badge tone="warning" className="mt-2">
+              {/* The verb agrees with the count as well as the noun did. */}
               {quote.pendingSubstitutions} replacement part
-              {quote.pendingSubstitutions === 1 ? '' : 's'} need a decision
+              {quote.pendingSubstitutions === 1 ? ' needs' : 's need'} a decision
             </Badge>
           )}
         </div>

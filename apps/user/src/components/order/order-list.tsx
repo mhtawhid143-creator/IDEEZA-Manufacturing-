@@ -6,6 +6,16 @@ import { Badge, buttonAppearance, EmptyState, Icon, StatusChip, Tag, Text, Toolt
 import { RowMenu } from '@/components/row-menu.js';
 import { goTo } from '@/lib/navigate.js';
 
+/**
+ * The glyph for what is being made, keyed off the type the order carries.
+ * The same three the draft card draws, so a row reads the same in both lists.
+ */
+const ORDER_ICON: Readonly<Record<string, 'board' | 'cube' | 'layers' | 'orders'>> = {
+  PCB: 'board',
+  '3D printing': 'cube',
+  'PCB + 3D printing': 'layers',
+};
+
 export interface OrderRow {
   readonly orderId: string;
   readonly rfqId: string;
@@ -138,8 +148,10 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
         >
           <span
             aria-hidden
-            className="h-12 w-12 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
-          />
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle text-icon-brand"
+          >
+            <Icon name={ORDER_ICON[row.typesIncluded[0] ?? ''] ?? 'orders'} size={20} />
+          </span>
 
           <div className="min-w-0 flex-1">
             <Link
@@ -156,7 +168,7 @@ export const OrderList = ({ orders, emptyTitle, emptyDescription }: OrderListPro
                 Show files ({row.fileCount})
               </Link>
               <Text tone="muted" size="xs">
-                · {row.manufacturerName} · ordered {row.orderedOn}
+                {row.manufacturerName} · ordered {row.orderedOn}
               </Text>
             </div>
           </div>

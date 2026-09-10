@@ -1903,7 +1903,7 @@ const main = async () => {
     });
     const navbarHeight = await page.evaluate(() =>
       Number.parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue(
+        window.getComputedStyle(document.documentElement).getPropertyValue(
           '--layout-navbar-height',
         ),
       ),
