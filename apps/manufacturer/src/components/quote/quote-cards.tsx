@@ -123,12 +123,17 @@ export const QuoteCards = ({
               'p-0',
             )}
           >
+            {/*
+              The last line of every card sits on one baseline: a one-line note
+              and a two-line note otherwise put the hint at two heights, and
+              four cards that do not agree read as a ragged row.
+            */}
             {pressable ? (
               <button
                 type="button"
                 aria-pressed={selected}
                 onClick={() => go(card.status)}
-                className="w-full rounded-xl p-4 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+                className="flex h-full w-full flex-col rounded-xl p-4 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
               >
                 <p
                   data-numeric
@@ -142,7 +147,7 @@ export const QuoteCards = ({
                 <Text tone="muted" size="xs" className="mt-0.5 block">
                   {card.note}
                 </Text>
-                <Text tone="muted" size="xs" className="mt-1 block">
+                <Text tone="muted" size="xs" className="mt-auto block pt-3">
                   {selected ? 'Filtering the table · press to clear' : 'Press to filter'}
                 </Text>
               </button>

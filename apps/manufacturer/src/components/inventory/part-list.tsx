@@ -7,6 +7,7 @@ import {
   DataTable,
   EmptyState,
   FormField,
+  Icon,
   Pagination,
   SearchInput,
   Select,
@@ -180,7 +181,7 @@ export const PartList = ({
               </div>
             ),
           },
-          { id: 'sku', header: 'SKU', cell: (row) => row.sku },
+          { id: 'sku', header: 'SKU', hideBelowLg: true, cell: (row) => row.sku },
           {
             id: 'category',
             header: 'Category',
@@ -194,6 +195,7 @@ export const PartList = ({
           },
           {
             id: 'reserved',
+            hideBelowLg: true,
             header: 'Reserved',
             cell: (row) => (
               <div>
@@ -206,6 +208,7 @@ export const PartList = ({
           },
           {
             id: 'price',
+            hideBelowLg: true,
             header: 'Price per unit',
             cell: (row) => `${row.currency} ${row.unitPriceMajor}`,
           },
@@ -243,7 +246,7 @@ export const PartList = ({
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
-                    ⋮
+                    <Icon name="more" size={16} />
                   </button>
                 )}
               />

@@ -9,15 +9,16 @@ import {
   DataTable,
   EmptyState,
   FormField,
+  Icon,
   Input,
   Pagination,
   SearchInput,
   Select,
   StageTrack,
-  type StageTrackState,
   StatusChip,
   Tag,
   Text,
+  type StageTrackState,
 } from '@ideeza/ui';
 import { RowMenu } from '@/components/row-menu.js';
 
@@ -205,8 +206,26 @@ export const OrderList = ({
                   find what it agreed to.
                 */}
                 <Text tone="muted" size="xs">
-                  {row.buyerName} · {orderReference(row.orderId)}
-                  {row.quoteReference === null ? '' : ` · ${row.quoteReference}`}
+                  <span className="whitespace-nowrap">{row.buyerName}</span>{' · '}
+                  <span className="whitespace-nowrap">{orderReference(row.orderId)}</span>
+                  {row.quoteReference === null ? null : (
+                    <>
+                      {' · '}
+                      <span className="whitespace-nowrap">{row.quoteReference}</span>
+                    </>
+                  )}
+                </Text>
+                {/*
+                  Below lg the quantity and the money have no column of their
+                  own — seven columns do not fit a phone — so they join the row
+                  they describe rather than being scrolled away from it.
+                */}
+                <Text tone="muted" size="xs" className="mt-0.5 block lg:hidden">
+                  <span className="whitespace-nowrap">{counted(row.quantity, 'unit')}</span>
+                  {' · '}
+                  <span className="whitespace-nowrap">
+                    {row.currency} {row.totalPriceMajor}
+                  </span>
                 </Text>
               </div>
             ),
@@ -214,18 +233,30 @@ export const OrderList = ({
           {
             id: 'quantity',
             header: 'Quantity',
-            cell: (row) => counted(row.quantity, 'unit'),
+            hideBelowLg: true,
+            cell: (row) => (
+              <span className="whitespace-nowrap">{counted(row.quantity, 'unit')}</span>
+            ),
           },
           {
             id: 'unit',
             header: 'Unit price',
             hideBelowLg: true,
-            cell: (row) => `${row.currency} ${row.unitPriceMajor}`,
+            cell: (row) => (
+              <span className="whitespace-nowrap">
+                {row.currency} {row.unitPriceMajor}
+              </span>
+            ),
           },
           {
             id: 'total',
             header: 'Total',
-            cell: (row) => `${row.currency} ${row.totalPriceMajor}`,
+            hideBelowLg: true,
+            cell: (row) => (
+              <span className="whitespace-nowrap">
+                {row.currency} {row.totalPriceMajor}
+              </span>
+            ),
           },
           {
             id: 'status',
@@ -256,6 +287,7 @@ export const OrderList = ({
           {
             id: 'stage',
             header: 'Current stage',
+            hideBelowLg: true,
             cell: (row) => (
               <StageTrack
                 total={row.totalStages}
@@ -289,13 +321,21 @@ export const OrderList = ({
                   {row.dueOn ?? '—'}
                 </p>
                 <Text tone="muted" size="xs">
+                  {/*
+                    A date that has passed is not today. The order can be past
+                    its date without being "late" — a stopped or disputed one is
+                    not on the shop floor — and the row said "due today" over a
+                    date nine days gone.
+                  */}
                   {row.late
                     ? 'past the date you quoted'
                     : row.dueInDays === null
                       ? `ordered ${row.orderedOn}`
-                      : row.dueInDays <= 0
-                        ? 'due today'
-                        : `in ${counted(row.dueInDays, 'day')}`}
+                      : row.dueInDays < 0
+                        ? `${counted(-row.dueInDays, 'day')} ago`
+                        : row.dueInDays === 0
+                          ? 'due today'
+                          : `in ${counted(row.dueInDays, 'day')}`}
                 </Text>
               </div>
             ),
@@ -386,7 +426,7 @@ export const OrderList = ({
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
-                    ⋮
+                    <Icon name="more" size={16} />
                   </button>
                 )}
               />

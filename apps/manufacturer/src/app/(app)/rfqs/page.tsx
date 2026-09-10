@@ -119,7 +119,9 @@ const RequestsPage = async ({
           note={
             counters.accepted === 0
               ? 'Your answer is with the buyer'
-              : `${counters.accepted} of your quotes was accepted`
+              : `${counters.accepted} of your quotes ${
+                  counters.accepted === 1 ? 'was' : 'were'
+                } accepted`
           }
         />
         {/*

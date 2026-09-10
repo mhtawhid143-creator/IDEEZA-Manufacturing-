@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Alert, Card, StatusChip, Tag, Text, buttonAppearance, majorAmount as major } from '@ideeza/ui';
+import { Alert, Card, StatusChip, Tag, Text, majorAmount as major } from '@ideeza/ui';
 import { recordChain } from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
@@ -217,20 +216,12 @@ export const OrderShell = ({
             shipsTo={`${order.shipTo.city}, ${order.shipTo.countryCode}`}
           />
 
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/quotes/${order.quoteId}`}
-              className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-            >
-              The quote it came from
-            </Link>
-            <Link
-              href={`/rfqs/${order.rfqId}`}
-              className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-            >
-              The request
-            </Link>
-          </div>
+          {/*
+            Two buttons stood here, to the quote and to the request. The chain
+            under the heading now links to both, by their references, and says
+            how they relate — which the buttons never did. One screen, one way
+            to each place.
+          */}
         </aside>
       </div>
     </div>

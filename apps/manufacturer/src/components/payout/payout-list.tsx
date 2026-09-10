@@ -10,6 +10,7 @@ import {
   DataTable,
   EmptyState,
   FormField,
+  Icon,
   Input,
   Modal,
   Pagination,
@@ -208,9 +209,15 @@ export const PayoutList = ({
             hideBelowLg: true,
             cell: (row) => payoutReference(row.id),
           },
-          { id: 'client', header: 'Client', cell: (row) => row.buyerName },
+          {
+            id: 'client',
+            header: 'Client',
+            hideBelowLg: true,
+            cell: (row) => row.buyerName,
+          },
           {
             id: 'amount',
+            hideBelowLg: true,
             header: 'Order amount',
             align: 'right',
             cell: (row) => `${row.currency} ${row.orderAmountMajor}`,
@@ -254,7 +261,12 @@ export const PayoutList = ({
               </div>
             ),
           },
-          { id: 'date', header: 'Date', cell: (row) => row.dateOn },
+          {
+            id: 'date',
+            header: 'Date',
+            hideBelowLg: true,
+            cell: (row) => <span className="whitespace-nowrap">{row.dateOn}</span>,
+          },
           {
             id: 'actions',
             header: <span className="sr-only">Actions</span>,
@@ -285,7 +297,7 @@ export const PayoutList = ({
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
-                    ⋮
+                    <Icon name="more" size={16} />
                   </button>
                 )}
               />

@@ -76,6 +76,16 @@ export interface ProductionTimelineProps {
   readonly heldByCase?: { readonly disputeId: string; readonly reason: string } | undefined;
 }
 
+/**
+ * Whether a second line is worth printing under the first.
+ *
+ * The two sentences are written in different places and meet on the row, so
+ * they arrive equal but for a full stop — which is how the panel came to print
+ * "The platform moves this one" directly above "The platform moves this one."
+ */
+const saysMore = (reason: string, already: string): boolean =>
+  reason.replace(/[.\s]+$/, '').toLowerCase() !== already.replace(/[.\s]+$/, '').toLowerCase();
+
 const EVIDENCE_OPTIONS = [
   { value: 'quality_report', label: 'Quality report' },
   { value: 'measurement_data', label: 'Measurement data' },
@@ -293,11 +303,22 @@ export const ProductionTimeline = ({
                         {stage.note}
                       </Text>
                     )}
-                    {!stage.movable && stage.blockedReason !== null && (
-                      <Text tone="muted" size="xs" className="mt-1 block">
-                        {stage.blockedReason}
-                      </Text>
-                    )}
+                    {/*
+                      Said once. The line above already carries `waitingFor`,
+                      which for a pending stage the shop cannot move is the
+                      blocked reason itself — so every waiting stage printed
+                      "Waiting for In production to finish." twice, one under
+                      the other. And a completed stage does not need to be told
+                      it cannot be reopened beside its own completion date.
+                    */}
+                    {!stage.movable &&
+                      stage.status !== 'completed' &&
+                      stage.blockedReason !== null &&
+                      saysMore(stage.blockedReason, stage.waitingFor) && (
+                        <Text tone="muted" size="xs" className="mt-1 block">
+                          {stage.blockedReason}
+                        </Text>
+                      )}
                     {stage.movable && !stage.completable && (
                       <Text tone="muted" size="xs" className="mt-1 block">
                         {counted(
@@ -354,7 +375,7 @@ export const ProductionTimeline = ({
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus disabled:cursor-not-allowed"
                             {...aria}
                           >
-                            ⋮
+                            <Icon name="more" size={16} />
                           </button>
                         )}
                       />
@@ -364,7 +385,7 @@ export const ProductionTimeline = ({
                           aria-label={`${stage.label} cannot be moved`}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-disabled"
                         >
-                          ⋮
+                          <Icon name="more" size={16} />
                         </span>
                       </Tooltip>
                     )}

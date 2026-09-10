@@ -1965,10 +1965,25 @@ const main = async () => {
     );
     check(
       'a stage the platform owns is not offered to the shop, and says so',
-      (await visible(page.getByText('The platform moves this one').first())) &&
+      (await page
+        .locator('ol[aria-label="Production stages"] > li')
+        .filter({ hasText: 'The platform moves this one' })
+        .count()) >= 1 &&
         (await page.getByText(/Waiting for In production to finish/).count()) >= 1,
       (await page.locator('ol[aria-label="Production stages"] > li').nth(5).textContent()) ?? '',
     );
+    const waitingRow =
+      (await page
+        .locator('ol[aria-label="Production stages"] > li')
+        .filter({ hasText: 'Ready to ship' })
+        .first()
+        .innerText()) ?? '';
+    check(
+      'a waiting stage says what it is waiting for once, not twice',
+      (waitingRow.match(/Waiting for In production to finish/g) ?? []).length === 1,
+      waitingRow.replace(/\s+/g, ' ').slice(0, 120),
+    );
+
     // ---- UIUX-208 / UIUX-146: one chain, from the design to the order
     const chain = page.getByRole('navigation', {
       name: 'Where this sits, from the design to the order',
@@ -2441,7 +2456,7 @@ const main = async () => {
         // page brings to the top of itself sits underneath it and no click can
         // reach it — which is what the screenshot of a "menu that went nowhere"
         // showed, and is the same trap `removeCard` documents above.
-        const kebab = page.locator('tbody tr button', { hasText: '⋮' }).first();
+        const kebab = page.locator('tbody tr button[aria-label^="Actions for"]').first();
         await kebab.waitFor({ state: 'visible', timeout: 15_000 });
         await kebab.evaluate((element) => {
           element.scrollIntoView({ block: 'center', inline: 'nearest' });

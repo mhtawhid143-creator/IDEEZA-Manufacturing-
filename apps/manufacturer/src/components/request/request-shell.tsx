@@ -229,9 +229,16 @@ export const RequestShell = ({
                         <span className="text-sm font-medium text-text-primary">
                           {REVIEW_SECTION_LABEL[section]}
                         </span>
+                        {/*
+                          The state stays on one line and the label wraps
+                          instead: "Not opened yet" was breaking after "opened",
+                          so two of the three rows were a line taller than the
+                          third for no reason a reader could see.
+                        */}
                         <Text
                           tone={request.reviewSeen[section] ? 'muted' : 'danger'}
                           size="xs"
+                          className="shrink-0 whitespace-nowrap"
                         >
                           {request.reviewSeen[section] ? 'Read' : 'Not opened yet'}
                         </Text>
@@ -336,15 +343,20 @@ export const RequestShell = ({
             shipsTo={`${request.shipTo.city}, ${request.shipTo.countryCode}`}
           />
 
-          <div className="flex flex-wrap gap-2">
+          {/*
+            On a surface, like everything else in this rail. A bare row of chips
+            between two cards has nothing under it and reads as something that
+            lost its container on the way out.
+          */}
+          <Card className="flex flex-wrap gap-2">
             <Tag tone="brand">{request.kindLabel}</Tag>
-            <Tag tone="neutral">{request.quantity} units</Tag>
+            <Tag tone="neutral">{counted(request.quantity, 'unit')}</Tag>
             {request.serviceLabels.map((label) => (
               <Tag key={label} tone="neutral">
                 {label}
               </Tag>
             ))}
-          </div>
+          </Card>
 
           {request.requirementsLockedAt === null && (
             <Alert tone="warning" title="These requirements are not frozen yet">

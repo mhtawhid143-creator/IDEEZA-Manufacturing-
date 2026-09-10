@@ -34,6 +34,8 @@ export interface QuoteRow {
   readonly quoteId: QuoteId;
   readonly rfqId: RfqId;
   readonly productName: string;
+  /** What kind of work it is, which is what the row's glyph draws. */
+  readonly kindLabel: string;
   readonly buyerName: string;
   readonly status: QuoteStatus;
   readonly expired: boolean;
@@ -128,7 +130,7 @@ const listInclude = {
     select: {
       id: true,
       buyer: { select: { displayName: true } },
-      package: { select: { product: { select: { name: true } } } },
+      package: { select: { kind: true, product: { select: { name: true } } } },
     },
   },
   substitutions: { select: { status: true } },
@@ -222,6 +224,7 @@ export const listQuotes = async (
     quoteId: asId<QuoteId>(row.id),
     rfqId: asId<RfqId>(row.rfqId),
     productName: row.rfq.package.product.name,
+    kindLabel: PACKAGE_KIND_LABEL[row.rfq.package.kind],
     buyerName: row.rfq.buyer.displayName,
     status: row.status,
     expired: quoteHasExpired(row, now),

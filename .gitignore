@@ -20,6 +20,7 @@ next-env.d.ts
 .vercel
 .env*
 .verify-shots-manufacturer
+.design-shots-manufacturer
 
 # The harnesses and the review environment take this so two of them never
 # share one built app.

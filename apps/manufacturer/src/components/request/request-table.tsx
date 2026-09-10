@@ -169,6 +169,19 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
                   <Text tone="muted" size="xs">
                     {row.buyerName}
                   </Text>
+                  {/*
+                    Below lg the quantity and the kind of work have no column of
+                    their own, and both are things a shop weighs before opening
+                    the request — so they ride with the name rather than sitting
+                    off the right edge of a phone.
+                  */}
+                  <Text tone="muted" size="xs" className="mt-0.5 block lg:hidden">
+                    <span className="whitespace-nowrap">
+                      {counted(row.quantity, 'unit')}
+                    </span>
+                    {' · '}
+                    <span className="whitespace-nowrap">{row.kindLabel}</span>
+                  </Text>
                 </div>
               </div>
             ),
@@ -195,6 +208,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
           },
           {
             id: 'quantity',
+            hideBelowLg: true,
             header: 'Quantity',
             // UIUX-131: the header already says Quantity; repeating the unit in
             // every cell adds a word and no information.
@@ -212,6 +226,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
           },
           {
             id: 'date',
+            hideBelowLg: true,
             header: 'Date',
             cell: (row) => (
               <div>
@@ -246,7 +261,7 @@ export const RequestTable = ({ rows, page, pageCount, filtered }: RequestTablePr
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
-                    ⋮
+                    <Icon name="more" size={16} />
                   </button>
                 )}
               />

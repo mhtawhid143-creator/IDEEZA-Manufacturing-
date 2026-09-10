@@ -132,6 +132,7 @@ const QuotesPage = async ({
               quoteId: row.quoteId,
               rfqId: row.rfqId,
               productName: row.productName,
+              kindLabel: row.kindLabel,
               buyerName: row.buyerName,
               quantity: row.quantity,
               leadTimeDays: row.leadTimeDays,

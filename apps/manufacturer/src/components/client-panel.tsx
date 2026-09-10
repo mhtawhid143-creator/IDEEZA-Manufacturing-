@@ -15,6 +15,19 @@ export interface ClientPanelProps {
 const day = (value: Date): string => value.toISOString().slice(0, 10);
 
 /**
+ * Up to two letters from the name, skipping the bracketed role most buyer
+ * names carry — "Nova Robotics (Buyer)" is NR, not NB.
+ */
+const initials = (name: string): string =>
+  name
+    .replace(/\([^)]*\)/g, ' ')
+    .split(/\s+/)
+    .filter((word) => /[a-z0-9]/i.test(word))
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('');
+
+/**
  * How reliable this buyer has been, in a phrase and a tone (UIUX-145).
  *
  * Not a star rating: nothing on this platform rates a buyer, and a score
@@ -58,10 +71,17 @@ export const ClientPanel = ({
         About the client
       </Text>
       <div className="flex items-center gap-3">
+        {/*
+          The buyer's initials, not an empty circle. A blank disc where a face
+          belongs reads as an avatar that failed to load; this build has no
+          photographs, so the circle says who it stands for instead.
+        */}
         <span
           aria-hidden
-          className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
-        />
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle text-sm font-semibold text-text-brand"
+        >
+          {initials(buyerName)}
+        </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-text-primary">{buyerName}</p>
           {/*

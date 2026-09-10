@@ -7,6 +7,7 @@ import {
   DataTable,
   EmptyState,
   FormField,
+  Icon,
   Input,
   Pagination,
   SearchInput,
@@ -27,6 +28,13 @@ import {
  * caption rather than a second badge — two badges of equal weight make a reader
  * decide which is the status, which is the thing the pill is for.
  */
+/** The same glyphs the request inbox uses, so one row reads like the other. */
+const KIND_ICON: Readonly<Record<string, 'board' | 'cube' | 'layers' | 'file'>> = {
+  PCB: 'board',
+  '3D printing': 'cube',
+  'PCB + 3D printing': 'layers',
+};
+
 const QUOTE_LIFECYCLE_STATUS: Readonly<Record<QuoteLifecycle, string>> = {
   quoted: 'submitted',
   accepted: 'accepted',
@@ -37,6 +45,8 @@ const QUOTE_LIFECYCLE_STATUS: Readonly<Record<QuoteLifecycle, string>> = {
 import { RowMenu } from '@/components/row-menu.js';
 
 export interface QuoteListRow {
+  /** What kind of work it is, which is what the row's glyph draws. */
+  readonly kindLabel: string;
   readonly quoteId: string;
   readonly rfqId: string;
   readonly productName: string;
@@ -163,8 +173,10 @@ export const QuoteList = ({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="h-9 w-9 shrink-0 rounded-md bg-gradient-to-br from-bg-brand-subtle to-bg-info-subtle"
-                />
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-subtle text-icon-secondary"
+                >
+                  <Icon name={KIND_ICON[row.kindLabel] ?? 'file'} size={18} />
+                </span>
                 <div className="min-w-0">
                   <Link
                     href={`/quotes/${row.quoteId}`}
@@ -195,18 +207,30 @@ export const QuoteList = ({
           {
             id: 'quantity',
             header: 'Quantity',
-            cell: (row) => `${row.quantity} Qty`,
+            hideBelowLg: true,
+            // The orders table calls the same number "400 units". One portal,
+            // one word for a count of things.
+            cell: (row) => (
+              <span className="whitespace-nowrap">{counted(row.quantity, 'unit')}</span>
+            ),
           },
           {
             id: 'lead',
             header: 'Lead time',
             hideBelowLg: true,
-            cell: (row) => `${row.leadTimeDays} Days`,
+            cell: (row) => (
+              <span className="whitespace-nowrap">{counted(row.leadTimeDays, 'day')}</span>
+            ),
           },
           {
             id: 'unit',
             header: 'Unit price',
-            cell: (row) => `${row.currency} ${row.unitPriceMajor}`,
+            hideBelowLg: true,
+            cell: (row) => (
+              <span className="whitespace-nowrap">
+                {row.currency} {row.unitPriceMajor}
+              </span>
+            ),
           },
           {
             id: 'total',
@@ -288,7 +312,7 @@ export const QuoteList = ({
                     className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-bg-surface-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
                     {...aria}
                   >
-                    ⋮
+                    <Icon name="more" size={16} />
                   </button>
                 )}
               />

@@ -85,7 +85,11 @@ export const RecordChain = ({ links, current, hrefs }: RecordChainProps) => (
  */
 export const CoversLine = ({ packageLabel }: { readonly packageLabel: string }) => (
   <Text tone="muted" size="xs" className="mt-1 block">
-    This request covers the {packageLabel.toLowerCase()} part of that project. Anything
-    else in it travels as its own request.
+    {/*
+      The label keeps its own casing. Lowercasing it turned PCB into "pcb",
+      which reads as a typo rather than as a sentence.
+    */}
+    This request covers the {packageLabel} part of that project. Anything else in it
+    travels as its own request.
   </Text>
 );

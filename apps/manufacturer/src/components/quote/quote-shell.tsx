@@ -92,15 +92,20 @@ export const QuoteShell = ({
               <CoversLine packageLabel={quote.kindLabel} />
             </div>
           </div>
-          <StatusChip
-            status={quote.expired && quote.status === 'submitted' ? 'expired' : quote.status}
-            label={
-              quote.expired && quote.status !== 'accepted'
-                ? 'Expired'
-                : (QUOTE_LABEL[quote.status] ?? quote.status)
-            }
-            withDot
-          />
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <StatusChip
+              status={
+                quote.expired && quote.status === 'submitted' ? 'expired' : quote.status
+              }
+              label={
+                quote.expired && quote.status !== 'accepted'
+                  ? 'Expired'
+                  : (QUOTE_LABEL[quote.status] ?? quote.status)
+              }
+              withDot
+            />
+            <Tag tone="neutral">Version {quote.version}</Tag>
+          </div>
         </div>
 
         <Card padded={false}>
@@ -252,15 +257,13 @@ export const QuoteShell = ({
           shipsTo={shipsTo}
         />
 
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/rfqs/${quote.rfqId}`}
-            className={buttonAppearance({ variant: 'secondary', size: 'sm' })}
-          >
-            Open the request
-          </Link>
-          <Tag tone="neutral">Version {quote.version}</Tag>
-        </div>
+        {/*
+          The button that was here said "Open the request", and the chain at the
+          top of this page now links to the same request two lines under the
+          heading. One screen, two controls, one destination — the defect
+          UIUX-230 named on the messages thread. The version moves up beside the
+          quote's own status, where the rest of its facts already are.
+        */}
 
         {quote.unfulfilledParts > 0 && (
           <Alert tone="warning" title="This quote covers part of the request">

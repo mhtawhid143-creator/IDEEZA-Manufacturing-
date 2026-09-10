@@ -118,11 +118,17 @@ export const OrderCards = ({
               'p-0',
             )}
           >
+            {/*
+              The hint is pushed to the bottom of the card rather than left to
+              follow the note. A one-line note and a two-line note put it at two
+              different heights, and four cards whose last line does not share a
+              baseline read as a ragged row rather than as one row.
+            */}
             <button
               type="button"
               aria-pressed={selected}
               onClick={() => go(card.status)}
-              className="w-full rounded-xl p-4 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
+              className="flex h-full w-full flex-col rounded-xl p-4 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
             >
               <p
                 data-numeric
@@ -136,7 +142,7 @@ export const OrderCards = ({
               <Text tone="muted" size="xs" className="mt-0.5 block">
                 {card.note}
               </Text>
-              <Text tone="muted" size="xs" className="mt-1 block">
+              <Text tone="muted" size="xs" className="mt-auto block pt-3">
                 {selected ? 'Filtering the table · press to clear' : 'Press to filter'}
               </Text>
             </button>
