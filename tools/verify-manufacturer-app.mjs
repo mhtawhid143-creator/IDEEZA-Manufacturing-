@@ -1863,6 +1863,57 @@ const main = async () => {
         (await first.locator('..').textContent()) ?? '',
       );
     }
+    // ---- the keyboard gets to the page without walking the rail
+    //
+    // Pressed rather than inspected: a skip link that exists in the markup and
+    // does not move focus is the common way to have one and not have one.
+    await page.goto(`${base}/orders`, { waitUntil: 'networkidle' });
+    await page.keyboard.press('Tab');
+    const skip = page.getByRole('link', { name: 'Skip to the page' });
+    check(
+      'the first thing the keyboard reaches is a way past the navigation',
+      await visible(skip, 5_000),
+    );
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+    check(
+      'and pressing it puts the focus in the page itself',
+      (await page.evaluate(() => document.activeElement?.id ?? '')) === 'main',
+      await page.evaluate(() => document.activeElement?.tagName ?? 'none'),
+    );
+
+    // ---- WCAG 2.2 AA 2.4.11: the navbar must not sit over what has focus
+    //
+    // The rail is sticky and 68px tall, so a control the browser scrolls to
+    // the top of the viewport lands behind it. Focus something far enough down
+    // that reaching it has to scroll, then measure where it ended up.
+    // Scrolled to the bottom first, then focus something near the top of the
+    // document: that is the case that fails. The browser has to scroll *up* to
+    // reach it, it stops with the element at the very top of the viewport, and
+    // the navbar is what is drawn there. Focusing something already on screen
+    // proves nothing, because nothing scrolls.
+    const focusedTop = await page.evaluate(async () => {
+      const target = document.querySelector('main a[href]');
+      if (target === null) return null;
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      target.focus();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      return target.getBoundingClientRect().top;
+    });
+    const navbarHeight = await page.evaluate(() =>
+      Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--layout-navbar-height',
+        ),
+      ),
+    );
+    check(
+      'a control the keyboard reaches is never parked behind the navbar',
+      focusedTop === null || focusedTop >= navbarHeight,
+      `focused at ${focusedTop}px, navbar is ${navbarHeight}px`,
+    );
+
     // ---- UIUX-198 rec 5: no page wears another page's name
     //
     // The finding was a cloned page: Orders kept the heading "Quotes". One

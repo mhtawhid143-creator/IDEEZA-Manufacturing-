@@ -44,6 +44,21 @@ export const AppShell = ({
 
   return (
       <div className="min-h-dvh bg-bg-page">
+        {/*
+          The first thing the keyboard reaches on every page.
+
+          Without it, getting from the address bar to an order takes thirteen
+          presses through the rail — and the rail is identical on every screen,
+          so the cost is paid again on each one. It is off-screen until it is
+          focused, which is the point: it costs a sighted mouse user nothing and
+          saves everybody else the whole of the navigation.
+        */}
+        <a
+          href="#main"
+          className="fixed left-4 top-4 z-notification -translate-y-20 rounded-md border border-border bg-bg-surface px-4 py-2 text-sm font-semibold text-text-link shadow-2 transition-transform duration-fast ease-standard focus-visible:translate-y-0"
+        >
+          Skip to the page
+        </a>
         <Navbar
           displayName={displayName}
           email={email}
@@ -60,7 +75,17 @@ export const AppShell = ({
             />
           </div>
 
-          <main className="min-w-0 flex-1 px-4 py-4 md:px-gutter md:py-gutter">
+          {/*
+            `tabIndex={-1}` so the skip link actually moves the focus here
+            rather than only scrolling to it — a scroll without focus leaves
+            the next Tab back at the top of the rail, which is the failure the
+            link exists to prevent.
+          */}
+          <main
+            id="main"
+            tabIndex={-1}
+            className="min-w-0 flex-1 px-4 py-4 focus-visible:outline-none md:px-gutter md:py-gutter"
+          >
             <div className="mx-auto w-full max-w-content">{children}</div>
           </main>
         </div>

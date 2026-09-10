@@ -3,3 +3,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * A control the keyboard reaches must not end up behind the navbar.
+ *
+ * WCAG 2.2 AA (2.4.11, Focus Not Obscured) asks that a focused element not be
+ * entirely hidden by author-created content. The navbar is `sticky`, so when
+ * Tab moves focus to something above the fold the browser scrolls that element
+ * to the top of the viewport — which is exactly where the navbar is sitting.
+ * The control takes focus, the ring is drawn, and the reader sees neither.
+ *
+ * The system already answers this for anchor targets (`[id]` in the design
+ * system's base layer), but focus lands on buttons, links and fields that
+ * mostly carry no id. `scroll-margin-top` moves where a scroll *stops*, not
+ * where anything sits, so no layout changes and nothing moves for a mouse.
+ *
+ * The same geometry is why this panel's own verification harness has to centre
+ * a row menu before it can click it: a control parked under the navbar is out
+ * of reach for a pointer too.
+ */
+a,
+button,
+summary,
+input,
+select,
+textarea,
+[tabindex]:not([tabindex='-1']) {
+  scroll-margin-top: calc(var(--layout-navbar-height) + 1rem);
+}
