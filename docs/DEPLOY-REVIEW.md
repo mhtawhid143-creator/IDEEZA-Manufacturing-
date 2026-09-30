@@ -72,6 +72,35 @@ the manufacturer panel as PrecisionCircuit Co. — with no password to type.
 `/auth/sign-in?pick=1` on either panel switches account, which is how a reviewer
 sees the second shop, and it is where signing out lands.
 
+## The token is optional, and this review is running without it
+
+`REVIEW_DIRECT_SIGN_IN_TOKEN` is what makes a hosted panel demand more than
+its address. It exists because a hostname leaks easily and a panel should not
+leak with it. The trade it makes is real, and it was paid three times on this
+review: a reviewer who bookmarks the panel bookmarks the address, not the
+tokened link, and the address on its own answers 404 with nothing to explain
+itself. Each time it read as a dead link rather than as a lock.
+
+So for **this** review the variable is removed from both projects, and the
+plain address signs a visitor in. What that costs is stated plainly: **anyone
+who has the address is in.** It is acceptable here for the same reasons the
+tokened arrangement was — the data is seeded fixtures, invented companies and
+invented orders, no real person's information; there is no payment provider
+connected, so nothing on these screens can move money; and the panels hold
+nothing a competitor could not see in the Figma file.
+
+**Put it back before anything real arrives.** Set
+`REVIEW_DIRECT_SIGN_IN_TOKEN` on both projects again and redeploy, and the
+address alone is refused exactly as before. And when the review itself is over,
+remove `REVIEW_DIRECT_SIGN_IN` as well, which restores the password form.
+
+The admission cookie now carries a thirty-day lifetime
+(`REVIEW_TOKEN_COOKIE_MAX_AGE`). Before, it was written with none, which made
+it a session cookie: it died when the browser closed, so even a reviewer who
+had used the tokened link correctly was locked out the next morning. With a
+lifetime, a tokened visit admits that browser for the length of the review —
+which is what this file already promised and the code did not do.
+
 ## Read this before sharing the links
 
 `REVIEW_DIRECT_SIGN_IN=1` together with the token means **anyone holding the

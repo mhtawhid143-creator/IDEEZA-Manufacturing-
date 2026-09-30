@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@ideeza/auth';
 import { authServices } from '@/lib/auth.js';
 import {
+  REVIEW_TOKEN_COOKIE_MAX_AGE,
   REVIEW_TOKEN_COOKIE_NAME,
   directSignInAccounts,
   directSignInAdmitted,
@@ -60,6 +61,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
         sameSite: 'lax',
         secure,
         path: '/',
+        maxAge: REVIEW_TOKEN_COOKIE_MAX_AGE,
       });
     }
     return chooser;
@@ -84,6 +86,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
       sameSite: 'lax',
       secure,
       path: '/',
+      maxAge: REVIEW_TOKEN_COOKIE_MAX_AGE,
     });
   }
   return response;

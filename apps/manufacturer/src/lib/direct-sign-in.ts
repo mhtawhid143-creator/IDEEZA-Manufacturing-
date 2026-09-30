@@ -68,6 +68,18 @@ export const directSignInAccounts = async (): Promise<readonly DirectSignInAccou
  */
 export const REVIEW_TOKEN_COOKIE_NAME = 'ideeza_review';
 
+/**
+ * How long a reviewer stays admitted without the token in the address again.
+ *
+ * Thirty days, matching the session's own absolute window: shorter and a
+ * reviewer coming back after a weekend is met by a bare 404 with nothing to
+ * explain it, which is the one failure this entry has produced in practice.
+ * The cookie carries the token, so it is exactly as strong as the link that
+ * set it, and rotating the variable still kills both at once.
+ */
+export const REVIEW_TOKEN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
+
+
 export const directSignInAdmitted = (request: {
   readonly hostname: string;
   readonly token: string | null;
