@@ -94,6 +94,17 @@ export const directSignInAdmitted = (request: {
     request.hostname === '[::1]';
   if (local) return { admitted: true, setCookie: undefined };
 
+  // An open review, declared rather than defaulted into. A link that needs
+  // nothing appended is the only kind a reviewer reliably keeps: the tokened
+  // one is correct, and it is also the one that gets bookmarked without its
+  // token and then reads as a dead panel. Setting this says the operator
+  // accepts that anyone with the address is in.
+  if (process.env['REVIEW_DIRECT_SIGN_IN_OPEN'] === '1') {
+    return { admitted: true, setCookie: undefined };
+  }
+
+  // Without that, a missing or too-short token still refuses everything:
+  // forgetting a variable must never be the thing that opens the door.
   const expected = process.env['REVIEW_DIRECT_SIGN_IN_TOKEN'];
   if (expected === undefined || expected.length < 16) {
     return { admitted: false, setCookie: undefined };
