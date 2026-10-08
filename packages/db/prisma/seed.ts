@@ -1120,7 +1120,15 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
   // -- two competing quotes ----------------------------------------------
   await prisma.quote.upsert({
     where: { id: ID.quoteA },
-    update: { status: 'accepted', acceptedForRfqId: ID.rfq, acceptedAt: T.accepted },
+    // The shipping estimate is cleared rather than merely left out of `create`
+    // (UIUX-169): a database seeded before it was removed keeps whatever it was
+    // given, and the demo would still show money the shop no longer quotes.
+    update: {
+      status: 'accepted',
+      acceptedForRfqId: ID.rfq,
+      acceptedAt: T.accepted,
+      shippingEstimateMinor: null,
+    },
     create: {
       id: ID.quoteA,
       rfqId: ID.rfq,
@@ -1146,7 +1154,7 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
 
   await prisma.quote.upsert({
     where: { id: ID.quoteB },
-    update: { status: 'rejected', acceptedForRfqId: null },
+    update: { status: 'rejected', acceptedForRfqId: null, shippingEstimateMinor: null },
     create: {
       id: ID.quoteB,
       rfqId: ID.rfq,

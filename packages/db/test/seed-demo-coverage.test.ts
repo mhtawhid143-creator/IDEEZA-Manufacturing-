@@ -114,6 +114,19 @@ describe('the seeded quotes are itemised', () => {
     }
   });
 
+  it('quotes no shipping, because the shop does not quote shipping', async () => {
+    // UIUX-169. Not merely absent from `create`: cleared on update, because a
+    // database seeded before the field was removed keeps whatever it was given
+    // and the demo would still show money the shop no longer quotes.
+    const quotes = await prisma.quote.findMany({
+      where: { id: { in: ['seed_quote_a', 'seed_quote_b'] } },
+      select: { shippingEstimateMinor: true },
+    });
+
+    expect(quotes).toHaveLength(2);
+    expect(quotes.every((quote) => quote.shippingEstimateMinor === null)).toBe(true);
+  });
+
   it('spends on both families, so the per-type subtotals both appear', async () => {
     const lines = await prisma.quoteCostLine.findMany({ where: { quoteId: 'seed_quote_a' } });
     const kinds = new Set(lines.map((line) => line.kind));
