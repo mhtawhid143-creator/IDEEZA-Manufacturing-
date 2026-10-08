@@ -160,3 +160,36 @@ property of this project, not of the machine.
 
 If a deployment is already blocked, a redeploy of the same commit stays blocked:
 the author is part of the commit. Fix the address, make a commit, and push.
+
+## The demo database refreshes itself on every production deploy
+
+A reviewer opened the hosted panel and reported ten features missing. Every one
+of them was built and tested; what was missing was **data for them to display**.
+The deployment applies migrations (`db:deploy`) but never ran the seed, so the
+hosted database kept whatever it was given the day it was first prepared while
+the product moved on for weeks.
+
+`apps/manufacturer/vercel.json` now ends the production build with
+`tools/prepare-demo-database.mjs` — migrations, seed, both fixture sets and the
+working week of demo volume, the same preparation the review environment uses
+locally. The connection string is already in the build's environment, so this
+needs no secret from anybody and no step anyone has to remember.
+
+Three things make it safe to run on every deploy:
+
+- **Every row is an upsert keyed on its own id.** The seed, both fixture sets
+  and `demo-volume.ts` can run any number of times without piling up rows —
+  `seed-demo-coverage.test.ts` and the harnesses check what they produce.
+- **Production only.** The command is guarded on `VERCEL_ENV`, so a preview
+  deployment reads the demo database and never writes to it.
+- **It fails the build loudly.** A seed that cannot run stops the deploy rather
+  than quietly publishing a panel with stale data behind it — which is the
+  failure this exists to end.
+
+**What it costs:** anything a reviewer typed into the panel is reset by the next
+deploy. For a review deployment that is the right trade — the demo is supposed
+to be the same for everyone who opens it — but it is the reason this must never
+be pointed at a database holding real work.
+
+Only the manufacturer project carries it. Both panels share one database, so
+running it from both would do the same work twice for nothing.
