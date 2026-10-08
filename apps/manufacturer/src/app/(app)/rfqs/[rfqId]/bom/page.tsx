@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { Card, CardHeader, EmptyState, majorAmount, Tag, Text, Tooltip } from '@ideeza/ui';
-import { bomIsRequired } from '@ideeza/domain';
+import { Badge, Card, CardHeader, EmptyState, majorAmount, Text, Tooltip } from '@ideeza/ui';
+import { bomIsRequired, STOCK_LEVEL_LABEL } from '@ideeza/domain';
 import {
   SUBSTITUTION_POLICY_LABEL,
   asId,
@@ -42,7 +42,7 @@ const impactWords = (
   }`;
 
 const COVERAGE_WORDS: Readonly<Record<CoverageState, string>> = {
-  covered: 'In stock',
+  covered: STOCK_LEVEL_LABEL.in_stock,
   short: 'Short',
   missing: 'Not stocked',
 };
@@ -256,11 +256,11 @@ const BomPage = async ({
                                     : 'This SKU is not in your inventory'
                           }
                         >
-                          <Tag tone={COVERAGE_TONE[coverage]}>
+                          <Badge tone={COVERAGE_TONE[coverage]}>
                             {matched?.suggestion != null
                               ? 'Substitute suggested'
                               : COVERAGE_WORDS[coverage]}
-                          </Tag>
+                          </Badge>
                         </Tooltip>
                         {matched?.suggestion != null && (
                           <Text tone="muted" size="xs" className="mt-1 block">

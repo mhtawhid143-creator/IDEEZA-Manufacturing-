@@ -174,14 +174,14 @@ export const OrderActs = ({
           <FormField label="Courier" required>
             <Input
               value={courier}
-              placeholder="eg. DHL Express"
+              placeholder="e.g. DHL Express"
               onChange={(event) => setCourier(event.target.value)}
             />
           </FormField>
           <FormField label="Tracking reference" required>
             <Input
               value={tracking}
-              placeholder="eg. 1Z999AA10123456784"
+              placeholder="e.g. 1Z999AA10123456784"
               onChange={(event) => setTracking(event.target.value)}
             />
           </FormField>
@@ -293,7 +293,7 @@ export const OrderActs = ({
       >
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FormField label="Reference" required hint="The BOM line, eg. U2.">
+            <FormField label="Reference" required hint="The BOM line, e.g. U2.">
               <Input
                 value={reference}
                 onChange={(event) => setReference(event.target.value)}

@@ -32,6 +32,27 @@ export const STOCK_STATES = ['in_stock', 'low_stock', 'out_of_stock'] as const;
 export type StockLevel = (typeof STOCK_STATES)[number];
 
 /**
+ * How a stock level is said out loud, in one place.
+ *
+ * Four screens kept their own copy of these three words — the dashboard's
+ * inventory health, the parts table, a part's own page and the BOM coverage
+ * chip — which is the arrangement that let the same status reach a reader in
+ * two casings one click apart (UIUX-204, from the other direction). One map,
+ * read by all four, so the casing is a decision rather than an accident.
+ *
+ * Title Case here, and only here. The portal writes sentence case for stage
+ * and status labels, and `status-vocabulary.test.ts` holds the stages to it;
+ * a stock level is a shelf state the reviewer reads as a named condition, and
+ * it was asked for in Title Case twice (UIUX-118). The exception is narrow on
+ * purpose: these three words, not the convention.
+ */
+export const STOCK_LEVEL_LABEL: Readonly<Record<StockLevel, string>> = Object.freeze({
+  in_stock: 'In Stock',
+  low_stock: 'Low Stock',
+  out_of_stock: 'Out of Stock',
+});
+
+/**
  * What the status column means.
  *
  * Availability, not stock: parts already promised to an order are not available

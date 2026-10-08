@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Alert, Card, StatusChip, Tag, Text, majorAmount as major } from '@ideeza/ui';
+import { Alert, Badge, Card, StatusChip, Text, majorAmount as major } from '@ideeza/ui';
 import { recordChain } from '@ideeza/domain';
 import { ClientPanel } from '@/components/client-panel.js';
 import { Crumbs } from '@/components/crumbs.js';
@@ -97,7 +97,7 @@ export const OrderShell = ({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {order.late && <Tag tone="danger">Past the quoted date</Tag>}
+              {order.late && <Badge tone="danger">Past the quoted date</Badge>}
               <StatusChip status={order.status} withDot />
             </div>
           </div>

@@ -174,8 +174,12 @@ export const RefundBanner = ({
         }
       >
         {claimReference(refundId)} · {issueReasonLabel(reason)} — {description}{' '}
+        {/*
+          The reference already says what it is a reference to (UIUX-217), so
+          the word in front of it only repeats the first half of it.
+        */}
         <Link href={`/orders/${orderId}`} className="text-text-link underline">
-          (Order {orderReference(orderId)})
+          ({orderReference(orderId)})
         </Link>
         {!answered && (
           <span className="mt-1 block font-medium text-text-primary">

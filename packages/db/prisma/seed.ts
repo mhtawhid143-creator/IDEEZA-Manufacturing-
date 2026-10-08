@@ -72,7 +72,14 @@ const ID = {
   bomU3: 'seed_bom_u3',
   package: 'seed_package_full',
   requirements: 'seed_requirements_v1',
+  withdrawalRequested: 'seed_withdrawal_requested',
+  withdrawalPaid: 'seed_withdrawal_paid',
+  withdrawalRejected: 'seed_withdrawal_rejected',
   rfq: 'seed_rfq_1',
+  packageRemote: 'seed_package_remote',
+  requirementsRemote: 'seed_requirements_remote',
+  rfqRemote: 'seed_rfq_remote',
+  recipientRemote: 'seed_recipient_remote',
   recipientA: 'seed_recipient_a',
   recipientB: 'seed_recipient_b',
   rfqItemU1: 'seed_rfq_item_u1',
@@ -86,6 +93,7 @@ const ID = {
   substitutionA: 'seed_substitution_a',
   inventoryA1: 'seed_inventory_a1',
   inventoryA2: 'seed_inventory_a2',
+  inventoryA3: 'seed_inventory_a3',
   inventoryB1: 'seed_inventory_b1',
   payment: 'seed_payment_1',
   order: 'seed_order_1',
@@ -836,6 +844,14 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       material: 'FR-4 TG135',
       manufacturingMethod: 'PCB fabrication + SMT assembly + SLA enclosure',
       tolerance: 'Board outline +/-0.2mm',
+      // The printed half of this package. Without these the specification tab
+      // showed a board and an empty card beside it, and a reviewer reasonably
+      // read that as the printed work not being built at all.
+      printTechnology: 'sla',
+      printMaterial: 'Tough 2000 resin',
+      printColor: 'Slate grey',
+      surfaceFinish: 'bead_blasted',
+      infillPercent: 100,
       leadTimeDays: 18,
       shippingRequirement: 'Courier, tracked, DAP Dhaka',
       assembly: 'smt',
@@ -843,6 +859,72 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       substitutionPolicy: 'with_approval',
       notes: 'ENIG finish required. Panelisation left to the manufacturer.',
       lockedAt: T.rfqSubmitted,
+      createdAt: T.requirementsLocked,
+    },
+  });
+
+  /**
+   * The board's own specification.
+   *
+   * It was absent, so all twenty-odd rows read "Manufacturer's discretion" —
+   * which is a truthful rendering of nothing, and reads on screen as a screen
+   * that failed to load. The answers below are the ones the requirement text
+   * above already states in prose, so the two cannot contradict each other.
+   */
+  await prisma.boardSpecification.upsert({
+    where: { requirementsId: ID.requirements },
+    update: {},
+    create: {
+      requirementsId: ID.requirements,
+      baseMaterial: 'fr4',
+      layerCount: 4,
+      thicknessMm: '1.60',
+      boardColor: 'blue',
+      silkscreenColor: 'white',
+      surfaceFinish: 'enig',
+      outerCopperOz: '1.0',
+      innerCopperOz: '0.5',
+      viaCovering: 'tented',
+      minViaHoleMm: '0.30',
+      outlineToleranceMm: '0.20',
+      // "Panelisation left to the manufacturer", as the notes say.
+      deliveryFormat: 'panel_by_manufacturer',
+      distinctDesigns: 1,
+      electricalTest: 'flying_probe_full',
+      ulMarking: 'none',
+      markOnBoard: 'order_number',
+      workmanshipClass: 'ipc_class_2',
+      packaging: 'antistatic_bubble',
+      assembledFace: 'top',
+      partsSuppliedBy: 'manufacturer',
+      toolingHolesAddedBy: 'manufacturer',
+      functionalTest: true,
+      remarks: 'ENIG finish required. Keep the 50-ohm impedance on the RF trace pair.',
+      createdAt: T.requirementsLocked,
+    },
+  });
+
+  // The printed part's own specification, the peer of the board's. A printer
+  // prices on the box, the layer, the tolerance and the finish, so a demo
+  // database that leaves them empty cannot show what a printer would read.
+  await prisma.printSpecification.upsert({
+    where: { requirementsId: ID.requirements },
+    update: {},
+    create: {
+      requirementsId: ID.requirements,
+      layerHeightMm: '0.05',
+      // No infill pattern: the enclosure is printed solid, and a pattern on a
+      // 100% part would describe a structure that is not there.
+      wallThicknessMm: '2.00',
+      dimensionXMm: '118.40',
+      dimensionYMm: '96.25',
+      dimensionZMm: '47.00',
+      toleranceMm: '0.15',
+      supportStructure: 'standard',
+      orientationRequirement:
+        'Print the bearing seat vertically. The seat face must not touch the build plate.',
+      postProcessing: 'Bead blast, then dye slate grey. No sanding on the bearing seat.',
+      certification: 'RoHS',
       createdAt: T.requirementsLocked,
     },
   });
@@ -914,11 +996,98 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
     });
   }
 
+  /**
+   * The project's second piece (UIUX-207).
+   *
+   * Every request says it covers one part of a project and that "anything else
+   * in it travels as its own request" — and no project in this database had a
+   * second part, so the sentence was a claim with nothing behind it and the
+   * page read as though it had lost the others.
+   *
+   * The drone's remote controller is a board of its own: a separate package
+   * under the same product, with its own requirements and its own request, sent
+   * to the same shop so one reader can see both. That is this platform's answer
+   * to a multi-part project, and now it is visible rather than described.
+   */
+  await prisma.manufacturingPackage.upsert({
+    where: { id: ID.packageRemote },
+    update: {},
+    create: {
+      id: ID.packageRemote,
+      productId: ID.product,
+      kind: 'pcb',
+      createdAt: T.requirementsLocked,
+    },
+  });
+
+  await prisma.manufacturingRequirements.upsert({
+    where: { id: ID.requirementsRemote },
+    update: {},
+    create: {
+      id: ID.requirementsRemote,
+      packageId: ID.packageRemote,
+      version: 1,
+      quantity: 500,
+      material: 'FR-4 TG135',
+      manufacturingMethod: 'PCB fabrication + SMT assembly',
+      tolerance: 'Board outline +/-0.2mm',
+      leadTimeDays: 15,
+      shippingRequirement: 'Ships with the main unit',
+      assembly: 'smt',
+      qualityCheckRequirement: 'Optical inspection on 100%',
+      substitutionPolicy: 'with_approval',
+      notes: 'Pairs with the main unit. Same finish, so the two match in the hand.',
+      lockedAt: T.rfqSubmitted,
+      createdAt: T.requirementsLocked,
+    },
+  });
+
+  await prisma.rfq.upsert({
+    where: { id: ID.rfqRemote },
+    update: {},
+    create: {
+      id: ID.rfqRemote,
+      buyerId: ID.buyer,
+      packageId: ID.packageRemote,
+      requirementsId: ID.requirementsRemote,
+      status: 'submitted',
+      quantity: 500,
+      volumeTiers: [],
+      currency: CURRENCY,
+      shipToLine1: '20/3, Sector 9',
+      shipToCity: 'Dhaka',
+      shipToPostalCode: '1230',
+      shipToCountryCode: 'BD',
+      responseDeadline: at('2026-11-20T00:00:00.000Z'),
+      submittedAt: T.rfqSubmitted,
+      createdAt: T.rfqCreated,
+    },
+  });
+
+  await prisma.rfqRecipient.upsert({
+    where: {
+      rfqId_manufacturerId: { rfqId: ID.rfqRemote, manufacturerId: ID.manufacturerA },
+    },
+    update: { status: 'routed' },
+    create: {
+      id: ID.recipientRemote,
+      rfqId: ID.rfqRemote,
+      manufacturerId: ID.manufacturerA,
+      status: 'routed',
+      createdAt: T.rfqSubmitted,
+    },
+  });
+
   // -- inventory (manufacturer owned) ------------------------------------
   const inventory = [
     { id: ID.inventoryA1, manufacturerId: ID.manufacturerA, partName: 'STM32F405 MCU', sku: 'MCU-STM32F405', category: 'Electronics', description: 'LQFP64, 1MB flash. The 100-pin variant will not fit this footprint.', stockQuantity: 1_200, reservedQuantity: 500, unitCostMinor: 620n, leadTimeDays: 7 },
     { id: ID.inventoryA2, manufacturerId: ID.manufacturerA, partName: 'SiK telemetry radio 868MHz', sku: 'RF-SIK868', category: 'Electronics', stockQuantity: 300, reservedQuantity: 0, unitCostMinor: 1_850n, leadTimeDays: 10 },
     { id: ID.inventoryB1, manufacturerId: ID.manufacturerB, partName: 'STM32F405 MCU', sku: 'MCU-STM32F405', category: 'Electronics', stockQuantity: 400, reservedQuantity: 0, unitCostMinor: 660n, leadTimeDays: 12 },
+    // A full shelf with every piece already promised (UIUX-219). It reads as
+    // out of stock, because what is promised to an order cannot be promised
+    // again — and that is the whole point of the Availability column. The rule
+    // was already right; what was missing was a row a reader could see it in.
+    { id: ID.inventoryA3, manufacturerId: ID.manufacturerA, partName: 'Tantalum capacitor 100uF 25V', sku: 'CAP-100U25V', category: 'Electrolytic capacitors', description: 'Every piece on the shelf is reserved against a confirmed order.', stockQuantity: 600, reservedQuantity: 600, unitCostMinor: 310n, leadTimeDays: 14 },
   ];
   for (const item of inventory) {
     await prisma.inventoryItem.upsert({
@@ -951,7 +1120,6 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       currency: CURRENCY,
       unitPriceMinor: 790n,
       totalPriceMinor: 395_000n,
-      shippingEstimateMinor: 2_800n,
       toolingSetupCostMinor: 12_000n,
       leadTimeDays: 24,
       materialProcessNotes: 'FR-4 TG135, ENIG finish, IPC Class 2 workmanship.',
@@ -977,7 +1145,6 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       currency: CURRENCY,
       unitPriceMinor: 740n,
       totalPriceMinor: 370_000n,
-      shippingEstimateMinor: 4_100n,
       leadTimeDays: 35,
       materialProcessNotes: 'FR-4 standard, HASL finish.',
       terms: 'Funds secured through the platform. HASL finish instead of ENIG.',
@@ -997,6 +1164,47 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       where: { id: item.id },
       update: {},
       create: { ...item, currency: CURRENCY },
+    });
+  }
+
+  /**
+   * What each unit price is made of.
+   *
+   * Every line is per unit and the set adds up to the quote's own
+   * `unitPriceMinor` — the invariant refuses anything else, because an
+   * itemisation that does not reconcile is a second price rather than an
+   * explanation. Both families are present on both quotes, so the per-type
+   * subtotals the quote page groups by have something to add up.
+   */
+  const costLines = [
+    { quoteId: ID.quoteA, kind: 'fabrication', amountMinor: 310n },
+    { quoteId: ID.quoteA, kind: 'parts', amountMinor: 180n },
+    { quoteId: ID.quoteA, kind: 'assembly', amountMinor: 120n },
+    { quoteId: ID.quoteA, kind: 'stencil', amountMinor: 30n },
+    { quoteId: ID.quoteA, kind: 'material', amountMinor: 80n },
+    { quoteId: ID.quoteA, kind: 'machine_time', amountMinor: 50n },
+    { quoteId: ID.quoteA, kind: 'support_removal', amountMinor: 10n },
+    { quoteId: ID.quoteA, kind: 'finishing', amountMinor: 10n },
+    { quoteId: ID.quoteB, kind: 'fabrication', amountMinor: 300n },
+    { quoteId: ID.quoteB, kind: 'parts', amountMinor: 170n },
+    { quoteId: ID.quoteB, kind: 'assembly', amountMinor: 110n },
+    { quoteId: ID.quoteB, kind: 'stencil', amountMinor: 25n },
+    { quoteId: ID.quoteB, kind: 'material', amountMinor: 75n },
+    { quoteId: ID.quoteB, kind: 'machine_time', amountMinor: 45n },
+    { quoteId: ID.quoteB, kind: 'support_removal', amountMinor: 8n },
+    { quoteId: ID.quoteB, kind: 'finishing', amountMinor: 7n },
+  ] as const;
+  for (const line of costLines) {
+    await prisma.quoteCostLine.upsert({
+      where: { quoteId_kind: { quoteId: line.quoteId, kind: line.kind } },
+      update: { amountMinor: line.amountMinor },
+      create: {
+        id: `seed_cost_${line.quoteId.slice('seed_quote_'.length)}_${line.kind}`,
+        quoteId: line.quoteId,
+        kind: line.kind,
+        currency: CURRENCY,
+        amountMinor: line.amountMinor,
+      },
     });
   }
 
@@ -1080,7 +1288,6 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
         currency: CURRENCY,
         unitPriceMinor: 790n,
         totalPriceMinor: 395_000n,
-        shippingEstimateMinor: 2_800n,
         toolingSetupCostMinor: 12_000n,
         leadTimeDays: 24,
         materialProcessNotes: 'FR-4 TG135, ENIG finish, IPC Class 2 workmanship.',
@@ -1162,6 +1369,31 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
       createdAt: T.orderConfirmed,
     },
   });
+
+  /**
+   * A withdrawal history worth opening.
+   *
+   * Released payouts build the shop's available balance and IDEEZA pays it out;
+   * the dialog that lists those payments had no rows at all, so it opened on its
+   * empty state and read as an unbuilt screen. One of each outcome, so the three
+   * words the panel can show — With IDEEZA, Paid out, Refused — are all visible.
+   */
+  const withdrawals = [
+    { id: ID.withdrawalPaid, status: 'paid', amountMinor: 250_000n, requestedAt: at('2026-03-02T09:00:00.000Z'), settledAt: at('2026-03-05T11:30:00.000Z') },
+    { id: ID.withdrawalRejected, status: 'rejected', amountMinor: 90_000n, requestedAt: at('2026-04-11T14:20:00.000Z'), settledAt: at('2026-04-12T08:05:00.000Z') },
+    { id: ID.withdrawalRequested, status: 'requested', amountMinor: 120_000n, requestedAt: at('2026-05-28T10:15:00.000Z'), settledAt: null },
+  ] as const;
+  for (const withdrawal of withdrawals) {
+    await prisma.withdrawalRequest.upsert({
+      where: { id: withdrawal.id },
+      update: { status: withdrawal.status },
+      create: {
+        ...withdrawal,
+        manufacturerId: ID.manufacturerA,
+        currency: CURRENCY,
+      },
+    });
+  }
 
   // -- context bound conversation ----------------------------------------
   await prisma.messageThread.upsert({

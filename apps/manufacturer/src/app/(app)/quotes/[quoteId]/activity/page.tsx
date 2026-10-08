@@ -17,6 +17,19 @@ const ACTOR_LABEL: Readonly<Record<string, string>> = {
 };
 
 /** The same wording the buyer's activity screen uses for the same record. */
+/**
+ * Not the feed's vocabulary, deliberately.
+ *
+ * `ACTIVITY_LABEL` in the domain says what happened as a headline — "Quote
+ * sent". This page says it inside a sentence with an actor in front of it —
+ * "The shop **sent this quote**" — so the two cannot share a line.
+ *
+ * It is safe to keep here only because this page reads a closed set: the query
+ * takes `subjectKind` of `quote` and `substitution` and nothing else, and all
+ * eleven of those kinds are below. If it ever widens, this becomes the same
+ * fault UIUX-123 found on the dashboard — an unmapped kind reaching a reader as
+ * a stored token — and the vocabulary belongs in the domain beside the other.
+ */
 const EVENT_LABEL: Readonly<Record<string, string>> = {
   quote_submitted: 'sent this quote',
   quote_revised: 'revised this quote',

@@ -524,7 +524,7 @@ export const ProductionTimeline = ({
           >
             <Input
               value={title}
-              placeholder="eg. AOI report, batch 1 of 2"
+              placeholder="e.g. AOI report, batch 1 of 2"
               onChange={(event) => setTitle(event.target.value)}
             />
           </FormField>

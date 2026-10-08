@@ -16,7 +16,6 @@ import {
   Select,
   StageTrack,
   StatusChip,
-  Tag,
   Text,
   type StageTrackState,
 } from '@ideeza/ui';
@@ -267,15 +266,25 @@ export const OrderList = ({
                 {/*
                   A dispute is not always the order's status: one can be raised
                   and answered while production carries on, so the order chip
-                  alone would not say a case exists. This does, and says which
-                  half of its life it is in.
+                  alone would not say a case exists.
+
+                  An open one is a badge, because it is happening now and it
+                  holds production. A settled one is a muted line instead
+                  (UIUX-213): the status column answers "what is true now", and
+                  a second badge beside "In production" read as a contradiction
+                  — an order shown as running with what looked like a live
+                  dispute on it. Past tense, quietly, so the fact survives
+                  without competing with the state.
                 */}
-                {row.disputeId !== null && (
-                  <Badge tone={row.disputeStatus === 'resolved' ? 'neutral' : 'danger'}>
-                    {row.disputeStatus === 'resolved' ? 'Dispute closed' : 'Dispute open'}
-                  </Badge>
+                {row.disputeId !== null && row.disputeStatus !== 'resolved' && (
+                  <Badge tone="danger">Dispute open</Badge>
                 )}
-                {row.openAlerts > 0 && <Tag tone="danger">Shortage</Tag>}
+                {row.openAlerts > 0 && <Badge tone="danger">Shortage</Badge>}
+                {row.disputeId !== null && row.disputeStatus === 'resolved' && (
+                  <Text tone="muted" size="xs">
+                    a dispute was settled on this order
+                  </Text>
+                )}
                 {!row.fundingSecured && row.status === 'awaiting_payment' && (
                   <Text tone="muted" size="xs">
                     not funded

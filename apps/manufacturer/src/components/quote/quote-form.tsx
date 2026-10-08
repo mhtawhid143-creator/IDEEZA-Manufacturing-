@@ -121,7 +121,7 @@ export const QuoteForm = ({
   const [unitPrice, setUnitPrice] = useState(defaults?.unitPriceMajor ?? '');
   const [leadTime, setLeadTime] = useState(defaults?.leadTimeDays ?? '');
   const [expiresOn, setExpiresOn] = useState(defaults?.expiresOn ?? inDays(21));
-  const [shipping, setShipping] = useState(defaults?.shippingMajor ?? '');
+
   const [tooling, setTooling] = useState(defaults?.toolingMajor ?? '');
   const [notes, setNotes] = useState(defaults?.materialProcessNotes ?? '');
   const [warranty, setWarranty] = useState(defaults?.warrantyTerms ?? '');
@@ -154,9 +154,9 @@ export const QuoteForm = ({
     const unit = unitMinor === null || Number.isNaN(unitMinor) ? 0 : unitMinor;
     const goods = unit * overview.quantity;
     const extras =
-      (minorOf(shipping) ?? 0) + (minorOf(tooling) ?? 0);
+      minorOf(tooling) ?? 0;
     return { goods, landed: goods + (Number.isNaN(extras) ? 0 : extras) };
-  }, [unitMinor, overview.quantity, shipping, tooling]);
+  }, [unitMinor, overview.quantity, tooling]);
 
   /**
    * The breakdown's own total, so the shop can see it agree with the price
@@ -273,7 +273,8 @@ export const QuoteForm = ({
       unitPriceMajor: unitPrice,
       leadTimeDays: leadTime,
       expiresOn,
-      shippingMajor: shipping,
+      // The shop no longer quotes shipping — see the note on the form above.
+      shippingMajor: '',
       toolingMajor: tooling,
       materialProcessNotes: notes,
       warrantyTerms: warranty,
@@ -453,18 +454,16 @@ export const QuoteForm = ({
                 onChange={(event) => setExpiresOn(event.target.value)}
               />
             </FormField>
-            <FormField
-              label={`Shipping estimate (${overview.currency})`}
-              hint="Optional. The buyer chooses a shipping speed at checkout."
-            >
-              <Input
-                name="shipping"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={shipping}
-                onChange={(event) => setShipping(event.target.value)}
-              />
-            </FormField>
+            {/*
+              No shipping estimate here (UIUX-169).
+
+              The courier is the buyer's choice at checkout and the platform
+              adds the transit, so a figure entered by the shop was a guess at
+              somebody else's decision — and it then sat in the grand total as
+              though it were part of the price. The lead time above is the
+              shop's half of the delivery promise; the transit is the
+              platform's, and it is stated as such on the order.
+            */}
             <FormField
               label={`Tooling and setup (${overview.currency})`}
               hint="Optional. One-off costs, charged once on the order."
@@ -733,13 +732,6 @@ export const QuoteForm = ({
                 {
                   label: 'Subtotal',
                   value: `${overview.currency} ${money(totals.goods)}`,
-                },
-                {
-                  label: 'Shipping estimate',
-                  value:
-                    (minorOf(shipping) ?? 0) === 0
-                      ? 'Not quoted'
-                      : `${overview.currency} ${money(minorOf(shipping) ?? 0)}`,
                 },
                 {
                   label: 'Tooling and setup',

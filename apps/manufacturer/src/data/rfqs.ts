@@ -1,6 +1,7 @@
 import {
   EMPTY_BOARD_SPECIFICATION,
-  PACKAGE_KIND_LABEL,
+  manufacturingTypeLabel,
+  requestReference,
   packageKindsIncluding,
   quoteCostKindsFor,
   quoteLifecycle,
@@ -131,7 +132,7 @@ const recipientInclude = {
           _count: { select: { files: true, bomLines: true } },
         },
       },
-      requirements: { select: { manufacturingMethod: true } },
+      requirements: { select: { manufacturingMethod: true, assembly: true } },
       items: { select: { id: true } },
     },
   },
@@ -261,7 +262,10 @@ export const listRoutedRequests = async (
       productName: row.rfq.package.product.name,
       description: row.rfq.requirements.manufacturingMethod,
       kind: row.rfq.package.kind,
-      kindLabel: PACKAGE_KIND_LABEL[row.rfq.package.kind],
+      kindLabel: manufacturingTypeLabel({
+        packageKind: row.rfq.package.kind,
+        assemblyAsked: row.rfq.requirements.assembly !== 'none',
+      }),
       quantity: row.rfq.quantity,
       status: row.status,
       lifecycle: requestLifecycle({
@@ -381,6 +385,18 @@ export interface RequestDetail {
   readonly productName: string;
   /** The project this was designed as, which every later record descends from. */
   readonly projectId: string;
+  /**
+   * The project's other pieces that *this shop* has been sent (UIUX-207).
+   *
+   * Scoped by the routing row like every other read: a manufacturer sees a
+   * request only because it was sent to them, and a sibling they were not sent
+   * is the buyer's business and not theirs.
+   */
+  readonly projectPieces: readonly {
+    readonly rfqId: string;
+    readonly reference: string;
+    readonly kindLabel: string;
+  }[];
   readonly creatorName: string;
   readonly buyerId: UserId;
   readonly buyerName: string;
@@ -501,6 +517,27 @@ export const getRoutedRequest = async (
 
   const rfq = recipient.rfq;
   const requirements = rfq.requirements;
+
+  /**
+   * The project's other pieces, as this shop may see them (UIUX-207).
+   *
+   * Scoped by `recipients: { some: { manufacturerId } }` rather than by the
+   * project alone: the project belongs to the buyer, and the pieces of it this
+   * shop may read are the ones routed to them.
+   */
+  const siblings = await database().rfq.findMany({
+    where: {
+      id: { not: rfqId },
+      package: { productId: rfq.package.productId },
+      recipients: { some: { manufacturerId } },
+    },
+    select: {
+      id: true,
+      package: { select: { kind: true } },
+      requirements: { select: { assembly: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
   const files: readonly RequestFile[] = rfq.package.files.map((link) => ({
     id: link.file.id,
     name: link.file.name,
@@ -541,11 +578,22 @@ export const getRoutedRequest = async (
     open: rfq.status === 'submitted',
     productName: rfq.package.product.name,
     projectId: rfq.package.product.id,
+    projectPieces: siblings.map((piece) => ({
+      rfqId: piece.id,
+      reference: requestReference(piece.id),
+      kindLabel: manufacturingTypeLabel({
+        packageKind: piece.package.kind,
+        assemblyAsked: piece.requirements.assembly !== 'none',
+      }),
+    })),
     creatorName: rfq.package.product.owner.displayName,
     buyerId: asId<UserId>(rfq.buyerId),
     buyerName: rfq.buyer.displayName,
     kind: rfq.package.kind,
-    kindLabel: PACKAGE_KIND_LABEL[rfq.package.kind],
+    kindLabel: manufacturingTypeLabel({
+      packageKind: rfq.package.kind,
+      assemblyAsked: requirements.assembly !== 'none',
+    }),
     quantity: rfq.quantity,
     volumeTiers: rfq.volumeTiers,
     currency: rfq.currency,

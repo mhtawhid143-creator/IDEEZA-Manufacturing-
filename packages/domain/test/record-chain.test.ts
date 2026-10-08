@@ -51,7 +51,7 @@ describe('one chain from the design to the order', () => {
     // which is what happens when one field is asked to be both (UIUX-146).
     const [project] = recordChain({ ...PROJECT, rfqId: 'rfq_1', quoteId: null, orderId: null });
     expect(project?.name).toBe('Beacon Light Board');
-    expect(project?.reference).toMatch(/^PRJ-[0-9A-Z]{8}$/);
+    expect(project?.reference).toMatch(/^#PRJ-[0-9A-Z]{8}$/);
     expect(project?.reference).not.toContain('Beacon');
   });
 

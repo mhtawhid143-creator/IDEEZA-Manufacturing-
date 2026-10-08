@@ -6,6 +6,8 @@ import {
   assertPartDeletable,
   availableStock,
   stockLevelOf,
+  STOCK_LEVEL_LABEL,
+  STOCK_STATES,
 } from '../src/index.js';
 
 describe('what is free to promise', () => {
@@ -147,5 +149,24 @@ describe('when a part may be deleted', () => {
     expect(() =>
       assertPartDeletable({ reservedQuantity: 0, suggestionCount: 0, movementCount: 4 }),
     ).toThrow(/stock movements recorded/);
+  });
+});
+
+/**
+ * UIUX-118. The three words had four copies — the dashboard, the parts table, a
+ * part's page and the BOM coverage chip — which is how one status reaches a
+ * reader in two casings. One map now, and this is what holds it to one.
+ */
+describe('how a stock level is said out loud', () => {
+  it('has a word for every level the domain can return', () => {
+    for (const level of STOCK_STATES) {
+      expect(STOCK_LEVEL_LABEL[level]).toBeTruthy();
+    }
+  });
+
+  it('writes the three of them in Title Case, which is the exception this ticket asked for', () => {
+    expect(STOCK_LEVEL_LABEL.in_stock).toBe('In Stock');
+    expect(STOCK_LEVEL_LABEL.low_stock).toBe('Low Stock');
+    expect(STOCK_LEVEL_LABEL.out_of_stock).toBe('Out of Stock');
   });
 });

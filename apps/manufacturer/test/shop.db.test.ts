@@ -111,9 +111,11 @@ describe('the dashboard headline numbers', () => {
   });
 
   it('counts the requests still waiting for an answer', async () => {
-    // The seeded request has been quoted by both shops, so nothing is open.
+    // The seeded request has been quoted by both shops, so it is not open. The
+    // project's second piece — the remote controller (UIUX-207) — is, and has
+    // not been answered, so the count starts at one rather than zero.
     const mine = await dashboard.getHeadlineTiles(SHOP);
-    expect(mine.openRfqs).toBe(0);
+    expect(mine.openRfqs).toBe(1);
 
     await prisma.rfqRecipient.update({
       where: {
@@ -124,6 +126,6 @@ describe('the dashboard headline numbers', () => {
     await prisma.rfq.update({ where: { id: 'seed_rfq_1' }, data: { status: 'submitted' } });
 
     const after = await dashboard.getHeadlineTiles(SHOP);
-    expect(after.openRfqs).toBe(1);
+    expect(after.openRfqs).toBe(2);
   });
 });

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import {
   Alert,
+  Badge,
   Card,
   CardHeader,
   DefinitionList,
@@ -9,7 +10,7 @@ import {
   Text,
   majorAmount as major,
 } from '@ideeza/ui';
-import { orderReference, type StockMovement } from '@ideeza/domain';
+import { orderReference, STOCK_LEVEL_LABEL, type StockMovement } from '@ideeza/domain';
 import { Crumbs } from '@/components/crumbs.js';
 import { PartForm } from '@/components/inventory/part-form.js';
 import { StockControls } from '@/components/inventory/stock-controls.js';
@@ -38,11 +39,8 @@ const MOVEMENT_WORDS: Readonly<Record<StockMovement, string>> = {
  * What a stock level is called, and what colour it takes — one map, so a pill's
  * words and its colour come from the same key and cannot disagree (UIUX-120).
  */
-const LEVEL_WORDS: Readonly<Record<string, string>> = {
-  in_stock: 'In stock',
-  low_stock: 'Low stock',
-  out_of_stock: 'Out of stock',
-};
+/** The portal's one stock vocabulary — see `STOCK_LEVEL_LABEL`. */
+const LEVEL_WORDS: Readonly<Record<string, string>> = STOCK_LEVEL_LABEL;
 
 const LEVEL_TONE: Readonly<Record<string, 'success' | 'warning' | 'danger'>> = {
   in_stock: 'success',
@@ -85,9 +83,9 @@ const PartDetailPage = async ({
               </Text>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Tag tone={LEVEL_TONE[part.level] ?? 'neutral'}>
+              <Badge tone={LEVEL_TONE[part.level] ?? 'neutral'}>
                 {LEVEL_WORDS[part.level] ?? part.level}
-              </Tag>
+              </Badge>
               {!part.enabledForMatching && <Tag tone="neutral">Not matched</Tag>}
             </div>
           </div>

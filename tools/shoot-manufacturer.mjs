@@ -42,6 +42,13 @@ const SURFACES = [
   ['rfq-bom', '/rfqs/mfrfix_rfq_driver/bom'],
   ['quotes', '/quotes'],
   ['quote-detail', '/quotes/verify_quote_a'],
+  // The seeded records too, not only the fixture ones. These are the rows a
+  // reviewer lands on first, and a design pass that only ever looked at the
+  // fixtures is how three built features were reported missing.
+  ['seed-rfq-spec', '/rfqs/seed_rfq_1/specification'],
+  ['seed-rfq-brief', '/rfqs/seed_rfq_1'],
+  ['seed-quote-detail', '/quotes/seed_quote_a'],
+  ['order-disputed', '/orders/mfrfix_order_disputed'],
   ['orders', '/orders'],
   ['order-detail', '/orders/mfrfix_order_beacon'],
   ['order-quote', '/orders/mfrfix_order_beacon/quote'],
@@ -147,11 +154,19 @@ const main = async () => {
 
     const browser = await chromium.launch();
 
-    for (const [width, height, suffix] of [
-      [1440, 900, ''],
-      [390, 844, '-390'],
+    // Light, phone, and dark. The dark pass is here because a reviewer reads
+    // the panel in dark mode and reported three status colours as "no colour"
+    // (UIUX-119/120) — a design pass that only ever looked at the light theme
+    // could not have seen it.
+    for (const [width, height, suffix, colorScheme] of [
+      [1440, 900, '', 'light'],
+      [390, 844, '-390', 'light'],
+      [1440, 900, '-dark', 'dark'],
     ]) {
-      const context = await browser.newContext({ viewport: { width, height } });
+      const context = await browser.newContext({
+        viewport: { width, height },
+        colorScheme,
+      });
       const page = await context.newPage();
       await signIn(page, base, MEMBER_EMAIL);
 

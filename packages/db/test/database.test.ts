@@ -194,8 +194,8 @@ describe('seed', () => {
     // Four favourites plus the mixed product the 3D route is exercised on.
     expect(await prisma.product.count()).toBe(5);
     expect(await prisma.productFavorite.count()).toBe(4);
-    expect(await prisma.rfq.count()).toBe(1);
-    expect(await prisma.rfqRecipient.count()).toBe(2);
+    expect(await prisma.rfq.count()).toBe(2);
+    expect(await prisma.rfqRecipient.count()).toBe(3);
     expect(await prisma.rfqItem.count()).toBe(3);
     expect(await prisma.quote.count()).toBe(2);
     expect(await prisma.manufacturingOrder.count()).toBe(1);
@@ -214,7 +214,7 @@ describe('seed', () => {
     expect(await prisma.refund.count()).toBe(1);
     expect(await prisma.dispute.count()).toBe(1);
     expect(await prisma.domainEvent.count()).toBe(9);
-    expect(await prisma.inventoryItem.count()).toBe(3);
+    expect(await prisma.inventoryItem.count()).toBe(4);
   });
 
   it('routes one request to two manufacturers and accepts exactly one quote', async () => {
@@ -330,13 +330,17 @@ describe('favourites and product availability', () => {
         package: { productId: 'seed_product_drone' },
       },
     });
-    // The reference scenario has run to production, so its request is closed.
-    expect(open).toHaveLength(0);
+    // The project has two pieces (UIUX-207): the main unit, whose request ran
+    // all the way to production and is closed, and the remote controller,
+    // which is still out with the shop. So a product can hold both at once —
+    // which is the point of asking through the package rather than the product.
+    expect(open.map((row) => row.id)).toEqual(['seed_rfq_remote']);
     const all = await prisma.rfq.findMany({
       where: { package: { productId: 'seed_product_drone' } },
+      orderBy: { id: 'asc' },
     });
-    expect(all).toHaveLength(1);
-    expect(all[0]?.status).toBe('closed');
+    expect(all).toHaveLength(2);
+    expect(all.map((row) => row.status).sort()).toEqual(['closed', 'submitted']);
   });
 });
 
@@ -494,7 +498,7 @@ describe('manufacturer owned records carry their manufacturer', () => {
       where: { manufacturerId: 'seed_mfr_b' },
     });
 
-    expect(ownedByA).toHaveLength(2);
+    expect(ownedByA).toHaveLength(3);
     expect(ownedByB).toHaveLength(1);
     expect(ownedByA.every((item) => item.manufacturerId === 'seed_mfr_a')).toBe(true);
   });

@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation';
-import { Alert, Card, CardHeader, EmptyState, Tag, Text } from '@ideeza/ui';
-import { asId, type OrderId, type RfqId } from '@ideeza/domain';
+import { Alert, Card, CardHeader, cn, EmptyState, Tag, Text } from '@ideeza/ui';
+import { asId, fileFormat, type OrderId, type RfqId } from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
 import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getOrder } from '@/data/orders.js';
 import { getRoutedRequest, type RequestFile } from '@/data/rfqs.js';
 import { requireManufacturer } from '@/lib/auth.js';
+import { FILE_FORMAT_TILE, FILE_FORMAT_TONE } from '@/components/request/file-format-tone.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,9 +79,9 @@ const OrderFilesPage = async ({
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     aria-hidden
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-surface-raised text-xs font-semibold text-text-tertiary"
+                    className={cn(FILE_FORMAT_TILE, FILE_FORMAT_TONE[fileFormat(file.name).group])}
                   >
-                    {file.name.split('.').pop()?.slice(0, 4).toUpperCase() ?? 'FILE'}
+                    {fileFormat(file.name).label}
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-text-primary">

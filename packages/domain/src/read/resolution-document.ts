@@ -136,17 +136,25 @@ const reference = (prefix: string, id: string): string => {
   const digest = ((BigInt(low) << 32n) | BigInt(high))
     .toString(DIGEST_ALPHABET)
     .toUpperCase();
-  return `${prefix}-${digest.slice(-DIGEST_LENGTH).padStart(DIGEST_LENGTH, '0')}`;
+  // The leading hash is the design's own convention for a record somebody can
+  // quote — `#13611` on an order, `#13617` on a stage (UIUX-138). Without it a
+  // reference reads as a code the platform uses internally rather than a number
+  // a shop can give the buyer, or read down a phone.
+  //
+  // It is added here, in the one place every reference is built, so the hash
+  // cannot appear on some records and not others — which is the fault this
+  // family of tickets keeps finding from different directions.
+  return `#${prefix}-${digest.slice(-DIGEST_LENGTH).padStart(DIGEST_LENGTH, '0')}`;
 };
 
-/** `CASE-1A2B3C4D` — a dispute, as quoted by either side. */
+/** `#CASE-1A2B3C4D` — a dispute, as quoted by either side. */
 export const caseReference = (disputeId: string): string => reference('CASE', disputeId);
 
-/** `CLAIM-1A2B3C4D` — a refund claim, as quoted by either side. */
+/** `#CLAIM-1A2B3C4D` — a refund claim, as quoted by either side. */
 export const claimReference = (refundId: string): string => reference('CLAIM', refundId);
 
 /**
- * `PRJ-1A2B3C4D` — the buyer's design, which every later record descends from
+  * `#PRJ-1A2B3C4D` — the buyer's design, which every later record descends from
  * (UIUX-146).
  *
  * A project needs a reference of its own precisely because it also has a name:
@@ -156,19 +164,19 @@ export const claimReference = (refundId: string): string => reference('CLAIM', r
  */
 export const projectReference = (productId: string): string => reference('PRJ', productId);
 
-/** `RFQ-1A2B3C4D` — a request for quotes. */
+/** `#RFQ-1A2B3C4D` — a request for quotes. */
 export const requestReference = (rfqId: string): string => reference('RFQ', rfqId);
 
-/** `QUOTE-1A2B3C4D` — one shop's answer to a request. */
+/** `#QUOTE-1A2B3C4D` — one shop's answer to a request. */
 export const quoteReference = (quoteId: string): string => reference('QUOTE', quoteId);
 
-/** `ORDER-1A2B3C4D` — a confirmed order, as quoted by either side. */
+/** `#ORDER-1A2B3C4D` — a confirmed order, as quoted by either side. */
 export const orderReference = (orderId: string): string => reference('ORDER', orderId);
 
-/** `PAYOUT-1A2B3C4D` — one release of money to a shop. */
+/** `#PAYOUT-1A2B3C4D` — one release of money to a shop. */
 export const payoutReference = (payoutId: string): string => reference('PAYOUT', payoutId);
 
-/** `PART-1A2B3C4D` — a line in a shop's own inventory. */
+/** `#PART-1A2B3C4D` — a line in a shop's own inventory. */
 export const partReference = (partId: string): string => reference('PART', partId);
 
 /**

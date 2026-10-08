@@ -1,5 +1,6 @@
-import { Card, PageHeader, Text, cn, majorAmount as major } from '@ideeza/ui';
+import { Card, PageHeader, Text, majorAmount as major } from '@ideeza/ui';
 import { STOCK_STATES, type StockLevel } from '@ideeza/domain';
+import { InventoryCards } from '@/components/inventory/inventory-cards.js';
 import { PartForm } from '@/components/inventory/part-form.js';
 import { PartList } from '@/components/inventory/part-list.js';
 import { inventoryCounters, listParts } from '@/data/inventory.js';
@@ -21,50 +22,6 @@ const matchingFilter = (value: string | undefined): 'all' | 'enabled' | 'disable
 const pageNumber = (value: string | undefined): number => {
   const parsed = Number(value ?? '1');
   return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
-};
-
-/**
- * How urgent a number is, said in the same colour language the table's own
- * Status column uses (UIUX-218).
- *
- * The complaint was that the most urgent figure on the page looked exactly like
- * the least urgent one. A card only takes a tone when the number is non-zero:
- * "0 out of stock" is good news and must not be painted as an alarm.
- */
-const COUNTER_TONE = {
-  neutral: { rule: 'border-border', value: 'text-text-primary' },
-  warning: { rule: 'border-border-warning', value: 'text-text-warning' },
-  danger: { rule: 'border-border-error', value: 'text-text-error' },
-} as const;
-
-const Counter = ({
-  value,
-  label,
-  note,
-  tone = 'neutral',
-}: {
-  readonly value: string | number;
-  readonly label: string;
-  readonly note: string;
-  readonly tone?: keyof typeof COUNTER_TONE;
-}) => {
-  const paint = COUNTER_TONE[value === 0 ? 'neutral' : tone];
-  return (
-    <Card className={paint.rule}>
-      <p
-        data-numeric
-        className={cn('text-3xl font-semibold tracking-near', paint.value)}
-      >
-        {value}
-      </p>
-      <Text size="sm" className="mt-0.5 block font-medium text-text-secondary">
-        {label}
-      </Text>
-      <Text tone="muted" size="xs" className="mt-0.5 block">
-        {note}
-      </Text>
-    </Card>
-  );
 };
 
 /**
@@ -90,6 +47,7 @@ const InventoryPage = async ({
   const category = single('category') ?? 'all';
   const level = levelFilter(single('level'));
   const matching = matchingFilter(single('matching'));
+  const reserved = single('reserved') === 'reserved' ? 'reserved' : 'all';
   const search = single('q') ?? '';
 
   const [counters, parts, shop] = await Promise.all([
@@ -99,6 +57,7 @@ const InventoryPage = async ({
       category,
       level,
       matching,
+      reserved,
       page: pageNumber(single('page')),
     }),
     getShopContext(actor.manufacturerId, actor.userId),
@@ -116,44 +75,20 @@ const InventoryPage = async ({
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Counter
-          value={counters.totalSkus}
-          label="Parts held"
-          note={
-            counters.disabled === 0
-              ? 'All of them matched to requests'
-              : `${counters.disabled} not matched to requests`
-          }
-        />
-        {/*
-          What the shelf is worth (UIUX-218). A count of parts says nothing
-          about the capital standing still in the store, which is the number a
-          shop plans around. At cost, because unsold stock has earned nothing.
-        */}
-        <Counter
-          value={`${counters.currency} ${major(counters.inventoryValueMinor)}`}
-          label="Stock at cost"
-          note="Everything on the shelf, at what you paid"
-        />
-        <Counter
-          value={counters.lowStock}
-          label="Low stock"
-          note="Availability at or below your threshold"
-          tone="warning"
-        />
-        <Counter
-          value={counters.outOfStock}
-          label="Out of stock"
-          note="Nothing free to promise"
-          tone="danger"
-        />
-        <Counter
-          value={counters.reservedParts}
-          label="Parts reserved"
-          note="Promised to confirmed orders"
-        />
-      </div>
+      {/*
+        The counts, and the filter they are (UIUX-220). "Stock at cost" is the
+        one that stays a plain card — it is money (UIUX-218), not a set of rows,
+        so there is nothing for it to narrow the table to.
+      */}
+      <InventoryCards
+        totalSkus={counters.totalSkus}
+        disabled={counters.disabled}
+        valueMajor={major(counters.inventoryValueMinor)}
+        valueLabel={counters.currency}
+        lowStock={counters.lowStock}
+        outOfStock={counters.outOfStock}
+        reservedParts={counters.reservedParts}
+      />
 
       <Card padded={false}>
         <div className="flex flex-col gap-4 p-4 md:p-6">

@@ -395,6 +395,77 @@ const main = async () => {
         (await visible(page.getByText(SHOP_NAME).first())),
     );
 
+    // ---- UIUX-217: the copy itself, swept rather than corrected one at a time
+    {
+      const words = await page.locator('body').innerText();
+      check(
+        'the portal writes "e.g." rather than "eg."',
+        !/\beg\.\s/.test(words),
+        (words.match(/\S*\beg\.\s\S*/) ?? ['none'])[0],
+      );
+      check(
+        'and never says a record’s kind twice in a row',
+        !/\b(Case CASE|Order ORDER|Quote QUOTE|Claim CLAIM|Payout PAYOUT)-/i.test(words),
+        (words.match(/\b\w+ (CASE|ORDER|QUOTE|CLAIM|PAYOUT)-\S*/) ?? ['none'])[0],
+      );
+    }
+
+    // ---- UIUX-123: the activity feed is written, not transliterated
+    {
+      // `evaluateAll` does not wait, and the feed is the last card on a long
+      // streamed page — so ask for the first row before reading them all.
+      const rows = page.locator('[data-activity-label]');
+      await rows.first().waitFor({ state: 'attached' });
+      const lines = await rows.evaluateAll((nodes) =>
+        nodes.map((node) => node.textContent?.trim() ?? ''),
+      );
+      check(
+        'every line of the feed reads as a sentence, never as a stored kind',
+        lines.length > 0 &&
+          lines.every((line) => !line.includes('_')) &&
+          lines.every((line) => line.charAt(0) === line.charAt(0).toUpperCase()),
+        lines.slice(0, 4).join(' · '),
+      );
+      check(
+        'and none of it is written in the present, the way a log is not',
+        lines.every((line) => !/\b\w+ing\b/.test(line)),
+        lines.slice(0, 4).join(' · '),
+      );
+    }
+
+    // ---- UIUX-119: the inventory legend is the key, in the column's own pills
+    {
+      const legend = page.getByRole('list').filter({ hasText: 'free to promise' });
+      check(
+        'the inventory health legend wears the three status pills it explains',
+        (await visible(legend.getByText('In Stock'))) &&
+          (await visible(legend.getByText('Low Stock'))) &&
+          (await visible(legend.getByText('Out of Stock'))) &&
+          (await visible(legend.getByText('at or below that threshold'))),
+      );
+      // Not merely present — each one has to be a different colour, which is
+      // what "the legend colors have not been applied" was reporting.
+      const colours = await legend
+        .getByText(/^(In Stock|Low Stock|Out of Stock)$/)
+        .evaluateAll((nodes) =>
+          nodes.map((node) => window.getComputedStyle(node).color),
+        );
+      check(
+        'and each of the three is painted a different colour',
+        colours.length === 3 && new Set(colours).size === 3,
+        colours.join(' · '),
+      );
+    }
+
+    // ---- UIUX-109: the trend caption names the period the figure measures
+    check(
+      'the order count is read against last month, in those words',
+      (await page.getByText(/vs the 30 days before/).count()) === 0 &&
+        (await visible(page.getByText(/(vs last month|so far this month)/).first())),
+      (await page.getByText(/(vs last month|so far this month)/).first().textContent()) ??
+        '',
+    );
+
     const navItems = [
       'Dashboard',
       'RFQs',
@@ -732,8 +803,8 @@ const main = async () => {
     // ------------- UIUX-138 / UIUX-139 / UIUX-140 / UIUX-144: the Brief panel
     check(
       'the request names itself with the reference either side can quote',
-      await visible(page.getByText(/^RFQ-[0-9A-Z]{8}$/)),
-      (await page.getByText(/^RFQ-[0-9A-Z]{8}$/).first().textContent()) ?? '',
+      await visible(page.getByText(/^#RFQ-[0-9A-Z]{8}$/)),
+      (await page.getByText(/^#RFQ-[0-9A-Z]{8}$/).first().textContent()) ?? '',
     );
     check(
       'the breadcrumb names the request, not the action that opened it',
@@ -747,11 +818,56 @@ const main = async () => {
         page.getByRole('link', { name: /^\d+ files?$/ }),
       ),
     );
+    // ------- UIUX-137: and the bill of materials is reached the same way
+    check(
+      'the BOM count is the way to the bill of materials, as the file count is',
+      await visible(page.getByRole('link', { name: /^\d+ lines?$/ })),
+    );
+    check(
+      'and it lands on the lines themselves',
+      (await page
+        .getByRole('link', { name: /^\d+ lines?$/ })
+        .getAttribute('href'))?.endsWith('/bom') === true,
+    );
     check(
       'one name for the kind of work, on the tag and in the field',
       (await page.getByText('3D module').count()) === 0 &&
         (await page.getByText(/^3D$/).count()) === 0,
     );
+    // ------- UIUX-136: the type names the whole job, not only the package
+    check(
+      'the manufacturing type names the assembly when parts are being placed',
+      (await visible(page.getByText('Manufacturing type'))) &&
+        (await visible(page.getByText(/^PCB \+ assembly$/).first())),
+      (await page
+        .getByText(/^(PCB|3D printing)(\s\+\s(assembly|3D printing))*$/)
+        .first()
+        .textContent()) ?? '',
+    );
+    // ------- UIUX-207: the project's other pieces are named, not promised
+    check(
+      'the covers line says what this request is one of',
+      await visible(page.getByText(/covers the .* part of that project/)),
+      (await page
+        .getByText(/covers the .* part of that project/)
+        .first()
+        .textContent()) ?? '',
+    );
+
+    // ------- UIUX-144: the chip above the card and the row inside it agree
+    {
+      const named = await page.getByText(/^PCB \+ assembly$/).count();
+      check(
+        'the chip and the row call this request the same thing',
+        named >= 2,
+        `${named} place(s) on the page say "PCB + assembly"`,
+      );
+      // And nothing on the page still calls the same request something shorter.
+      check(
+        'and no surface on it falls back to the package alone',
+        (await page.getByText(/^PCB$/).count()) === 0,
+      );
+    }
     check(
       'the buyer target price is labelled as theirs, not as a price',
       await visible(page.getByText(/target/i).first()),
@@ -801,10 +917,27 @@ const main = async () => {
     // ------- UIUX-147 / UIUX-148: what the work needs, not just what arrived
     // ---- UIUX-150 / UIUX-149: what each file is, and why none of them opens
     check(
-      'each file row carries a glyph for what the file is for',
-      (await page.locator('ul[aria-label$="files"] svg').count()) >= 2,
-      `${await page.locator('ul[aria-label$="files"] svg').count()} glyphs`,
+      'each file row is marked with its own format, not a shared glyph',
+      (await page.locator('ul[aria-label$="files"] li span[aria-hidden]').count()) >= 2,
     );
+    // ---- UIUX-150: and the mark carries colour, which is what was asked for
+    {
+      const tiles = page.locator('ul[aria-label$="files"] li span[aria-hidden]').first();
+      const paint = await tiles.evaluate((node) => {
+        const style = window.getComputedStyle(node);
+        return { background: style.backgroundColor, colour: style.color };
+      });
+      check(
+        'the format tile is painted rather than left the surface colour',
+        paint.background !== 'rgba(0, 0, 0, 0)' && paint.background !== 'transparent',
+        `${paint.background} on ${paint.colour}`,
+      );
+      check(
+        'and it prints the format, so the colour has something to mean',
+        /^[A-Z0-9]{2,6}$/.test((await tiles.textContent())?.trim() ?? ''),
+        (await tiles.textContent())?.trim() ?? '',
+      );
+    }
     check(
       'the tab says plainly that no file opens in the browser, and why',
       (await visible(
@@ -921,7 +1054,7 @@ const main = async () => {
     // ------------------------------- M04: inventory against the bill of materials
     check(
       'the stock column says what this shop can cover',
-      (await visible(page.getByText('In stock').first())) &&
+      (await visible(page.getByText('In Stock').first())) &&
         (await visible(page.getByText('Short').first())) &&
         (await visible(page.getByText('Not stocked').first())),
     );
@@ -1094,7 +1227,8 @@ const main = async () => {
       'the price summary is named, and states what it is worked out from',
       (await visible(quoteModal.getByText('What the buyer will see'))) &&
         (await visible(quoteModal.getByText(/Worked out from your unit price/))) &&
-        (await visible(quoteModal.getByText('Shipping estimate'))) &&
+        // No shipping row any more (UIUX-169): the shop does not quote it.
+        (await quoteModal.getByText('Shipping estimate').count()) === 0 &&
         (await visible(quoteModal.getByText('Tooling and setup'))),
     );
 
@@ -1135,7 +1269,6 @@ const main = async () => {
     await quoteModal
       .getByLabel('Payment and delivery terms')
       .fill('50% on confirmation, 50% before shipping. Ex-works Dhaka.');
-    await quoteModal.getByLabel('Shipping estimate (USD)').fill('84.00');
     await quoteModal.getByLabel('Tooling and setup (USD)').fill('120.00');
     await quoteModal.getByLabel('Warranty').fill('12 months against manufacturing defects.');
 
@@ -1257,7 +1390,7 @@ const main = async () => {
     check(
       'the quote states what the buyer pays and what is not the shop’s to quote',
       (await visible(page.getByText('Pricing breakdown'))) &&
-        (await visible(page.getByText('USD 5,164.00').first())) &&
+        (await visible(page.getByText('USD 5,080.00').first())) &&
         (await visible(page.getByText('not yours to quote', { exact: false }))),
     );
     check(
@@ -1460,7 +1593,11 @@ const main = async () => {
       (await page.getByRole('columnheader', { name: 'Type' }).count()) >= 1 &&
         (await page
           .getByRole('table', { name: 'Orders in production' })
-          .getByText(/^(PCB|3D printing|PCB \+ 3D printing)$/)
+          // Every shape `manufacturingTypeLabel` can produce (UIUX-136): the
+          // package kind, and the assembly where a board is being populated.
+          .getByText(
+            /^(PCB|3D printing|PCB \+ assembly|PCB \+ 3D printing|PCB \+ assembly \+ 3D printing)$/,
+          )
           .count()) >= 1,
     );
     check(
@@ -1649,7 +1786,7 @@ const main = async () => {
       'the rail reaches the inventory, and it counts what matters',
       (await visible(page.getByRole('heading', { name: 'Inventory management' }))) &&
         (await visible(page.getByText('Parts held'))) &&
-        (await visible(page.getByText('Low stock').first())) &&
+        (await visible(page.getByText('Low Stock').first())) &&
         (await visible(page.getByText('Parts reserved'))),
     );
     check(
@@ -1666,7 +1803,7 @@ const main = async () => {
     check(
       'the urgent card does not look like the calm one',
       await page
-        .getByText('Out of stock')
+        .getByText('Out of Stock')
         .first()
         .locator('..')
         .evaluate((card) => {
@@ -2055,7 +2192,7 @@ const main = async () => {
     );
     check(
       'the project is named as well as numbered',
-      /Project PRJ-[0-9A-Z]{8} · Beacon Light Board/.test(chainWords),
+      /Project #PRJ-[0-9A-Z]{8} · Beacon Light Board/.test(chainWords),
       chainWords.slice(0, 90),
     );
     // ---- UIUX-207: what this record covers, said rather than assumed
@@ -2227,7 +2364,7 @@ const main = async () => {
     );
     check(
       'and there is one way through to the quote itself',
-      (await page.getByRole('link', { name: /Open QUOTE-.* in full/ }).count()) === 1,
+      (await page.getByRole('link', { name: /Open #QUOTE-.* in full/ }).count()) === 1,
     );
     await page.goto(`${base}/orders/mfrfix_order_beacon/files`, {
       waitUntil: 'networkidle',
@@ -2313,8 +2450,8 @@ const main = async () => {
     );
     check(
       'and names the order it is about, as a link',
-      /\(Order ORDER-[0-9A-Z]{8}\)/.test(claimBody),
-      (claimBody.match(/\(Order ORDER-[0-9A-Z]{8}\)/) ?? ['(not named)'])[0],
+      /\(#ORDER-[0-9A-Z]{8}\)/.test(claimBody),
+      (claimBody.match(/\(#ORDER-[0-9A-Z]{8}\)/) ?? ['(not named)'])[0],
     );
 
     // The design's Refund Request form: a reason, the full claim or an amount of
@@ -3638,7 +3775,9 @@ const main = async () => {
         const caseText = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
         check(
           'the case is the design\'s Dispute Center page',
-          /Dispute Center Case/.test(caseText) &&
+          // "Dispute Center — #CASE-…" since UIUX-217: the reference carries
+          // the word "case", so the heading no longer says it twice.
+          /Dispute Center — #CASE-/.test(caseText) &&
             /Client Name/.test(caseText) &&
             /Dispute Reason/.test(caseText) &&
             /Dispute Amount/.test(caseText),

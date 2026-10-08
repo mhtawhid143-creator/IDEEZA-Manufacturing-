@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { Text, Tooltip } from '@ideeza/ui';
 import type { ChainLink, PipelineStage } from '@ideeza/domain';
@@ -83,13 +84,52 @@ export const RecordChain = ({ links, current, hrefs }: RecordChainProps) => (
  * surface reading as if it were the whole project — which is the half of
  * multi-product support that does not need a schema to change.
  */
-export const CoversLine = ({ packageLabel }: { readonly packageLabel: string }) => (
+export interface ProjectPiece {
+  readonly rfqId: string;
+  readonly reference: string;
+  readonly kindLabel: string;
+}
+
+export const CoversLine = ({
+  packageLabel,
+  siblings = [],
+}: {
+  readonly packageLabel: string;
+  /** The project's other pieces this shop has been sent. */
+  readonly siblings?: readonly ProjectPiece[];
+}) => (
   <Text tone="muted" size="xs" className="mt-1 block">
     {/*
       The label keeps its own casing. Lowercasing it turned PCB into "pcb",
       which reads as a typo rather than as a sentence.
     */}
-    This request covers the {packageLabel} part of that project. Anything else in it
-    travels as its own request.
+    This request covers the {packageLabel} part of that project.{' '}
+    {siblings.length === 0 ? (
+      'Anything else in it travels as its own request.'
+    ) : (
+      <>
+        {/*
+          Naming them, rather than promising they exist (UIUX-207).
+
+          The sentence used to end "anything else in it travels as its own
+          request" — true, and unverifiable from the page: a reader had no way
+          to see what it was referring to, so a project with three pieces read
+          as a page that had lost two. The other pieces are listed when this
+          shop has been sent them, and only then: a manufacturer reads a
+          request through its routing row, so showing a piece nobody sent them
+          would be a leak rather than a feature.
+        */}
+        The rest of it travels as its own request —{' '}
+        {siblings.map((piece, index) => (
+          <Fragment key={piece.rfqId}>
+            {index > 0 && ', '}
+            <Link href={`/rfqs/${piece.rfqId}`} className="text-text-link underline">
+              {piece.kindLabel} · {piece.reference}
+            </Link>
+          </Fragment>
+        ))}
+        .
+      </>
+    )}
   </Text>
 );

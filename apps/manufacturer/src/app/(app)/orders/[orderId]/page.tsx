@@ -9,7 +9,7 @@ import {
   buttonAppearance,
   majorAmount,
 } from '@ideeza/ui';
-import { asId, caseReference, type OrderId } from '@ideeza/domain';
+import { asId, caseReference, issueReasonLabel, type OrderId } from '@ideeza/domain';
 import { OrderShell } from '@/components/order/order-shell.js';
 import { ProductionTimeline } from '@/components/order/production-timeline.js';
 import { REVIEW_WINDOW_DAYS } from '@/lib/review-window.js';
@@ -125,8 +125,14 @@ const OrderProductionPage = async ({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-text-primary">
-                    Case {caseReference(dispute.id)} ·{' '}
-                    {dispute.reason.replace(/_/g, ' ')}
+                    {/*
+                      The reference says "CASE" already (UIUX-217), and the
+                      reason is read through the shared vocabulary rather than
+                      by knocking the underscores out of a stored token — which
+                      is how "failed quality check" reached a reader in lower
+                      case beside properly written lines (UIUX-123).
+                    */}
+                    {caseReference(dispute.id)} · {issueReasonLabel(dispute.reason)}
                   </p>
                   <Text tone="muted" size="xs">
                     {dispute.currency} {major(dispute.claimedAmountMinor)} in question ·{' '}

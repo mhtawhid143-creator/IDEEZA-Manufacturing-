@@ -111,7 +111,7 @@ export const RequestShell = ({
                       : { quote: `/quotes/${request.myQuote.id}` }
                   }
                 />
-                <CoversLine packageLabel={request.kindLabel} />
+                <CoversLine packageLabel={request.kindLabel} siblings={request.projectPieces} />
               </div>
             </div>
             <StatusChip

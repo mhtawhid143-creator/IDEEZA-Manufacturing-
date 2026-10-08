@@ -429,3 +429,42 @@ describe('what the inventory summary reports', () => {
     expect(detail?.level).toBe('out_of_stock');
   });
 });
+
+/**
+ * UIUX-220. The "Parts reserved" card counted something the table could not be
+ * narrowed to, so pressing it did nothing — which is what "cant click parts
+ * reserved box" reported. The card is a filter now, and this is the filter.
+ */
+describe('narrowing the table to what is already promised', () => {
+  it('keeps only the parts with stock reserved against an order', async () => {
+    const all = await inventory.listParts(SHOP, { pageSize: 200 });
+    const reservedSkus = all.rows
+      .filter((row) => row.reservedQuantity > 0)
+      .map((row) => row.sku)
+      .sort();
+    expect(reservedSkus.length).toBeGreaterThan(0);
+
+    const page = await inventory.listParts(SHOP, { reserved: 'reserved', pageSize: 200 });
+    expect(page.rows.map((row) => row.sku).sort()).toEqual(reservedSkus);
+    expect(page.rows.every((row) => row.reservedQuantity > 0)).toBe(true);
+  });
+
+  it('composes with the level filter rather than replacing it', async () => {
+    // The two answer different questions — what is free, and whether any of it
+    // is spoken for — so a shop may ask both at once.
+    const page = await inventory.listParts(SHOP, {
+      reserved: 'reserved',
+      level: 'in_stock',
+      pageSize: 200,
+    });
+    expect(
+      page.rows.every((row) => row.reservedQuantity > 0 && row.level === 'in_stock'),
+    ).toBe(true);
+  });
+
+  it('leaves the table alone when nothing is asked of it', async () => {
+    const all = await inventory.listParts(SHOP, { pageSize: 200 });
+    const unfiltered = await inventory.listParts(SHOP, { reserved: 'all', pageSize: 200 });
+    expect(unfiltered.total).toBe(all.total);
+  });
+});

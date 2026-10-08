@@ -209,7 +209,7 @@ export const PartForm = ({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Part name" required>
               <Input
-                placeholder="eg. SMD Resistor"
+                placeholder="e.g. SMD Resistor"
                 value={partName}
                 onChange={(event) => setPartName(event.target.value)}
               />
@@ -224,7 +224,7 @@ export const PartForm = ({
               }
             >
               <Input
-                placeholder="eg. RES-10k-SMD"
+                placeholder="e.g. RES-10k-SMD"
                 value={sku}
                 readOnly={mode === 'edit'}
                 disabled={mode === 'edit'}
@@ -244,7 +244,7 @@ export const PartForm = ({
           >
             <Textarea
               rows={3}
-              placeholder="eg. 10k 1% 0402 thin film. Tighter tolerance than RES-10K-0603, for the feedback divider."
+              placeholder="e.g. 10k 1% 0402 thin film. Tighter tolerance than RES-10K-0603, for the feedback divider."
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />
@@ -259,7 +259,7 @@ export const PartForm = ({
               >
                 <Input
                   inputMode="numeric"
-                  placeholder="eg. 250"
+                  placeholder="e.g. 250"
                   value={stock}
                   onChange={(event) => setStock(event.target.value)}
                 />
@@ -267,7 +267,7 @@ export const PartForm = ({
               <FormField label={`Price per unit (${currency})`} required>
                 <Input
                   inputMode="decimal"
-                  placeholder="eg. 0.25"
+                  placeholder="e.g. 0.25"
                   value={price}
                   onChange={(event) => setPrice(event.target.value)}
                 />
@@ -283,7 +283,7 @@ export const PartForm = ({
             >
               <Input
                 inputMode="numeric"
-                placeholder="eg. 50"
+                placeholder="e.g. 50"
                 value={threshold}
                 onChange={(event) => setThreshold(event.target.value)}
               />
@@ -295,7 +295,7 @@ export const PartForm = ({
             >
               <Input
                 inputMode="numeric"
-                placeholder="eg. 7"
+                placeholder="e.g. 7"
                 value={leadTime}
                 onChange={(event) => setLeadTime(event.target.value)}
               />
@@ -303,14 +303,14 @@ export const PartForm = ({
             <FormField label="Minimum order quantity">
               <Input
                 inputMode="numeric"
-                placeholder="eg. 100"
+                placeholder="e.g. 100"
                 value={moq}
                 onChange={(event) => setMoq(event.target.value)}
               />
             </FormField>
             <FormField label="Storage location">
               <Input
-                placeholder="eg. Warehouse A, shelf 3"
+                placeholder="e.g. Warehouse A, shelf 3"
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
               />

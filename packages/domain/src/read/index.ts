@@ -5,3 +5,6 @@ export * from './counting.js';
 export * from './request-lifecycle.js';
 export * from './quote-lifecycle.js';
 export * from './record-chain.js';
+export * from './reporting-period.js';
+export * from './activity-vocabulary.js';
+export * from './file-format.js';

@@ -457,3 +457,26 @@ which is what it was doing anyway. Both values are the system's own semantic
 tokens — no colour is invented — and the words gain contrast rather than lose
 it (title 9.58:1 → 13.98:1, body 5.84:1 → 9.85:1, border 5.29:1 red and 9.55:1
 yellow against the new surface). Delete that block when the step ships.
+
+#### No colour family for a category
+
+A file row carries a tile showing its format — `PDF`, `ZIP`, `CSV`, `GBR`,
+`STL` — and the design colours them: PDF red, ZIP purple, CSV green
+(UIUX-150). The colour is identifying a **kind of thing**, not a state.
+
+The system ships colour families only for states and for brand:
+`--color-badge-{success,warning,error,blue,brand}-{bg,text}`. There is no
+neutral set of category colours, so the tiles use the state families for
+identity — red for a document, green for data, amber for a model — which is
+the one place in this repo where a status colour is deliberately not a status.
+
+**What this repo does meanwhile:** `FILE_FORMAT_TONE` in
+`apps/manufacturer/src/components/request/file-format-tone.ts` maps the format
+groups onto those badge families, in one place that both file lists read. The
+risk the mapping accepts is a reader taking the red `PDF` tile for a warning;
+what contains it is that every actual state on the tab is a block of words —
+"3 files this work needs did not arrive" — rather than a two-letter mark.
+
+**What the system needs:** a category or "accent" family of four to six
+colours that carry no severity. Point `FILE_FORMAT_TONE` at it and the
+exception goes away.

@@ -15,7 +15,12 @@ import {
   Text,
   majorAmount as major,
 } from '@ideeza/ui';
-import { counted, issueReasonLabel } from '@ideeza/domain';
+import {
+  activityLabel,
+  counted,
+  issueReasonLabel,
+  STOCK_LEVEL_LABEL,
+} from '@ideeza/domain';
 import {
   getDashboardSections,
   getHeadlineTiles,
@@ -63,11 +68,8 @@ const STOCK_TONE: Readonly<Record<string, 'success' | 'warning' | 'danger'>> = {
   out_of_stock: 'danger',
 };
 
-const STOCK_WORDS: Readonly<Record<string, string>> = {
-  in_stock: 'In stock',
-  low_stock: 'Low stock',
-  out_of_stock: 'Out of stock',
-};
+/** The portal's one stock vocabulary — see `STOCK_LEVEL_LABEL`. */
+const STOCK_WORDS: Readonly<Record<string, string>> = STOCK_LEVEL_LABEL;
 
 const day = (at: Date): string =>
   at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -165,55 +167,6 @@ const WorkMixRing = ({
   );
 };
 
-/**
- * Event kinds, said in a sentence a shop floor would recognise.
- *
- * The log stores machine names because two panels and a test read them. The feed
- * translates rather than renames, so a kind that has no entry here still shows
- * up — unreadable is better than hidden.
- */
-const ACTIVITY_LABEL: Readonly<Record<string, string>> = {
-  rfq_submitted: 'Request received',
-  rfq_withdrawn: 'Request withdrawn',
-  rfq_recipient_viewed: 'Request opened',
-  rfq_recipient_declined: 'Request declined',
-  rfq_recipient_expired: 'Request expired',
-  rfq_clarification_requested: 'Clarification asked for',
-  quote_submitted: 'Quote sent',
-  quote_revision_requested: 'Revision asked for',
-  quote_revised: 'Quote revised',
-  quote_accepted: 'Quote accepted',
-  quote_rejected: 'Quote rejected',
-  quote_expired: 'Quote expired',
-  quote_withdrawn: 'Quote withdrawn',
-  substitution_suggested: 'Substitute suggested',
-  substitution_approved: 'Substitute approved',
-  substitution_rejected: 'Substitute rejected',
-  substitution_unavailable: 'Part cannot be supplied',
-  payment_initiated: 'Payment started',
-  payment_secured: 'Payment held by IDEEZA',
-  payment_failed: 'Payment failed',
-  order_created: 'Order created',
-  order_confirmed: 'Order confirmed',
-  order_production_started: 'Production started',
-  order_stage_advanced: 'Stage advanced',
-  order_task_updated: 'Task updated',
-  order_shipped: 'Shipment recorded',
-  order_delivered: 'Delivery recorded',
-  order_delivery_confirmed: 'Delivery confirmed',
-  order_completed: 'Order completed',
-  order_cancel_requested: 'Cancellation asked for',
-  order_cancelled: 'Order cancelled',
-  refund_requested: 'Refund asked for',
-  refund_approved: 'Refund approved',
-  refund_rejected: 'Refund declined',
-  dispute_opened: 'Issue opened',
-  dispute_statement_added: 'Statement added',
-  dispute_resolved: 'Issue resolved',
-  payout_released: 'Payout released',
-  inventory_low_stock: 'Part running low',
-  inventory_out_of_stock: 'Part out of stock',
-};
 
 /**
  * What kind of news a line is, which is what its dot says before the words are
@@ -341,14 +294,24 @@ const DashboardPage = async ({
   const firstTour = Object.keys(walked).length === 0 ? TOURS[0] : undefined;
 
   const now = Date.now();
+  /*
+    "vs last month", which is what the design says and what the figure now
+    actually measures (UIUX-109): this month to date against the same stretch
+    of last month, from `monthToDate` in the domain.
+
+    With nothing to compare against there is no percentage to state, so it says
+    what it counted instead. A "+100%" against zero is not a rise, it is a
+    first — and the month is named rather than left as "this period", because a
+    number with no period on it is the thing the caption exists to prevent.
+  */
   const orderTrend =
     sections.ordersLastPeriod === 0
-      ? `${sections.ordersThisPeriod} in the last 30 days`
+      ? `${sections.ordersThisPeriod} so far this month`
       : `${sections.ordersThisPeriod >= sections.ordersLastPeriod ? '+' : ''}${Math.round(
           ((sections.ordersThisPeriod - sections.ordersLastPeriod) /
             sections.ordersLastPeriod) *
             100,
-        )}% vs the 30 days before`;
+        )}% vs last month`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -912,9 +875,9 @@ const DashboardPage = async ({
                           One map, so the pill's colour and its words come from
                           the same value and cannot disagree (UIUX-120).
                         */}
-                        <Tag tone={STOCK_TONE[part.level] ?? 'neutral'}>
+                        <Badge tone={STOCK_TONE[part.level] ?? 'neutral'}>
                           {STOCK_WORDS[part.level] ?? part.level}
-                        </Tag>
+                        </Badge>
                       </td>
                     </tr>
                   ))}
@@ -925,14 +888,37 @@ const DashboardPage = async ({
                 pill is derived from this rule and from nothing else, so the
                 legend cannot describe one thing while the column shows another.
               */}
-              <p className="border-t border-border-subtle px-4 py-3 text-xs text-text-tertiary md:px-6">
-                Availability is what is on the shelf less what is already
-                promised. <strong className="font-semibold">Out of stock</strong> is
-                nothing free to promise,{' '}
-                <strong className="font-semibold">low stock</strong> is at or below the
-                threshold you set on the part, and{' '}
-                <strong className="font-semibold">in stock</strong> is above it.
-              </p>
+              {/*
+                The legend wears the pills themselves (UIUX-119).
+
+                It used to say the three words in bold, which told a reader what
+                the levels mean but not which colour is which — so the column
+                above it was still three unexplained colours, and the legend was
+                not a key. Each term is now the same `Badge` with the same tone
+                the column derives from `STOCK_TONE`, so a colour here and a
+                colour there cannot come apart.
+              */}
+              <div className="flex flex-col gap-2 border-t border-border-subtle px-4 py-3 md:px-6">
+                <p className="text-xs text-text-tertiary">
+                  Availability is what is on the shelf less what is already promised.
+                </p>
+                <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {(
+                    [
+                      ['in_stock', 'above the threshold you set on the part'],
+                      ['low_stock', 'at or below that threshold'],
+                      ['out_of_stock', 'nothing free to promise'],
+                    ] as const
+                  ).map(([level, meaning]) => (
+                    <li key={level} className="flex items-center gap-1.5">
+                      <Badge tone={STOCK_TONE[level] ?? 'neutral'}>
+                        {STOCK_WORDS[level] ?? level}
+                      </Badge>
+                      <span className="text-xs text-text-tertiary">{meaning}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </Card>
@@ -1044,8 +1030,13 @@ const DashboardPage = async ({
                         ACTIVITY_DOT[tone] ?? 'bg-icon',
                       )}
                     />
-                    <span className="font-medium text-text-secondary">
-                      {ACTIVITY_LABEL[entry.kind] ?? entry.kind.replace(/_/g, ' ')}
+                    {/*
+                      Marked so the harness can read every line of the feed at
+                      once and assert none of them arrived as a stored kind
+                      (UIUX-123).
+                    */}
+                    <span data-activity-label className="font-medium text-text-secondary">
+                      {activityLabel(entry.kind)}
                     </span>
                     <span aria-hidden className="text-text-tertiary">
                       ·
@@ -1145,7 +1136,7 @@ const DashboardPage = async ({
           />
           <div className="mt-3 flex flex-wrap gap-2">
             {shop.services.length === 0 ? (
-              <Tag tone="warning">No services published</Tag>
+              <Badge tone="warning">No services published</Badge>
             ) : (
               shop.services.map((service) => (
                 <Tag key={service} tone="brand">
@@ -1154,7 +1145,7 @@ const DashboardPage = async ({
               ))
             )}
             {shop.servedRegions.length === 0 ? (
-              <Tag tone="warning">No regions served</Tag>
+              <Badge tone="warning">No regions served</Badge>
             ) : (
               shop.servedRegions.map((region) => (
                 <Tag key={region} tone="neutral">
@@ -1163,10 +1154,10 @@ const DashboardPage = async ({
               ))
             )}
             {shop.minimumOrderQuantity === null && (
-              <Tag tone="warning">No minimum order quantity</Tag>
+              <Badge tone="warning">No minimum order quantity</Badge>
             )}
             {shop.standardLeadTimeDays === null && (
-              <Tag tone="warning">No standard lead time</Tag>
+              <Badge tone="warning">No standard lead time</Badge>
             )}
           </div>
         </Card>

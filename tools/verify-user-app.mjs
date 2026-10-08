@@ -1594,7 +1594,7 @@ const main = async () => {
     const caseHeading = (await page.locator('h1').first().innerText()) ?? '';
     check(
       'the case is quoted by a shared reference, not a raw database id',
-      /Dispute CASE-[0-9A-Z]{8}/.test(caseHeading) && !/dp_[a-z0-9]{6,}/.test(caseHeading),
+      /Dispute #CASE-[0-9A-Z]{8}/.test(caseHeading) && !/dp_[a-z0-9]{6,}/.test(caseHeading),
       caseHeading.trim().slice(0, 60),
     );
     // The reason sits in the case summary, as its own definition row.

@@ -78,13 +78,19 @@ const OrderTermsPage = async ({
               value: `${order.currency} ${major(order.unitPriceMinor)}`,
             },
             { label: 'Goods', value: `${order.currency} ${major(goods)}` },
-            {
-              label: 'Shipping estimate',
-              value:
-                order.shippingEstimateMinor === null
-                  ? 'Not quoted'
-                  : `${order.currency} ${major(order.shippingEstimateMinor)}`,
-            },
+            /*
+              Only when these frozen terms actually carry one (UIUX-169): the
+              shop no longer quotes shipping, but an order opened before that
+              change agreed a real figure and it stays on the record.
+            */
+            ...(order.shippingEstimateMinor === null
+              ? []
+              : [
+                  {
+                    label: 'Shipping estimate',
+                    value: `${order.currency} ${major(order.shippingEstimateMinor)}`,
+                  },
+                ]),
             {
               label: 'Tooling and setup',
               value:

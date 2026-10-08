@@ -265,13 +265,22 @@ const QuoteDetailPage = async ({
               label: 'Subtotal',
               value: `${quote.currency} ${major(quote.totalPriceMinor)}`,
             },
-            {
-              label: 'Shipping estimate',
-              value:
-                quote.shippingEstimateMinor === null
-                  ? 'Not quoted'
-                  : `${quote.currency} ${major(quote.shippingEstimateMinor)}`,
-            },
+            /*
+              Only when this quote actually carries one (UIUX-169). The shop no
+              longer quotes shipping — the courier is the buyer's choice at
+              checkout — but a quote priced before that change agreed a real
+              figure, and hiding money a buyer accepted would be the worse
+              dishonesty. So it is shown where it exists and absent where it
+              does not, rather than printed as "Not quoted" on every quote.
+            */
+            ...(quote.shippingEstimateMinor === null
+              ? []
+              : [
+                  {
+                    label: 'Shipping estimate',
+                    value: `${quote.currency} ${major(quote.shippingEstimateMinor)}`,
+                  },
+                ]),
             {
               label: 'Tooling and setup',
               value:

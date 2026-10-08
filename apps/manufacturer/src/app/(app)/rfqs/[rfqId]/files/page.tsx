@@ -1,52 +1,25 @@
 import { notFound } from 'next/navigation';
-import { Alert, Card, CardHeader, EmptyState, Icon, Tag, Text } from '@ideeza/ui';
+import { Alert, Card, CardHeader, cn, EmptyState, Tag, Text } from '@ideeza/ui';
 import {
   asId,
   counted,
+  fileFormat,
   PRODUCTION_FILE_FAMILY,
   PRODUCTION_FILE_LABEL,
   PRODUCTION_FILE_PURPOSE,
   QUOTE_COST_FAMILY_LABEL,
   productionFileRoleOf,
   requiredProductionFiles,
-  type ProductionFileRole,
   type RfqId,
 } from '@ideeza/domain';
-import type { IconName } from '@ideeza/ui';
 import { RequestShell } from '@/components/request/request-shell.js';
 import { getClientProfile } from '@/data/clients.js';
 import { getRoutedRequest, markSectionViewed, type RequestFile } from '@/data/rfqs.js';
 import { requireManufacturer } from '@/lib/auth.js';
+import { FILE_FORMAT_TILE, FILE_FORMAT_TONE } from '@/components/request/file-format-tone.js';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * A glyph for what the file is for, not for what format it happens to be in
- * (UIUX-150).
- *
- * The review asked for colour-coded icons per format — red PDF, purple ZIP. Two
- * departures, both deliberate. **Colour is not used**: in this portal colour
- * means state and urgency, and this tab's own danger alert sits a few pixels
- * below the list, so a red icon on a healthy row would compete with it. And the
- * glyph follows the file's *role* rather than its extension, because two ZIPs
- * on one request are a Gerber set and a 3D model, which is the distinction a
- * shop is actually scanning for. The extension is still printed beside it.
- */
-const ROLE_ICON: Readonly<Record<ProductionFileRole, IconName>> = {
-  gerber: 'layers',
-  drill: 'grid',
-  fabrication_drawing: 'file',
-  pick_and_place: 'board',
-  assembly_drawing: 'file',
-  panelisation: 'layers',
-  model_3d: 'cube',
-  print_specification: 'list',
-  orientation_notes: 'compass',
-  finish_specification: 'settings',
-  bom: 'parts',
-  schematic: 'board',
-  other: 'file',
-};
 
 const FAMILY_LABEL: Readonly<Record<'board' | 'printed' | 'either', string>> = {
   board: QUOTE_COST_FAMILY_LABEL.board,
@@ -156,18 +129,36 @@ const FilesPage = async ({
                       className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:px-6"
                     >
                       <div className="flex min-w-0 items-center gap-3">
+                        {/*
+                          The format, in colour (UIUX-150).
+
+                          Nine rows of one grey glyph gave a shop nothing to
+                          scan by. The tile carries the format and its colour;
+                          the words beside and after it carry the role. An
+                          earlier pass refused colour here on the grounds that
+                          it would compete with the red "files did not arrive"
+                          alert below — but that alert is a block of words about
+                          a state, and this is a two-letter mark of a kind. They
+                          are not saying the same sort of thing, and the design
+                          asks for both.
+
+                          The extension has left the metadata line below, since
+                          printing it twice on one row is what it would be.
+                        */}
                         <span
                           aria-hidden
-                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-surface-raised text-icon-secondary"
+                          className={cn(
+                            FILE_FORMAT_TILE,
+                            FILE_FORMAT_TONE[fileFormat(file.name).group],
+                          )}
                         >
-                          <Icon name={ROLE_ICON[roleOf(file)]} size={18} />
+                          {fileFormat(file.name).label}
                         </span>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-text-primary">
                             {file.name}
                           </p>
                           <Text tone="muted" size="xs">
-                            {file.name.split('.').pop()?.toUpperCase() ?? 'FILE'} ·{' '}
                             {size(file.byteSize)} · rev {file.revision} ·{' '}
                             {PRODUCTION_FILE_PURPOSE[roleOf(file)]}
                           </Text>

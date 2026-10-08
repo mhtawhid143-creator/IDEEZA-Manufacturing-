@@ -1639,7 +1639,7 @@ export const ProfilePanels = ({
                 </Text>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {data.services.length === 0 ? (
-                    <Tag tone="warning">None — no request can reach you</Tag>
+                    <Badge tone="warning">None — no request can reach you</Badge>
                   ) : (
                     data.services.map((service) => (
                       <Tag key={service} tone="brand">
@@ -1656,7 +1656,7 @@ export const ProfilePanels = ({
                 </Text>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {data.servedRegions.length === 0 ? (
-                    <Tag tone="warning">None published</Tag>
+                    <Badge tone="warning">None published</Badge>
                   ) : (
                     data.servedRegions.map((region) => <Tag key={region}>{region}</Tag>)
                   )}
@@ -2332,7 +2332,7 @@ export const ProfilePanels = ({
               }
             />
           </FormField>
-          <FormField label="Country code" required hint="Two letters, eg. BD.">
+          <FormField label="Country code" required hint="Two letters, e.g. BD.">
             <Input
               value={company.countryCode}
               onChange={(event) =>
@@ -2496,7 +2496,7 @@ export const ProfilePanels = ({
               <FormField label="Add a certification" className="min-w-[220px] flex-1">
                 <Input
                   value={newCertification}
-                  placeholder="eg. ISO 9001:2015"
+                  placeholder="e.g. ISO 9001:2015"
                   onChange={(event) => setNewCertification(event.target.value)}
                 />
               </FormField>

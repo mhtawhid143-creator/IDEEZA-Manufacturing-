@@ -2,6 +2,9 @@ import {
   OPEN_RFQ_STATUSES,
   PACKAGE_KIND_LABEL,
   TRANSIT_DAYS,
+  manufacturingTypeLabel,
+  monthToDate,
+  within,
   orderReference,
   quoteReference,
   requestReference,
@@ -345,7 +348,7 @@ export interface DashboardSections {
   readonly shippedOrDelivered: number;
   readonly workMix: readonly WorkMixSlice[];
   readonly orderCount: number;
-  /** Orders taken in the last 30 days, and in the 30 before that. */
+  /** Orders taken this month to date, and in the same stretch of last month. */
   readonly ordersThisPeriod: number;
   readonly ordersLastPeriod: number;
   readonly ordersInProduction: readonly DashboardOrderRow[];
@@ -393,6 +396,7 @@ export const getDashboardSections = async (
           select: {
             buyer: { select: { displayName: true } },
             package: { select: { kind: true, product: { select: { name: true } } } },
+            requirements: { select: { assembly: true } },
           },
         },
       },
@@ -412,6 +416,7 @@ export const getDashboardSections = async (
             quantity: true,
             responseDeadline: true,
             package: { select: { kind: true, product: { select: { name: true } } } },
+            requirements: { select: { assembly: true } },
           },
         },
       },
@@ -474,6 +479,7 @@ export const getDashboardSections = async (
             quantity: true,
             responseDeadline: true,
             package: { select: { kind: true, product: { select: { name: true } } } },
+            requirements: { select: { assembly: true } },
           },
         },
       },
@@ -512,6 +518,7 @@ export const getDashboardSections = async (
                 quantity: true,
                 responseDeadline: true,
                 package: { select: { kind: true, product: { select: { name: true } } } },
+                requirements: { select: { assembly: true } },
               },
             },
           },
@@ -537,6 +544,10 @@ export const getDashboardSections = async (
         readonly kind: PackageKind;
         readonly product: { readonly name: string };
       };
+      // Optional because a request can be read before its requirements are
+      // frozen; without it the row names the package and stops short of
+      // claiming the assembly either way.
+      readonly requirements?: { readonly assembly: string } | null;
     },
     href: string,
   ): DashboardRequestRow => ({
@@ -544,7 +555,10 @@ export const getDashboardSections = async (
     reference: requestReference(rfq.id),
     productName: rfq.package.product.name,
     quantity: rfq.quantity,
-    kindLabel: PACKAGE_LABEL[rfq.package.kind],
+    kindLabel: manufacturingTypeLabel({
+      packageKind: rfq.package.kind,
+      assemblyAsked: (rfq.requirements?.assembly ?? 'none') !== 'none',
+    }),
     respondBy: rfq.responseDeadline,
     reason,
     actionLabel: REQUEST_ACTION[reason].act,
@@ -669,9 +683,11 @@ export const getDashboardSections = async (
       payoutTotals.find((row) => row.status === status)?._sum.netAmountMinor ?? 0n,
     );
 
-  const day = 24 * 60 * 60 * 1_000;
-  const thirtyDaysAgo = new Date(Date.now() - 30 * day);
-  const sixtyDaysAgo = new Date(Date.now() - 60 * day);
+  // Calendar months, not a rolling window, because the header says "vs last
+  // month" and a caption has to describe the comparison the page is making
+  // (UIUX-109). The earlier window is the same stretch of last month, so a
+  // part month is never measured against a whole one.
+  const period = monthToDate(new Date());
 
   // What a line of the log is about. The event carries a kind and the id of the
   // record it happened to; the product name comes from this shop's own rows
@@ -740,10 +756,10 @@ export const getDashboardSections = async (
     shippedOrDelivered,
     workMix: [...mix].map(([label, count]) => ({ label, count })),
     orderCount: orders.length,
-    ordersThisPeriod: orders.filter((order) => order.createdAt >= thirtyDaysAgo).length,
-    ordersLastPeriod: orders.filter(
-      (order) => order.createdAt >= sixtyDaysAgo && order.createdAt < thirtyDaysAgo,
-    ).length,
+    ordersThisPeriod: orders.filter((order) => within(order.createdAt, period.current))
+      .length,
+    ordersLastPeriod: orders.filter((order) => within(order.createdAt, period.previous))
+      .length,
     ordersInProduction: live.slice(0, 5).map((order) => {
       const current =
         order.stages.find((stage) => stage.status === 'in_progress') ??
@@ -764,7 +780,10 @@ export const getDashboardSections = async (
         // here and "In production" on the order itself is two names for one
         // thing.
         stageLabel: current === null ? 'Finished' : stageDefinition(current.key).label,
-        kindLabel: PACKAGE_LABEL[order.rfq.package.kind] ?? order.rfq.package.kind,
+        kindLabel: manufacturingTypeLabel({
+          packageKind: order.rfq.package.kind,
+          assemblyAsked: (order.rfq.requirements?.assembly ?? 'none') !== 'none',
+        }),
         completedStages: order.stages.filter((stage) => stage.status === 'completed')
           .length,
         totalStages: Math.max(1, order.stages.length),

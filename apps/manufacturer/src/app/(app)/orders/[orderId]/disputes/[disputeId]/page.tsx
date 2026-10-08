@@ -82,8 +82,14 @@ const DisputeCasePage = async ({
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
+        {/*
+          "Case" once, not twice (UIUX-217). The heading used to read "Dispute
+          Center Case #CASE-13NKYEUO" — the word is already the first half of
+          the reference, so saying it in the prose as well is a stutter the eye
+          catches before it reads anything else.
+        */}
         <h1 className="text-xl font-bold text-text-primary">
-          Dispute Center Case {caseReference(dispute.id)}
+          Dispute Center — {caseReference(dispute.id)}
         </h1>
         <StatusChip status={dispute.status} label={disputeStatusLabel(dispute.status)} withDot />
       </div>

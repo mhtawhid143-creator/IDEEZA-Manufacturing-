@@ -84,6 +84,37 @@ export const PACKAGE_KIND_LABEL: Readonly<Record<PackageKind, string>> = Object.
   full_product: 'PCB + 3D printing',
 });
 
+export interface ManufacturingTypeWork {
+  readonly packageKind: PackageKind;
+  /** Whether the buyer asked for the parts to be placed, not just the board made. */
+  readonly assemblyAsked: boolean;
+}
+
+/**
+ * The whole job, not only what the package is made of (UIUX-136).
+ *
+ * `PACKAGE_KIND_LABEL` answers "what is in the box". The row headed
+ * **Manufacturing type** is asking something else — what this shop is being
+ * asked to *do* — and the two are not the same question. A board that has to be
+ * fabricated and a board that has to be fabricated and populated are different
+ * jobs, with different prices, different equipment and often different shops;
+ * the row that names the job said "PCB" for both.
+ *
+ * Built by adding to the package vocabulary rather than replacing it, so every
+ * label still opens with the words UIUX-144 settled and the inbox filter — which
+ * narrows by kind — still reads as the same vocabulary as the row it narrows.
+ *
+ * Assembly is only ever named where there is a board to populate: a printed part
+ * has no such stage, and naming one would describe work nobody is being asked
+ * to do.
+ */
+export const manufacturingTypeLabel = (work: ManufacturingTypeWork): string => {
+  const assembled = work.assemblyAsked && work.packageKind !== 'module_3d';
+  if (!assembled) return PACKAGE_KIND_LABEL[work.packageKind];
+
+  return work.packageKind === 'pcb' ? 'PCB + assembly' : 'PCB + assembly + 3D printing';
+};
+
 /**
  * Which package kinds involve a given kind of work (UIUX-126).
  *

@@ -78,7 +78,7 @@ export const DisputeStatement = ({
         <FormField label="Heading" hint="Optional. What this statement is about.">
           <Input
             value={title}
-            placeholder="eg. How the specification was met"
+            placeholder="e.g. How the specification was met"
             onChange={(event) => setTitle(event.target.value)}
           />
         </FormField>

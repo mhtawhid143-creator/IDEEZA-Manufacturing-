@@ -49,8 +49,19 @@ export const RequestBrief = ({
         description="Frozen when the request was sent, which is what a quote answers."
         actions={
           <div className="flex flex-wrap gap-2">
-            {request.hasBoard && <Tag tone="brand">PCB</Tag>}
-            {request.hasPrintedPart && <Tag tone="brand">3D printing</Tag>}
+            {/*
+              The same string as the Manufacturing type row below, not a second
+              reading of it (UIUX-144).
+
+              These chips used to be derived from the files attached — one for a
+              board file, one for a model file — while the row was derived from
+              the package. So a combined request whose printed files had not
+              arrived yet wore a "PCB" chip above a row reading "PCB + 3D
+              printing": one request, two names, a few centimetres apart. That
+              is the fault this ticket keeps finding, and the fix is that there
+              is now one string, used twice, rather than two agreeing readings.
+            */}
+            <Tag tone="brand">{request.kindLabel}</Tag>
             {!request.hasBoard && !request.hasPrintedPart && (
               <Tag tone="neutral">No production files attached</Tag>
             )}
@@ -112,7 +123,16 @@ export const RequestBrief = ({
             : [
                 {
                   label: 'BOM lines',
-                  value: counted(request.bomLines.length, 'line'),
+                  // The count is the way to the bill of materials, exactly as
+                  // the file count is the way to the files below it (UIUX-137).
+                  // A number with a tab somewhere else that shows the same
+                  // thing is a dead end: the shop has read "3 lines" and still
+                  // has to go looking for which three.
+                  value: (
+                    <Link href={`/rfqs/${request.rfqId}/bom`} className={linkStyle}>
+                      {counted(request.bomLines.length, 'line')}
+                    </Link>
+                  ),
                 },
               ]),
           {

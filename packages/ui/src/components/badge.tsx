@@ -61,7 +61,20 @@ export const Badge = ({ tone = 'neutral', size = 'sm', className, children, ...r
 );
 
 export interface TagProps extends HTMLAttributes<HTMLSpanElement> {
-  readonly tone?: Tone;
+  /**
+   * Two tones, because the system ships two.
+   *
+   * `--color-tag-*` exists for `neutral` and `brand` and for nothing else, so a
+   * tag has no success, warning or danger colour to wear. It used to accept the
+   * whole `Tone` union and silently paint the neutral surface for the other
+   * four — eighteen call sites asked for a colour and every one of them came
+   * out grey, which is what "no colours visible" meant on the inventory table.
+   *
+   * A status that needs a colour is a `Badge` (A17 Subtle), which the system
+   * does ship colours for. Narrowing this makes the compiler say so instead of
+   * the mistake reaching a screen.
+   */
+  readonly tone?: Extract<Tone, 'neutral' | 'brand'>;
   readonly children: ReactNode;
 }
 

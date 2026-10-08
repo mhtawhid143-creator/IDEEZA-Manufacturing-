@@ -58,6 +58,15 @@ export interface InventoryFilters {
   readonly level?: StockLevel | 'all';
   /** The design's "All Parts": everything, only matched, or only switched off. */
   readonly matching?: 'all' | 'enabled' | 'disabled';
+  /**
+   * Only the parts with stock promised to a confirmed order (UIUX-220).
+   *
+   * Independent of `level` rather than a value of it: the level says what is
+   * free to promise, this says whether any of the shelf is already spoken for,
+   * and a shop may reasonably ask both at once — "what is still in stock, and
+   * how much of it am I already committed on".
+   */
+  readonly reserved?: 'all' | 'reserved';
   readonly page?: number;
   readonly pageSize?: number;
 }
@@ -131,6 +140,7 @@ export const listParts = async (
     ...(filters.matching === undefined || filters.matching === 'all'
       ? {}
       : { enabledForMatching: filters.matching === 'enabled' }),
+    ...(filters.reserved === 'reserved' ? { reservedQuantity: { gt: 0 } } : {}),
     ...(search === ''
       ? {}
       : {

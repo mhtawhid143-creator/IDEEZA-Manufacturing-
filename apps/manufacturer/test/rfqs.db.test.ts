@@ -194,7 +194,13 @@ describe('the inbox is this shop’s routing records', () => {
     ).toBe(false);
 
     const waiting = await rfqs.listRoutedRequests(SHOP, { status: 'new' });
-    expect(waiting.rows.map((row) => row.rfqId)).toEqual(['test_rfq_fresh']);
+    // Two unanswered: this test's own, and the seeded project's second piece —
+    // the drone's remote controller, which exists so a project with more than
+    // one part is visible rather than only described (UIUX-207).
+    expect(waiting.rows.map((row) => row.rfqId).sort()).toEqual([
+      'seed_rfq_remote',
+      'test_rfq_fresh',
+    ]);
     expect(waiting.rows.every((row) => row.lifecycle === 'new')).toBe(true);
 
     // "PCB" means the request has boards in it, so a combined package belongs

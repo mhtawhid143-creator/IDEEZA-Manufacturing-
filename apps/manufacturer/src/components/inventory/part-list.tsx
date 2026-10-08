@@ -1,17 +1,19 @@
 'use client';
 
+import { STOCK_LEVEL_LABEL } from '@ideeza/domain';
+
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   DataTable,
+  Badge,
   EmptyState,
   FormField,
   Icon,
   Pagination,
   SearchInput,
   Select,
-  Tag,
   Text,
 } from '@ideeza/ui';
 import { RowMenu } from '@/components/row-menu.js';
@@ -31,11 +33,8 @@ export interface PartListRow {
   readonly updatedOn: string;
 }
 
-const LEVEL_WORDS: Readonly<Record<PartListRow['level'], string>> = {
-  in_stock: 'In stock',
-  low_stock: 'Low stock',
-  out_of_stock: 'Out of stock',
-};
+/** The portal's one stock vocabulary — see `STOCK_LEVEL_LABEL`. */
+const LEVEL_WORDS: Readonly<Record<PartListRow['level'], string>> = STOCK_LEVEL_LABEL;
 
 const LEVEL_TONE: Readonly<
   Record<PartListRow['level'], 'success' | 'warning' | 'danger'>
@@ -125,9 +124,9 @@ export const PartList = ({
             <Select
               options={[
                 { value: 'all', label: 'Any level' },
-                { value: 'in_stock', label: 'In stock' },
-                { value: 'low_stock', label: 'Low stock' },
-                { value: 'out_of_stock', label: 'Out of stock' },
+                { value: 'in_stock', label: LEVEL_WORDS.in_stock },
+                { value: 'low_stock', label: LEVEL_WORDS.low_stock },
+                { value: 'out_of_stock', label: LEVEL_WORDS.out_of_stock },
               ]}
               value={params.get('level') ?? 'all'}
               onChange={(event) => apply({ level: event.target.value })}
@@ -190,7 +189,16 @@ export const PartList = ({
           },
           {
             id: 'available',
-            header: 'Availability',
+            /*
+              "Free to promise", which is what the part's own page has always
+              called this number (UIUX-219). The table called the same figure
+              "Availability" and printed the reserved count beside it, so a row
+              with a full shelf and nothing free read as three numbers with no
+              word saying which was which — and "In Stock" beside a prominent
+              zero looks like a contradiction rather than a different quantity.
+              One name for one number, on both screens.
+            */
+            header: 'Free to promise',
             cell: (row) => `${row.available} pcs`,
           },
           {
@@ -201,7 +209,11 @@ export const PartList = ({
               <div>
                 <p className="text-sm text-text-secondary">{row.reservedQuantity} pcs</p>
                 <Text tone="muted" size="xs">
-                  of {row.stockQuantity} on the shelf
+                  {row.reservedQuantity === row.stockQuantity && row.stockQuantity > 0
+                    ? // The case this column exists for, said rather than left
+                      // to be worked out from two numbers.
+                      `all ${row.stockQuantity} on the shelf`
+                    : `of ${row.stockQuantity} on the shelf`}
                 </Text>
               </div>
             ),
@@ -215,7 +227,7 @@ export const PartList = ({
           {
             id: 'level',
             header: 'Status',
-            cell: (row) => <Tag tone={LEVEL_TONE[row.level]}>{LEVEL_WORDS[row.level]}</Tag>,
+            cell: (row) => <Badge tone={LEVEL_TONE[row.level]}>{LEVEL_WORDS[row.level]}</Badge>,
           },
           {
             id: 'updated',

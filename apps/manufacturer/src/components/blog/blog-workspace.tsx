@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Alert,
+  Badge,
   Button,
   Card,
   EmptyState,
@@ -225,9 +226,9 @@ export const BlogWorkspace = ({
               <div className="flex flex-1 flex-col gap-2 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Tag tone="brand">{article.category}</Tag>
-                  <Tag tone={STATUS_TONE[article.status]}>
+                  <Badge tone={STATUS_TONE[article.status]}>
                     {STATUS_LABEL[article.status]}
-                  </Tag>
+                  </Badge>
                 </div>
                 <p className="text-sm font-semibold text-text-primary">{article.title}</p>
                 <Text tone="muted" size="xs">
