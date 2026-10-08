@@ -494,6 +494,18 @@ export const seedDatabase = async (prisma: PrismaClient): Promise<void> => {
   ];
   for (const sheet of sheets) {
     const { parameters, ...row } = sheet;
+    // A sheet is unique on `(manufacturerId, kind)`, not on its id — so a
+    // database prepared by an earlier seed holds this sheet under whatever id
+    // that seed used, and an id-keyed upsert then tries to *insert* and hits
+    // the constraint. That is what stopped the hosted deploy the first time it
+    // ran the seed against a database it had not created.
+    //
+    // Clearing the stale-id duplicate first makes the seed converge on its own
+    // ids from any starting point. The parameters cascade with it, and they are
+    // rewritten below in either case.
+    await prisma.shopCapabilitySheet.deleteMany({
+      where: { manufacturerId: row.manufacturerId, kind: row.kind, id: { not: row.id } },
+    });
     await prisma.shopCapabilitySheet.upsert({ where: { id: row.id }, update: row, create: row });
     await prisma.shopCapabilityParameter.deleteMany({ where: { sheetId: row.id } });
     await prisma.shopCapabilityParameter.createMany({
