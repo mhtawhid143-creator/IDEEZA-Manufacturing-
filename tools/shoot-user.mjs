@@ -144,11 +144,21 @@ const main = async () => {
 
     const browser = await chromium.launch();
 
-    for (const [width, height, suffix] of [
-      [1440, 900, ''],
-      [390, 844, '-390'],
+    // Light, phone, and dark — the same three the shop panel takes. The dark
+    // pass is here for the same reason it is there: a reviewer reads the panel
+    // in dark mode and reported three status colours as "no colour", and a
+    // design pass that only ever looked at the light theme could not have seen
+    // it. Fixing that for one panel and not the other would leave the same
+    // blind spot on half the product.
+    for (const [width, height, suffix, colorScheme] of [
+      [1440, 900, '', 'light'],
+      [390, 844, '-390', 'light'],
+      [1440, 900, '-dark', 'dark'],
     ]) {
-      const context = await browser.newContext({ viewport: { width, height } });
+      const context = await browser.newContext({
+        viewport: { width, height },
+        colorScheme,
+      });
       const page = await context.newPage();
       await signIn(page, base, BUYER_EMAIL);
 

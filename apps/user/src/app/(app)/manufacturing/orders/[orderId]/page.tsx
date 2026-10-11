@@ -24,6 +24,7 @@ import { threadForContext } from '@/data/messaging.js';
 import { listOrderIssues } from '@/data/resolution.js';
 import { requireBuyer } from '@/lib/auth.js';
 import {
+  SHIPPING_CHOICE_LABEL,
   asId,
   caseReference,
   claimReference,
@@ -42,11 +43,6 @@ const SERVICE_LABEL: Readonly<Record<string, string>> = {
   enclosure_3d: '3D / enclosure',
   stencil: 'Stencil',
   testing: 'Testing',
-};
-
-const SHIPPING_METHOD: Readonly<Record<string, string>> = {
-  standard: 'Standard courier · tracked',
-  express: 'Expedited courier · tracked',
 };
 
 /**
@@ -286,10 +282,10 @@ const OrderPage = async ({
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader
-              title="Production scope"
+              title="Work included"
               description="Locked from the accepted quote — to change it, request a new quote."
             />
-            <ul aria-label="Production scope" className="mt-4 flex flex-col gap-2.5">
+            <ul aria-label="Work included" className="mt-4 flex flex-col gap-2.5">
               {order.requestedServices.length === 0 ? (
                 <li>
                   <Text tone="muted" size="sm">
@@ -355,7 +351,7 @@ const OrderPage = async ({
                 {
                   label: 'Shipping method',
                   value:
-                    SHIPPING_METHOD[order.shippingChoice] ?? order.shippingChoice,
+                    SHIPPING_CHOICE_LABEL[order.shippingChoice] ?? order.shippingChoice,
                 },
                 { label: 'As required', value: order.shippingRequirement },
                 {

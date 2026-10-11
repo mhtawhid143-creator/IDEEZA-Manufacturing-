@@ -17,6 +17,7 @@ import {
 } from '@ideeza/ui';
 import {
   activityLabel,
+  serviceLabels,
   counted,
   issueReasonLabel,
   STOCK_LEVEL_LABEL,
@@ -1138,9 +1139,13 @@ const DashboardPage = async ({
             {shop.services.length === 0 ? (
               <Badge tone="warning">No services published</Badge>
             ) : (
-              shop.services.map((service) => (
+              // Read through the domain's service vocabulary, which the request
+              // Brief has always used, rather than by knocking the underscores
+              // out of the stored value — that printed "parts sourcing" here
+              // and "Parts sourcing" one screen away.
+              serviceLabels(shop.services).map((service) => (
                 <Tag key={service} tone="brand">
-                  {service.replace(/_/g, ' ')}
+                  {service}
                 </Tag>
               ))
             )}

@@ -1,3 +1,4 @@
+import { PACKAGE_KIND_LABEL } from '@ideeza/domain';
 import type {
   AssemblyMode,
   AssemblySides,
@@ -47,11 +48,8 @@ export const SIDES_COPY: Readonly<Record<AssemblySides, string>> = Object.freeze
   double_side: 'Double-side',
 });
 
-export const PACKAGE_COPY: Readonly<Record<PackageKind, string>> = Object.freeze({
-  pcb: 'PCB only',
-  module_3d: '3D module',
-  full_product: 'Full product',
-});
+/** One name for the kind of work, from the domain (UIUX-144). */
+export const PACKAGE_COPY: Readonly<Record<PackageKind, string>> = PACKAGE_KIND_LABEL;
 
 export const FIT_COPY: Readonly<
   Record<FitVerdict, { readonly label: string; readonly tone: 'success' | 'warning' | 'danger' }>

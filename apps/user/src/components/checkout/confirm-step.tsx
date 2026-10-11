@@ -145,7 +145,7 @@ export const ConfirmStep = ({
 
         <Card>
           <CardHeader
-            title="Production scope"
+            title="Work included"
             description="Locked from the accepted quote — to change it, send a new request."
           />
           <ul className="mt-4 flex flex-col">

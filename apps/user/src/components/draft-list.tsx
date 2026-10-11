@@ -35,7 +35,7 @@ const hueOf = (seed: string): number => {
 
 const TYPE_ICONS: Readonly<Record<PackageKind, readonly { readonly key: string; readonly icon: React.ReactNode; readonly label: string }[]>> = {
   pcb: [{ key: 'board', icon: <Icon name="board" size={16} />, label: 'Printed circuit board' }],
-  module_3d: [{ key: 'cube', icon: <Icon name="cube" size={16} />, label: '3D module' }],
+  module_3d: [{ key: 'cube', icon: <Icon name="cube" size={16} />, label: '3D printing' }],
   full_product: [
     { key: 'board', icon: <Icon name="board" size={16} />, label: 'Printed circuit board' },
     { key: 'cube', icon: <Icon name="cube" size={16} />, label: 'Enclosure' },

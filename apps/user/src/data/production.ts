@@ -19,6 +19,7 @@ import {
   type ShippingChoice,
   type UserId,
   counted,
+  PACKAGE_KIND_LABEL,
 } from '@ideeza/domain';
 import { toDatabaseEventKind, toDomainEventKind } from '@ideeza/db';
 import type { AnswerInventoryAlertInput } from '@ideeza/types';
@@ -334,11 +335,8 @@ export const getProduction = async (
   };
 };
 
-const PACKAGE_TITLE: Readonly<Record<string, string>> = {
-  pcb: 'PCB items',
-  module_3d: '3D module',
-  full_product: 'Full product (boards and printed parts)',
-};
+/** One name for the kind of work, from the domain (UIUX-144). */
+const PACKAGE_TITLE: Readonly<Record<string, string>> = PACKAGE_KIND_LABEL;
 
 /**
  * What the order is made of, as the manufacturer priced it.

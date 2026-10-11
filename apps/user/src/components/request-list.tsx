@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import { EmptyState, StatusChip, Text, buttonAppearance } from '@ideeza/ui';
+import { PACKAGE_KIND_LABEL } from '@ideeza/domain';
 import type { RequestSummary } from '@/data/requests.js';
 
-const PACKAGE_LABEL: Readonly<Record<string, string>> = {
-  pcb: 'PCB only',
-  module_3d: '3D module',
-  full_product: 'Full product',
-};
+/** One name for the kind of work, from the domain (UIUX-144). */
+const PACKAGE_LABEL: Readonly<Record<string, string>> = PACKAGE_KIND_LABEL;
 
 const day = (value: Date | null): string =>
   value === null ? '—' : value.toISOString().slice(0, 10);

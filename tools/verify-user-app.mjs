@@ -544,8 +544,8 @@ const main = async () => {
       .catch(() => undefined);
     await page.waitForLoadState('networkidle');
     check(
-      'a product with only a model file reads back as a 3D module',
-      await visible(page.getByText('3D module only')),
+      'a product with only a model file reads back as 3D printing',
+      await visible(page.getByText('3D printing only')),
     );
     await page.getByLabel('Process').selectOption('sls');
     await page.getByLabel('Print material').selectOption('PA12');
@@ -688,6 +688,18 @@ const main = async () => {
     // arriving and React attaching is taken by neither the router nor the
     // browser, and the page simply stays where it was. A person whose click did
     // nothing clicks again, and so does this.
+    //
+    // And waited for first: until two are selected this control is a *disabled
+    // button* with the same name, and the subtree swaps it for an anchor. A
+    // click resolved against the page a moment earlier lands on the node being
+    // replaced, which is neither a button press nor a navigation — the failure
+    // this check produced intermittently, with a correct href and an empty
+    // console. Waiting for the button to go is a real condition, not a sleep.
+    await page
+      .getByRole('button', { name: 'Compare' })
+      .waitFor({ state: 'detached', timeout: 15_000 })
+      .catch(() => undefined);
+
     let onCompare = false;
     for (let attempt = 0; attempt < 4 && !onCompare; attempt += 1) {
       await page.getByRole('link', { name: 'Compare' }).click();
@@ -1071,7 +1083,7 @@ const main = async () => {
     check(
       'the checkout shows the locked production scope and the stepper',
       (await visible(page.getByRole('navigation', { name: 'Checkout progress' }))) &&
-        (await visible(page.getByText('Production scope'))) &&
+        (await visible(page.getByText('Work included'))) &&
         (await visible(page.getByText(/Locked from the accepted quote/))),
     );
 
@@ -1229,9 +1241,9 @@ const main = async () => {
     );
     check(
       'the order shows the locked scope and the summary of what was charged',
-      (await visible(page.getByText('Production scope'))) &&
+      (await visible(page.getByText('Work included'))) &&
         (await visible(page.getByText(/Locked from the accepted quote/))) &&
-        (await visible(page.getByRole('list', { name: 'Production scope' }))) &&
+        (await visible(page.getByRole('list', { name: 'Work included' }))) &&
         (await visible(page.getByText('Order Summary'))),
     );
     check(
@@ -1804,7 +1816,7 @@ const main = async () => {
       await visible(page.getByText('Understood — we will decide by Friday.')),
     );
     await page.screenshot({ path: join(shotDir, 'conversation.png'), fullPage: false });
-    // ------------------------------------ T14: a 3D module on its own
+    // ------------------------------------ T14: a printed part on its own
     //
     // The Industrial Sensor Hub carries a STEP file and no board, so it is the
     // product that exercises sending a printed part to manufacture by itself.
@@ -1819,8 +1831,10 @@ const main = async () => {
     check(
       'the draft groups the files by the work they imply',
       (await visible(page.getByRole('group', { name: 'PCB items' }))) &&
-        (await visible(page.getByRole('group', { name: '3D module' }))) &&
-        (await visible(page.getByText(/Full product/))),
+        (await visible(page.getByRole('group', { name: '3D printing' }))) &&
+        // The derived kind, in the one vocabulary (UIUX-144) rather than this
+        // panel's own "Full product".
+        (await visible(page.getByText(/PCB \+ 3D printing — board and printed parts/))),
     );
 
     // The point of this route: drop the boards and send the printed part alone.
@@ -1830,8 +1844,8 @@ const main = async () => {
       .first()
       .uncheck();
     check(
-      'dropping the boards leaves a 3D module on its own',
-      await visible(page.getByText('3D module only')),
+      'dropping the boards leaves 3D printing on its own',
+      await visible(page.getByText('3D printing only')),
     );
     check(
       'a printed part is asked for its process and material',
@@ -1862,7 +1876,7 @@ const main = async () => {
     check(
       'the print specification is saved with the draft',
       //manufacturing/draft/(?!new)[^/?]+/.test(printDraftUrl) &&
-        (await visible(page.getByText(/SLS|3D module/))),
+        (await visible(page.getByText(/SLS|3D printing/))),
       printDraftUrl,
     );
     await page.screenshot({ path: join(shotDir, 'draft-3d.png'), fullPage: false });
@@ -2127,6 +2141,19 @@ const main = async () => {
     ]) {
       const slipped = await slide(target);
       check(`${target} does not scroll sideways on a phone`, slipped <= 1, `${slipped}px`);
+
+      // ---- UIUX-144: one name for the kind of work, on this panel too.
+      //
+      // The shop panel was held to this and the buyer panel was not, so it kept
+      // four private vocabularies — "3D", "3D module", "Full product", "PCB
+      // only" — including the exact words that ticket retired. A buyer and a
+      // shop reading the same order saw different names for it.
+      const words = await page.locator('body').innerText();
+      check(
+        `${target} uses the one vocabulary for the kind of work`,
+        !/\b3D module\b/.test(words) && !/\bFull product\b/.test(words),
+        (words.match(/\b(3D module|Full product)\b/) ?? ['none'])[0],
+      );
     }
 
     // The gallery, for the design review.

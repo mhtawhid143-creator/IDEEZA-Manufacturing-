@@ -17,6 +17,7 @@ import {
   SURFACE_FINISH_LABEL,
   usesInfill,
   type PrintTechnology,
+  PACKAGE_KIND_LABEL,
 } from '@ideeza/domain';
 
 export interface CompositionFile {
@@ -53,7 +54,7 @@ const GROUPS = [
   },
   {
     kind: 'model_3d' as const,
-    title: '3D module',
+    title: '3D printing',
     note: 'Model files: STL, STEP, 3MF and the like.',
   },
   {
@@ -66,7 +67,7 @@ const GROUPS = [
 /**
  * What goes to manufacture, chosen group by group.
  *
- * A 3D module can be sent on its own, so the package kind is not something the
+  * A printed part can be sent on its own, so the package kind is not something the
  * buyer answers separately — it follows from what is ticked here, and is read
  * back so there is no doubt about what is being asked for. The print
  * specification appears only when a model file is included, because a bare board
@@ -89,9 +90,11 @@ export const DraftComposition = ({
   const derivedKind = useMemo(() => {
     const board = includes('pcb');
     const model = includes('model_3d');
-    if (board && model) return 'Full product — board and printed parts';
-    if (model) return '3D module only';
-    if (board) return 'PCB only';
+    // The domain's names, not a fourth set (UIUX-144): "3D module" was the
+    // word that ticket retired, and it was still being shown to buyers here.
+    if (board && model) return `${PACKAGE_KIND_LABEL.full_product} — board and printed parts`;
+    if (model) return `${PACKAGE_KIND_LABEL.module_3d} only`;
+    if (board) return `${PACKAGE_KIND_LABEL.pcb} only`;
     return 'Nothing that can be made yet';
   }, [selected, files]);
 

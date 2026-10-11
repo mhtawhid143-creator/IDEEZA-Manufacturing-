@@ -8,6 +8,24 @@ export const SHIPPING_CHOICES = ['standard', 'express'] as const;
 export type ShippingChoice = (typeof SHIPPING_CHOICES)[number];
 
 /**
+ * How a courier choice is said out loud, in one place.
+ *
+ * The shop's order page printed `shippingChoice` through a `replace` on its
+ * underscores — the stored word, in lower case, beside rows that are all
+ * properly written — while the buyer's order page carried its own map. One
+ * fact, two readings, which is the fault UIUX-123, UIUX-144 and UIUX-217 each
+ * found somewhere else.
+ *
+ * The words are the buyer panel's, not new ones: a buyer has been reading them,
+ * and an audit is not the place to change what a buyer is told.
+ */
+export const SHIPPING_CHOICE_LABEL: Readonly<Record<ShippingChoice, string>> =
+  Object.freeze({
+    standard: 'Standard courier · tracked',
+    express: 'Expedited courier · tracked',
+  });
+
+/**
  * How long the courier takes once the units leave the factory.
  *
  * The quote prices the goods and gives a lead time for making them; it says

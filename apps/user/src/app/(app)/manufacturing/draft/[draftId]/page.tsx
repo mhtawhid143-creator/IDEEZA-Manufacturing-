@@ -19,15 +19,18 @@ import { getDraft } from '@/data/drafts.js';
 import { getProductDetail } from '@/data/products.js';
 import { requireBuyer } from '@/lib/auth.js';
 import { openRequestHref } from '@/lib/routes.js';
-import { asId, fileKindOf, type RfqId } from '@ideeza/domain';
+import { asId, fileKindOf, PACKAGE_KIND_LABEL, type RfqId } from '@ideeza/domain';
 
 export const dynamic = 'force-dynamic';
 
-const PACKAGE_LABEL: Readonly<Record<string, string>> = {
-  pcb: 'PCB only',
-  module_3d: '3D module',
-  full_product: 'Full product',
-};
+/**
+ * One name for the kind of work, from the domain (UIUX-144).
+ *
+ * This page had its own — "PCB only", "3D module", "Full product" — while the
+ * list two clicks away had a third set and the shop panel had the domain's.
+ * "3D module" is the exact word UIUX-144 retired, still being shown to buyers.
+ */
+const PACKAGE_LABEL: Readonly<Record<string, string>> = PACKAGE_KIND_LABEL;
 
 /**
  * A saved draft: the same step, reopened.

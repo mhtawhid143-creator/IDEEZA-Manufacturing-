@@ -6,6 +6,7 @@ import {
   assertStageProgression,
   counted,
   manufacturingTypeLabel,
+  type ShippingChoice,
   isFundingSecured,
   orderMachine,
   orderSchedule,
@@ -414,7 +415,8 @@ export interface OrderDetail extends OrderRow {
     readonly postalCode: string | null;
     readonly countryCode: string;
   };
-  readonly shippingChoice: string;
+  /** Two values, not any string — so the courier vocabulary lookup is total. */
+  readonly shippingChoice: ShippingChoice;
   readonly schedule: {
     readonly estimatedShipAt: Date;
     readonly estimatedDeliveryAt: Date;

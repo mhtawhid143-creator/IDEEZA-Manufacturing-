@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { PageHeader, majorAmount } from '@ideeza/ui';
-import { withdrawalReference } from '@ideeza/domain';
+import { activityLabel, withdrawalReference } from '@ideeza/domain';
 import { SettingsPanels } from '@/components/settings/settings-panels.js';
 import { earningsSummary } from '@/data/payouts.js';
 import { getShopProfile } from '@/data/profile.js';
@@ -37,11 +37,19 @@ const deviceName = (userAgent: string | null): string => {
   return 'Unknown device';
 };
 
-/** What an event was, in words rather than in its enum name. */
-const eventWords = (kind: string, subject: string): string => {
-  const readable = kind.replace(/_/g, ' ');
-  return `You ${readable} — ${subject.replace(/_/g, ' ')}`;
-};
+/**
+ * What an event was, in words rather than in its enum name.
+ *
+ * It used to build the sentence itself — `You ${kind} — ${subject}`, both with
+ * their underscores knocked out — so this list read "You quote submitted —
+ * quote" while the dashboard's feed, from the same rows, read "Quote sent".
+ * That is the fault UIUX-123 fixed on the feed, surviving on a second surface.
+ *
+ * `activityLabel` is the one vocabulary, and the subject is dropped rather than
+ * printed: every label already names the kind of record it happened to, so
+ * "Quote sent · quote" only says it twice.
+ */
+const eventWords = (kind: string): string => activityLabel(kind);
 
 /**
  * Settings, in the design's shape: a section rail and one pane.
@@ -218,7 +226,7 @@ const SettingsPage = async ({
             id: row.id,
             day: day(row.at),
             time: time(row.at),
-            text: eventWords(row.kind, row.subject),
+            text: eventWords(row.kind),
           })),
           disputes: disputes.map((dispute) => ({
             id: dispute.id,

@@ -9,6 +9,7 @@ import {
   majorAmount as major,
 } from '@ideeza/ui';
 import {
+  SHIPPING_CHOICE_LABEL,
   asId,
   counted,
   orderReference,
@@ -100,7 +101,13 @@ const OrderTermsPage = async ({
             },
             { label: 'Landed total', value: `${order.currency} ${major(landed)}` },
             { label: 'Lead time', value: `${order.leadTimeDays} days` },
-            { label: 'Shipping choice', value: order.shippingChoice.replace(/_/g, ' ') },
+            {
+              // The courier is read from the one vocabulary both panels share,
+              // not by knocking the underscores out of a stored word — which
+              // left this row in lower case beside rows that were all written.
+              label: 'Shipping choice',
+              value: SHIPPING_CHOICE_LABEL[order.shippingChoice] ?? order.shippingChoice,
+            },
             { label: 'Confirmed', value: day(order.confirmedAt) },
           ]}
         />

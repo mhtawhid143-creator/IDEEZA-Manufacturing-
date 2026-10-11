@@ -1,3 +1,4 @@
+import { PACKAGE_KIND_LABEL } from '@ideeza/domain';
 import { HubSection } from '@/components/hub-section.js';
 import { OrderList } from '@/components/order/order-list.js';
 import { major } from '@/components/rfq/quote-money.js';
@@ -16,11 +17,8 @@ const SERVICE_TAG: Readonly<Record<string, string>> = {
   testing: 'Test',
 };
 
-const KIND_TAG: Readonly<Record<string, string>> = {
-  pcb: 'PCB',
-  module_3d: '3D',
-  full_product: 'Full product',
-};
+/** One name for the kind of work, from the domain (UIUX-144). */
+const KIND_TAG: Readonly<Record<string, string>> = PACKAGE_KIND_LABEL;
 
 const day = (value: Date): string => value.toISOString().slice(0, 10);
 
