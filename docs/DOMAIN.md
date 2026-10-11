@@ -174,3 +174,28 @@ total, and the four request tabs grouping by product. The order's own stage is
 disagree — and the rule is worth an invariant of its own, refusing to mark an
 order shipped while a component is unfinished, beside the other production
 refusals rather than left to be remembered.
+
+### The five rules that follow (decided 2026-10-11)
+
+1. **One quantity for the order.** 500 of each product, not a count per product.
+   `Rfq.quantity` stays a single field. A buyer wanting 500 drones and 2,000
+   batteries sends the batteries as their own request — which is what the
+   platform already does with the pieces of a project, so this stays consistent
+   rather than becoming an exception.
+2. **A shop takes all of it or none.** No partial quote: a partial quote means
+   two shops shipping separately, which "ships as one" rules out.
+3. **The buyer sees a price per product and a total.** Both, not only the total.
+4. **A shortage on one product holds the shipment, not the other products.**
+   A shop checks its stock against the bill of materials before quoting, so the
+   common case never reaches production at all; this answers the case the
+   `InventoryAlert` flow exists for — a part lost, failing inspection, or a
+   supplier falling through after the order is confirmed. The other products
+   keep moving, because everything ships together anyway.
+5. **A bad product is a partial refund or an agreed rework** — and **this needs
+   nothing built**. `Refund.requestedAmountMinor` / `approvedAmountMinor` have
+   always made a refund an *amount* rather than the whole order;
+   `partial_refund.agreed` is already a release trigger (§3); and
+   `DISPUTE_OUTCOMES` already carries `rework` and `replacement_shipment`.
+
+No per-component escrow, no per-component refund record, no new release trigger.
+The money model is untouched.
