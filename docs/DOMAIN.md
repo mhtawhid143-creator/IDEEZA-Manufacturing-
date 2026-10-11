@@ -144,3 +144,33 @@ one is currently represented only as a field or a parameter, never as a default:
 - quote confidentiality between competing manufacturers is assumed and enforced
   in `access.ts`; confirm it is intended
 - design file / intellectual property protection between competing recipients
+
+## 8. Decided: an order of several products ships as one
+
+A project can hold more than one thing to make. Until the schema carries that,
+each piece travels as its own request — and every request, quote and order says
+so and links to the others (UIUX-207).
+
+**When one order does carry several products, the order is the slowest
+component.** Nothing ships until every product in it is finished, and the whole
+order travels in one courier shipment. Decided by the business, 2026-10-11.
+
+The rule matters most for what it *removes*. The question that had held this up
+was what an order's status is when one component has shipped and another has
+not — and because money leaves escrow against that status, it could not be
+guessed. Shipping everything together answers it: `order.status` is the
+least-advanced component's status, and an order is never `shipped` while a
+component is unfinished.
+
+So the money model does not move. One shipment, one delivery, one release
+against the triggers in §3. No partial release, no per-component refund or
+dispute, no accepting different shops for different components.
+`ManufacturingOrder`, `Payment`, `Payout`, `Refund` and `Dispute` are unchanged.
+
+What the schema still owes: an RFQ carrying many packages, `ProductionStage`
+and `ProductionTask` carrying a component, a price per component inside one
+total, and the four request tabs grouping by product. The order's own stage is
+**derived** (`min` across components) rather than stored, so the two can never
+disagree — and the rule is worth an invariant of its own, refusing to mark an
+order shipped while a component is unfinished, beside the other production
+refusals rather than left to be remembered.
